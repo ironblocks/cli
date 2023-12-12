@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 // 3rd party.
 import { CommandFactory } from 'nest-commander';
 // Internal.

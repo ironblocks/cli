@@ -9,8 +9,12 @@ import { FirewallIntegrateCommand } from './integrate/integrate.command';
     subCommands: [FirewallIntegrateCommand],
 })
 export class FirewallCommand extends CommandRunner {
-    async run(): Promise<void> {
+    async run(passedParams: string[]): Promise<void> {
+        const [unkownCommand] = passedParams;
+        if (!!unkownCommand) {
+            return this.command.error(`error: uknown command '${unkownCommand}'`);
+        }
         // Output information about available subcommands.
-        this.command.outputHelp();
+        this.command.help();
     }
 }

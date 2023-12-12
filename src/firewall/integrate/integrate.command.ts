@@ -1,5 +1,3 @@
-// Builtin.
-import { dirname } from 'path';
 // 3rd party.
 import { CommandRunner, Option, SubCommand } from 'nest-commander';
 // Internal.
@@ -13,7 +11,7 @@ interface CommandOptions {
 
 @SubCommand({
     name: 'integ',
-    description: 'Integrate with Ironblocks firewall',
+    description: 'Integrate your contracts with Ironblocks firewall',
 })
 export class FirewallIntegrateCommand extends CommandRunner {
     constructor(private readonly fwIntegService: FirewallIntegrateService) {
@@ -21,25 +19,29 @@ export class FirewallIntegrateCommand extends CommandRunner {
     }
 
     private setOptionConflicts(optionName: string, conflicts: string[]): void {
-        const option = this.command.options.find(
-            (option) => option.attributeName() === optionName,
-        );
+        const option = this.command.options.find((option) => option.attributeName() === optionName);
         option.conflicts(conflicts);
     }
 
-    async run(passedParam: string[], options?: CommandOptions): Promise<void> {
-        if (options?.file) {
-            return this.fwIntegService.integContractFile(options.file);
+    async run(passedParams: string[], options?: CommandOptions): Promise<void> {
+        const [unkownArg] = passedParams;
+        if (!!unkownArg) {
+            return this.command.error(`error: uknown argument '${unkownArg}'`);
         }
 
-        if (options.dir) {
-            return this.fwIntegService.integContractsDir(
-                options.dir,
-                options.recursive,
-            );
+        try {
+            if (options?.file) {
+                return await this.fwIntegService.integContractFile(options.file);
+            }
+
+            if (options.dir) {
+                return await this.fwIntegService.integContractsDir(options.dir, options.recursive);
+            }
+        } catch (err) {
+            return this.command.error(`error: ${err.message}`);
         }
 
-        this.command.outputHelp();
+        this.command.help();
     }
 
     @Option({
@@ -57,7 +59,7 @@ export class FirewallIntegrateCommand extends CommandRunner {
     })
     parseDirPath(val: string): string {
         this.setOptionConflicts('dir', ['file']);
-        return dirname(val);
+        return val;
     }
 
     @Option({

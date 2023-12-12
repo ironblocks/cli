@@ -24,9 +24,11 @@ module.exports = {
         'prettier/prettier': [
             'error',
             {
-                // Indent with 4 spaces
+                // Indent with spaces.
                 "tabWidth": 4,
+                // Max line length.
+                "printWidth": 100,
             }
-        ]
+        ],
     },
 };
