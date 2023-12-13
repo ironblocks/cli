@@ -1,20 +1,23 @@
+// Builtin.
+import { dirname } from 'path';
 // 3rd party.
 import { Injectable } from '@nestjs/common';
 // Internal.
-import { withHooks } from '../../lib/decorators';
-import { assertDirExistsHook, assertFileExistsHook, npmInstallFirewallConsumerHook } from './utils';
+import { FirewallIntegrateUtils } from './integrate.utils';
 
 @Injectable()
 export class FirewallIntegrateService {
-    constructor() {}
+    constructor(private readonly fwIntegUtils: FirewallIntegrateUtils) {}
 
-    @withHooks([assertFileExistsHook, npmInstallFirewallConsumerHook])
     public async integContractFile(filepath: string): Promise<void> {
-        console.log('Integ file', filepath);
+        await this.fwIntegUtils.assertFileExists(filepath);
+        await this.fwIntegUtils.npmInstallFirewallConsumer(dirname(filepath));
+        console.log(`Integ file: ${filepath}`);
     }
 
-    @withHooks([assertDirExistsHook, npmInstallFirewallConsumerHook])
     public async integContractsDir(dirpath: string, recursive: boolean): Promise<void> {
-        console.log('Integ dir', dirpath, recursive);
+        await this.fwIntegUtils.assertDirExists(dirpath);
+        await this.fwIntegUtils.npmInstallFirewallConsumer(dirpath);
+        console.log(`Integ dir: ${dirpath}, rec: ${recursive}`);
     }
 }
