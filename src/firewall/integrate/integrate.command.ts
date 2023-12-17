@@ -1,3 +1,5 @@
+// Builtin.
+import { resolve } from 'path';
 // 3rd party.
 import { CommandRunner, Option, SubCommand } from 'nest-commander';
 // Internal.
@@ -50,7 +52,7 @@ export class FirewallIntegrateCommand extends CommandRunner {
     })
     parseFilePath(val: string): string {
         this.setOptionConflicts('file', ['dir']);
-        return val;
+        return resolve(val);
     }
 
     @Option({
@@ -59,7 +61,7 @@ export class FirewallIntegrateCommand extends CommandRunner {
     })
     parseDirPath(val: string): string {
         this.setOptionConflicts('dir', ['file']);
-        return val;
+        return resolve(val);
     }
 
     @Option({

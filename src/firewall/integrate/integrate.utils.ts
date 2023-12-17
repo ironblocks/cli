@@ -1,12 +1,12 @@
+// Builtin.
+import { exec, spawn } from 'child_process';
+import { stat, readdir, readFile, writeFile } from 'fs/promises';
+import { join, parse } from 'path';
+import { promisify } from 'util';
 // 3rd party.
 import { Injectable } from '@nestjs/common';
 import { InquirerService } from 'nest-commander';
 import { parse as parseSolidity } from '@solidity-parser/parser';
-// Builtin.
-import { exec, spawn } from 'child_process';
-import { stat, readFile, writeFile } from 'fs/promises';
-import { parse, resolve } from 'path';
-import { promisify } from 'util';
 
 type ParsedSolidityConstructs = {
     children: SolidityConstruct[];
@@ -28,6 +28,8 @@ type SolidityConstruct = {
 };
 
 const execAsync = promisify(exec);
+
+const RE_SOLIDITY_FILE_NAME = new RegExp(`\\w+\\.sol$`, 'g');
 
 const RE_COMMENTS = new RegExp(`(?:\\/\\/[^\\n]*|\\/\\*[\\s\\S]*?\\*\\/)`, 'g');
 const RE_BLANK_SPACE = new RegExp(`(?:(?:\\s)|${RE_COMMENTS.source})`, 'g');
@@ -74,6 +76,7 @@ const RE_MODIFIERS = new RegExp(
     `(?<modifiers>(?:(?!returns)[\\w,\\.\\(\\)]+${RE_BLANK_SPACE.source}*)*)`,
     'g',
 );
+const RE_IMMUTABLE_STATE = new RegExp(`\\pure|view\\b`, 'i');
 const RE_RETURNS = new RegExp(`(?<returns>returns[^{]+${RE_BLANK_SPACE.source}*)`, 'g');
 const RE_METHOD_DEFINITION = new RegExp(
     `^${RE_FUNCTION.source}?${RE_SIGNATURE.source}${RE_VISIBILITY.source}?${RE_MODIFIERS.source}?${RE_RETURNS.source}?`,
@@ -94,7 +97,7 @@ export class FirewallIntegrateUtils {
                 throw new Error();
             }
         } catch (err) {
-            throw new Error(`file does not exist '${resolve(path)}'`);
+            throw new Error(`file does not exist '${path}'`);
         }
     }
 
@@ -105,8 +108,37 @@ export class FirewallIntegrateUtils {
                 throw new Error();
             }
         } catch (err) {
-            throw new Error(`directory does not exist '${resolve(path)}'`);
+            throw new Error(`directory does not exist '${path}'`);
         }
+    }
+
+    assertSolidityFile(path: string): void {
+        if (!this.isSolidityFile(path)) {
+            throw new Error(`not a solidity file '${path}'`);
+        }
+    }
+
+    isSolidityFile(path: string): boolean {
+        return RE_SOLIDITY_FILE_NAME.test(path);
+    }
+
+    async getSolidityFilesInDir(dirpath: string, recursive: boolean): Promise<string[]> {
+        const solifityFiles = [];
+        const files = await readdir(dirpath);
+        await Promise.all(
+            files.map(async (filename) => {
+                const path = join(dirpath, filename);
+                const stats = await stat(path);
+                if (stats.isFile() && this.isSolidityFile(path)) {
+                    solifityFiles.push(path);
+                }
+                if (stats.isDirectory() && recursive) {
+                    const subDirectoryFiles = await this.getSolidityFilesInDir(path, recursive);
+                    solifityFiles.push(...subDirectoryFiles);
+                }
+            }),
+        );
+        return solifityFiles;
     }
 
     async npmInstallFirewallConsumer(dirpath: string): Promise<void> {
@@ -182,7 +214,7 @@ export class FirewallIntegrateUtils {
             // Overriding original file.
             await writeFile(path, customizedCode);
         } catch (err) {
-            throw new Error('Unsupported file format');
+            throw new Error(`unsupported file format '${path}'`);
         }
     }
 
@@ -259,6 +291,11 @@ export class FirewallIntegrateUtils {
                 modifiers: string = '',
                 returns: string = '',
             ) => {
+                const isImmutableState = RE_IMMUTABLE_STATE.test(modifiers);
+                if (isImmutableState) {
+                    return match;
+                }
+
                 if (modifiers) {
                     return `${func}${signature}${visibility}${modifiers}${MODIFIER_TO_ADD} ${returns}`;
                 }
