@@ -25,6 +25,7 @@ type SolidityConstruct = {
     namePath?: string;
     visibility?: string;
     isConstructor?: boolean;
+    modifiers?: SolidityConstruct[];
 };
 
 const execAsync = promisify(exec);
@@ -231,6 +232,11 @@ export class FirewallIntegrateUtils {
             contract,
             contractCode,
         );
+
+        if (contractCodeWithCustomizedMethods === contractCode) {
+            return contractCode;
+        }
+
         // Add base contract inheritance to contract declaration.
         const customizedContractCode = contractCodeWithCustomizedMethods.replace(
             RE_CONTRACT_DEFINITION,
@@ -275,7 +281,10 @@ export class FirewallIntegrateUtils {
     }
 
     private customizeMethodCode(method: SolidityConstruct, methodCode: string): string {
-        if (method.visibility !== 'external') {
+        const isAlreadyCustomized = (method.modifiers ?? []).some(
+            (modifier) => modifier.name === MODIFIER_TO_ADD,
+        );
+        if (isAlreadyCustomized || method.visibility !== 'external') {
             return methodCode;
         }
 
