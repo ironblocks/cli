@@ -223,18 +223,16 @@ export class FirewallIntegrateUtils {
         const isAlreadyCustomized = (contract.baseContracts ?? []).some(
             (base) => base.baseName?.namePath === BASE_CONTRACT_TO_INHERIT,
         );
-        if (isAlreadyCustomized) {
-            return contractCode;
-        }
-
         // Add custom modifiers to contract methods.
         const contractCodeWithCustomizedMethods = this.customizeContractMethods(
             contract,
             contractCode,
         );
 
-        if (contractCodeWithCustomizedMethods === contractCode) {
+        if (isAlreadyCustomized && contractCodeWithCustomizedMethods === contractCode) {
             return contractCode;
+        } else if (isAlreadyCustomized) {
+            return contractCodeWithCustomizedMethods;
         }
 
         // Add base contract inheritance to contract declaration.
