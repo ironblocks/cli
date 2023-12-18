@@ -3,18 +3,22 @@ import { dirname } from 'path';
 // 3rd party.
 import { Injectable } from '@nestjs/common';
 // Internal.
+import { Logger } from '../../logging/logger.service';
 import { FirewallIntegrateUtils } from './integrate.utils';
 
 @Injectable()
 export class FirewallIntegrateService {
-    constructor(private readonly fwIntegUtils: FirewallIntegrateUtils) {}
+    constructor(
+        private readonly fwIntegUtils: FirewallIntegrateUtils,
+        private readonly logger: Logger,
+    ) {}
 
     public async integContractFile(filepath: string): Promise<void> {
         await this.fwIntegUtils.assertFileExists(filepath);
         this.fwIntegUtils.assertSolidityFile(filepath);
         await this.fwIntegUtils.npmInstallFirewallConsumer(dirname(filepath));
         await this.fwIntegUtils.customizeContractFile(filepath);
-        console.log(`Customized file '${filepath}'`);
+        this.logger.log(`Customized file '${filepath}'`);
     }
 
     public async integContractsDir(dirpath: string, recursive: boolean): Promise<void> {
@@ -27,7 +31,7 @@ export class FirewallIntegrateService {
         await Promise.all(
             files.map(async (filepath) => {
                 await this.fwIntegUtils.customizeContractFile(filepath);
-                console.log(`Customized file '${filepath}'`);
+                this.logger.log(`Customized file '${filepath}'`);
             }),
         );
     }
