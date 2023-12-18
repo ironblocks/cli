@@ -14,12 +14,11 @@ async function bootstrap() {
 }
 
 function setRootDescription(app: INestApplicationContext): void {
-    const ROOT_DESCRIPTION = `
+    const ROOT_DESCRIPTION = `\
     __
  __|__|
 |__|__   Welcome to Ironblocks' CLI tool
-   |__|
-    `;
+   |__|`;
     const runner = app.get<CommandRunner>(CommandRunnerService);
     // @ts-ignore
     runner.commander.description(ROOT_DESCRIPTION);
