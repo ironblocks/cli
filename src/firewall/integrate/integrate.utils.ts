@@ -190,7 +190,13 @@ export class FirewallIntegrateUtils {
         });
     }
 
-    async customizeContractFile(path: string): Promise<void> {
+    /**
+     * Customize a solidity file to integrate with the "firewall".
+     *
+     * @param path
+     * @returns true iff any changes were made to the file.
+     */
+    async customizeContractFile(path: string): Promise<boolean> {
         const content = await readFile(path, 'utf8');
         const contractNameFilter = parse(path).name;
 
@@ -205,6 +211,10 @@ export class FirewallIntegrateUtils {
                 const isMatchingContract = name === contractNameFilter;
                 return isContractDefinition && isMatchingContract;
             });
+            if (!parsedContract) {
+                return false;
+            }
+
             const [contractStartIndex, contractEndIndex] = parsedContract.range;
             const contractCode = content.substring(contractStartIndex, contractEndIndex + 1);
             const customizedContractCode = this.customizeContractCode(parsedContract, contractCode);
@@ -212,8 +222,13 @@ export class FirewallIntegrateUtils {
                 content.slice(0, contractStartIndex) +
                 customizedContractCode +
                 content.slice(contractEndIndex + 1);
+            if (customizedCode === content) {
+                return false;
+            }
+
             // Overriding original file.
             await writeFile(path, customizedCode);
+            return true;
         } catch (err) {
             throw new Error(`unsupported file format '${path}'`);
         }

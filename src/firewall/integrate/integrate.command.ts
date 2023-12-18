@@ -65,7 +65,7 @@ export class FirewallIntegrateCommand extends CommandRunner {
     }
 
     @Option({
-        flags: '-r, --recursive',
+        flags: '-r, --rec',
         description: 'Recurse on all the contract files in the directory',
         defaultValue: false,
     })

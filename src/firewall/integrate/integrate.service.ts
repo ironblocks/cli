@@ -3,7 +3,7 @@ import { dirname } from 'path';
 // 3rd party.
 import { Injectable } from '@nestjs/common';
 // Internal.
-import { Logger } from '../../logging/logger.service';
+import { Logger } from '../../lib/logging/logger.service';
 import { FirewallIntegrateUtils } from './integrate.utils';
 
 @Injectable()
@@ -17,8 +17,12 @@ export class FirewallIntegrateService {
         await this.fwIntegUtils.assertFileExists(filepath);
         this.fwIntegUtils.assertSolidityFile(filepath);
         await this.fwIntegUtils.npmInstallFirewallConsumer(dirname(filepath));
-        await this.fwIntegUtils.customizeContractFile(filepath);
-        this.logger.log(`Customized file '${filepath}'`);
+        const customized = await this.fwIntegUtils.customizeContractFile(filepath);
+        if (customized) {
+            this.logger.log(`Customized file '${filepath}'`);
+        } else {
+            this.logger.log(`File was not changed '${filepath}'`);
+        }
     }
 
     public async integContractsDir(dirpath: string, recursive: boolean): Promise<void> {
@@ -28,11 +32,22 @@ export class FirewallIntegrateService {
             throw new Error(`could not find any solidity files at '${dirpath}'`);
         }
         await this.fwIntegUtils.npmInstallFirewallConsumer(dirpath);
+
+        const customizedFiles = [];
         await Promise.all(
             files.map(async (filepath) => {
-                await this.fwIntegUtils.customizeContractFile(filepath);
-                this.logger.log(`Customized file '${filepath}'`);
+                const customized = await this.fwIntegUtils.customizeContractFile(filepath);
+                if (customized && !customizedFiles.length) {
+                    this.logger.log(`Customized files:\n\t${filepath}`);
+                    customizedFiles.push(filepath);
+                } else if (customized) {
+                    this.logger.log(`\t${filepath}`);
+                    customizedFiles.push(filepath);
+                }
             }),
         );
+        if (!customizedFiles.length) {
+            this.logger.log(`No files were changed at '${dirpath}'`);
+        }
     }
 }
