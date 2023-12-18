@@ -120,7 +120,7 @@ export class FirewallIntegrateUtils {
     }
 
     isSolidityFile(path: string): boolean {
-        return RE_SOLIDITY_FILE_NAME.test(path);
+        return !!path.match(RE_SOLIDITY_FILE_NAME);
     }
 
     async getSolidityFilesInDir(dirpath: string, recursive: boolean): Promise<string[]> {
@@ -220,18 +220,22 @@ export class FirewallIntegrateUtils {
     }
 
     private customizeContractCode(contract: SolidityConstruct, contractCode: string): string {
-        const isAlreadyCustomized = (contract.baseContracts ?? []).some(
-            (base) => base.baseName?.namePath === BASE_CONTRACT_TO_INHERIT,
-        );
+        const alreadyCustomizedHeader = this.alreadyCustomizedContractHeader(contract);
+        const methods = contract.subNodes.filter(({ type }) => type === 'FunctionDefinition');
+        const alreadyCustomizedSomeMethods = methods.some(this.alreadyCustomizedContractMethod);
         // Add custom modifiers to contract methods.
         const contractCodeWithCustomizedMethods = this.customizeContractMethods(
-            contract,
             contractCode,
+            contract,
+            methods,
         );
 
-        if (isAlreadyCustomized && contractCodeWithCustomizedMethods === contractCode) {
+        if (
+            contractCodeWithCustomizedMethods === contractCode &&
+            (alreadyCustomizedHeader || !alreadyCustomizedSomeMethods)
+        ) {
             return contractCode;
-        } else if (isAlreadyCustomized) {
+        } else if (alreadyCustomizedHeader) {
             return contractCodeWithCustomizedMethods;
         }
 
@@ -257,9 +261,12 @@ export class FirewallIntegrateUtils {
         return customizedContractCode;
     }
 
-    private customizeContractMethods(contract: SolidityConstruct, contractCode: string): string {
+    private customizeContractMethods(
+        contractCode: string,
+        contract: SolidityConstruct,
+        methods: SolidityConstruct[],
+    ): string {
         const [contractStartIndex, _] = contract.range;
-        const methods = contract.subNodes.filter(({ type }) => type === 'FunctionDefinition');
         // Customizing methods from the bottom up not to affect other methods' start and end indexes.
         const customizedMethods = methods.reduceRight((customized, method) => {
             const [methodStartIndex, methodEndIndex] = method.range;
@@ -279,10 +286,8 @@ export class FirewallIntegrateUtils {
     }
 
     private customizeMethodCode(method: SolidityConstruct, methodCode: string): string {
-        const isAlreadyCustomized = (method.modifiers ?? []).some(
-            (modifier) => modifier.name === MODIFIER_TO_ADD,
-        );
-        if (isAlreadyCustomized || method.visibility !== 'external') {
+        const alreadyCustomized = this.alreadyCustomizedContractMethod(method);
+        if (alreadyCustomized || method.visibility !== 'external') {
             return methodCode;
         }
 
@@ -298,7 +303,7 @@ export class FirewallIntegrateUtils {
                 modifiers: string = '',
                 returns: string = '',
             ) => {
-                const isImmutableState = RE_IMMUTABLE_STATE.test(modifiers);
+                const isImmutableState = !!modifiers.match(RE_IMMUTABLE_STATE);
                 if (isImmutableState) {
                     return match;
                 }
@@ -312,5 +317,15 @@ export class FirewallIntegrateUtils {
         );
 
         return customizedMethodCode;
+    }
+
+    private alreadyCustomizedContractHeader(contract: SolidityConstruct): boolean {
+        return (contract.baseContracts ?? []).some(
+            (base) => base.baseName?.namePath === BASE_CONTRACT_TO_INHERIT,
+        );
+    }
+
+    private alreadyCustomizedContractMethod(method: SolidityConstruct): boolean {
+        return (method.modifiers ?? []).some((modifier) => modifier.name === MODIFIER_TO_ADD);
     }
 }
