@@ -13,7 +13,7 @@ interface CommandOptions {
 
 @SubCommand({
     name: 'integ',
-    description: 'Integrate your contracts with Ironblocks firewall',
+    description: "Integrate your contracts with Ironblocks' firewall",
 })
 export class FirewallIntegrateCommand extends CommandRunner {
     constructor(private readonly fwIntegService: FirewallIntegrateService) {
