@@ -123,26 +123,29 @@ export class FirewallIntegrateUtils {
         return !!path.match(RE_SOLIDITY_FILE_NAME);
     }
 
-    async getSolidityFilesInDir(dirpath: string, recursive: boolean): Promise<string[]> {
-        const solifityFiles = [];
-        const files = await readdir(dirpath);
-        await Promise.all(
-            files.map(async (filename) => {
-                const path = join(dirpath, filename);
+    async forEachSolidityFilesInDir(
+        cb: (filepath: string) => unknown | Promise<unknown>,
+        dirpath: string,
+        recursive: boolean,
+    ): Promise<void> {
+        const directoriesQueue: string[] = [dirpath];
+        while (directoriesQueue.length) {
+            const dir = directoriesQueue.pop();
+            const files = await readdir(dir);
+            for (const filename of files) {
+                const path = join(dir, filename);
                 const stats = await stat(path);
                 if (stats.isFile() && this.isSolidityFile(path)) {
-                    solifityFiles.push(path);
+                    await cb(path);
                 }
                 if (stats.isDirectory() && recursive) {
-                    const subDirectoryFiles = await this.getSolidityFilesInDir(path, recursive);
-                    solifityFiles.push(...subDirectoryFiles);
+                    directoriesQueue.push(path);
                 }
-            }),
-        );
-        return solifityFiles;
+            }
+        }
     }
 
-    async npmInstallFirewallConsumer(dirpath: string): Promise<void> {
+    async npmInstallFirewallConsumerIfNeeded(dirpath: string): Promise<void> {
         await this.installNodeModuleIfNeeded('@ironblocks/firewall-consumer', dirpath);
     }
 

@@ -6,9 +6,9 @@ import { CommandRunner, Option, SubCommand } from 'nest-commander';
 import { FirewallIntegrateService } from './integrate.service';
 
 interface CommandOptions {
-    dir?: string;
     file?: string;
-    recursive?: boolean;
+    dir?: string;
+    rec?: boolean;
 }
 
 @SubCommand({
@@ -37,7 +37,7 @@ export class FirewallIntegrateCommand extends CommandRunner {
             }
 
             if (options.dir) {
-                return await this.fwIntegService.integContractsDir(options.dir, options.recursive);
+                return await this.fwIntegService.integContractsDir(options.dir, options.rec);
             }
         } catch (err) {
             return this.command.error(`error: ${err.message}`);
