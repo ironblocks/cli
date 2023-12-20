@@ -3,18 +3,10 @@
 </p>
 
 <p align="center">
-    <a href="https://www.npmjs.com/~ironblocks" target="_blank">
-        <img src="https://img.shields.io/npm/v/@ironblocks/cli" alt="NPM Version" />
-    </a>
-    <a href="https://opensource.org/licenses/MIT" target="_blank">
-        <img src="https://img.shields.io/badge/License-MIT-green.svg" alt="Package License" />
-    </a>
-    <a href="https://discord.com/channels/1065679814289268929" target="_blank">
-        <img src="https://img.shields.io/badge/discord-blue?logo=discord&logoColor=white">
-    </a>
-    <a href="https://twitter.com/Ironblocks_" target="_blank">
-        <img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow">
-    </a>
+    <a href="https://www.npmjs.com/~ironblocks" target="_blank"><img src="https://img.shields.io/npm/v/@ironblocks/cli" alt="NPM Version" /></a>
+    <a href="https://opensource.org/licenses/MIT" target="_blank"><img src="https://img.shields.io/badge/License-MIT-green.svg" alt="Package License" /></a>
+    <a href="https://discord.com/channels/1065679814289268929" target="_blank"><img src="https://img.shields.io/badge/discord-blue?logo=discord&logoColor=white"></a>
+    <a href="https://twitter.com/Ironblocks_" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow"></a>
 </p>
 
 ## Description
