@@ -5,8 +5,10 @@ import { join, parse } from 'path';
 import { promisify } from 'util';
 // 3rd party.
 import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { InquirerService } from 'nest-commander';
 import { parse as parseSolidity } from '@solidity-parser/parser';
+import { any as pathMatch } from 'micromatch';
 
 type ParsedSolidityConstructs = {
     children: SolidityConstruct[];
@@ -89,7 +91,10 @@ const MODIFIER_TO_ADD = 'firewallProtected';
 
 @Injectable()
 export class FirewallIntegrateUtils {
-    constructor(private readonly inquirer: InquirerService) {}
+    constructor(
+        private readonly inquirer: InquirerService,
+        private readonly config: ConfigService,
+    ) {}
 
     async assertFileExists(path: string): Promise<void> {
         try {
@@ -135,6 +140,9 @@ export class FirewallIntegrateUtils {
             for (const filename of files) {
                 const path = join(dir, filename);
                 const stats = await stat(path);
+                if (this.shouldIgnore(path)) {
+                    continue;
+                }
                 if (stats.isFile() && this.isSolidityFile(path)) {
                     await cb(path);
                 }
@@ -143,6 +151,12 @@ export class FirewallIntegrateUtils {
                 }
             }
         }
+    }
+
+    private shouldIgnore(path: string): boolean {
+        const ignoreList = this.config.get<string[]>('fwIntegIgnore') ?? [];
+        const matchedIgnoreList = pathMatch(path, ignoreList);
+        return matchedIgnoreList;
     }
 
     async npmInstallFirewallConsumerIfNeeded(dirpath: string): Promise<void> {

@@ -5,7 +5,7 @@
 <p align="center">
     <a href="https://www.npmjs.com/~ironblocks" target="_blank"><img src="https://img.shields.io/npm/v/@ironblocks/cli" alt="NPM Version" /></a>
     <a href="https://opensource.org/licenses/MIT" target="_blank"><img src="https://img.shields.io/badge/License-MIT-green.svg" alt="Package License" /></a>
-    <a href="https://discord.com/channels/1065679814289268929" target="_blank"><img src="https://img.shields.io/badge/discord-blue?logo=discord&logoColor=white"></a>
+    <a href="https://discord.com/channels/1065679814289268929" target="_blank"><img src="https://img.shields.io/badge/Discord-blue?logo=discord&logoColor=white"></a>
     <a href="https://twitter.com/Ironblocks_" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow"></a>
 </p>
 
@@ -25,6 +25,24 @@ $ npm install @ironblocks/cli
 $ npm run build
 $ npm link
 ```
+
+## Config
+
+Customize default config by adding a `.ib.cli.js` file at the working directory from which you use the tool.
+
+```js
+module.exports = {
+    // Solidity contract files and directories to ignore when integrating the firewall.
+    fwIntegIgnore: ['examples', 'also/**.sol'],
+    // Whether to ignore the default firewall integration ignore list.
+    fwIntegIgnoreOverrideDefaults: false,
+};
+```
+
+| options                       | type        | required | description                                                                      | defaults         |
+|-------------------------------| ----------- | -------- | ---------------------------------------------------------------------------------|------------------|
+| fwIntegIgnore                 | string[]    | false    | solidity contract files and directories to ignore when integrating the firewall  | ["node_modules"] |
+| fwIntegIgnoreOverrideDefaults | boolean     | false    | whether to ignore the default firewall integration ignore list                   | false            |
 
 ## Commands
 ```bash
