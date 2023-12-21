@@ -1,5 +1,5 @@
 <p align="center">
-    <a href="http://nestjs.com/" target="blank"><img src="https://app.ironblocks.com/assets/icons/ironblocks/logo.svg" width="200" alt="Nest Logo" /></a>
+    <a href="https://www.ironblocks.com/" target="blank"><img src="https://app.ironblocks.com/assets/icons/ironblocks/logo.svg" width="200" alt="Nest Logo" /></a>
 </p>
 
 <p align="center">
