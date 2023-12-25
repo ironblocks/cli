@@ -17,7 +17,7 @@ export class FirewallIntegrateService {
         await this.fwIntegUtils.assertFileExists(filepath);
         this.fwIntegUtils.assertSolidityFile(filepath);
         await this.fwIntegUtils.npmInstallFirewallConsumerIfNeeded(dirname(filepath));
-        const customized = await this.fwIntegUtils.customizeContractFile(filepath);
+        const customized = await this.fwIntegUtils.customizeSolidityFile(filepath);
         if (customized) {
             this.logger.log(`Customized file '${filepath}'`);
         } else {
@@ -38,7 +38,7 @@ export class FirewallIntegrateService {
                     await this.fwIntegUtils.npmInstallFirewallConsumerIfNeeded(dirpath);
                 }
 
-                const customized = await this.fwIntegUtils.customizeContractFile(filepath);
+                const customized = await this.fwIntegUtils.customizeSolidityFile(filepath);
                 if (customized && !customizedFiles.length) {
                     this.logger.log(`Customized files:\n\t${filepath}`);
                     customizedFiles.push(filepath);

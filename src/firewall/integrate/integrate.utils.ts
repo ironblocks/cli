@@ -213,7 +213,7 @@ export class FirewallIntegrateUtils {
      * @param path
      * @returns true iff any changes were made to the file.
      */
-    async customizeContractFile(path: string): Promise<boolean> {
+    async customizeSolidityFile(path: string): Promise<boolean> {
         const content = await readFile(path, 'utf8');
         const contractNameFilter = parse(path).name;
 
