@@ -21,6 +21,7 @@ type SolidityConstruct = {
     range: [number, number];
     subNodes?: SolidityConstruct[];
 
+    kind?: string;
     name?: string;
     baseContracts?: SolidityConstruct[];
     baseName?: SolidityConstruct;
@@ -44,7 +45,7 @@ const RE_BLANK_SPACE = new RegExp(`(?:(?:\\s)|${RE_COMMENTS.source})`, 'g');
  */
 const RE_NAME = new RegExp(`\\w+`, 'g');
 const RE_CONTRACT_DECLARATION = new RegExp(
-    `(?<declaration>contract${RE_BLANK_SPACE.source}+(?<name>${RE_NAME.source}))`,
+    `(?<declaration>abstract${RE_BLANK_SPACE.source}+contract${RE_BLANK_SPACE.source}+(?<name>${RE_NAME.source}))`,
     'g',
 );
 const RE_BASE_CONTRACTS = new RegExp(
@@ -65,22 +66,25 @@ const RE_CONTRACT_DEFINITION = new RegExp(
  *
  * (function)? <signature>(<name>(...params)) <visibility>? <modifiers>? (returns (...params)?)?
  */
-const RE_FUNCTION = new RegExp(`(?<func>function${RE_BLANK_SPACE.source}+)`, 'g');
-const RE_PARAMS = new RegExp(`(?<params>[\\w,]+(?:${RE_BLANK_SPACE.source}*))*`, 'g');
+const RE_FUNCTION = new RegExp(`(?<func>function)`, 'g');
+const RE_PARAMS = new RegExp(
+    `(?<params>${RE_BLANK_SPACE.source}*[\\w,\\[\\]]+(?:${RE_BLANK_SPACE.source}*))*`,
+    'g',
+);
 const RE_SIGNATURE = new RegExp(
-    `(?<signature>(?<name>${RE_NAME.source})${RE_BLANK_SPACE.source}*\\(${RE_BLANK_SPACE.source}*${RE_PARAMS.source}\\)${RE_BLANK_SPACE.source}*)`,
+    `(?<signature>${RE_BLANK_SPACE.source}+(?<name>${RE_NAME.source})${RE_BLANK_SPACE.source}*\\(${RE_PARAMS.source}\\))`,
     'g',
 );
 const RE_VISIBILITY = new RegExp(
-    `(?<visibility>(?:public|external|internal|private)${RE_BLANK_SPACE.source}*)`,
+    `(?<visibility>${RE_BLANK_SPACE.source}*(?:public|external|internal|private))`,
     'g',
 );
 const RE_MODIFIERS = new RegExp(
-    `(?<modifiers>(?:(?!returns)[\\w,\\.\\(\\)]+${RE_BLANK_SPACE.source}*)*)`,
+    `(?<modifiers>(?:${RE_BLANK_SPACE.source}*(?!returns)[\\w,\\.\\(\\)\\[\\]]+)*)`,
     'g',
 );
 const RE_IMMUTABLE_STATE = new RegExp(`\\pure|view\\b`, 'i');
-const RE_RETURNS = new RegExp(`(?<returns>returns[^{]+${RE_BLANK_SPACE.source}*)`, 'g');
+const RE_RETURNS = new RegExp(`(?<returns>${RE_BLANK_SPACE.source}*returns[^{]+)`, 'g');
 const RE_METHOD_DEFINITION = new RegExp(
     `^${RE_FUNCTION.source}?${RE_SIGNATURE.source}${RE_VISIBILITY.source}?${RE_MODIFIERS.source}?${RE_RETURNS.source}?`,
     'g',
@@ -192,7 +196,7 @@ export class FirewallIntegrateUtils {
         }
 
         return new Promise((resolve, reject) => {
-            const spawned = spawn('npm', ['install', '--silent', dependency], {
+            const spawned = spawn('npm', ['install', '--silent', '--force', dependency], {
                 cwd: dirpath,
                 stdio: 'inherit',
                 detached: false,
@@ -223,10 +227,11 @@ export class FirewallIntegrateUtils {
                 range: true,
             }) as ParsedSolidityConstructs;
 
-            const parsedContract = parsed.children.find(({ type, name }) => {
+            const parsedContract = parsed.children.find(({ type, kind, name }) => {
                 const isContractDefinition = type === 'ContractDefinition';
+                const isContract = kind === 'abstract' || kind === 'contract';
                 const isMatchingContract = name === contractNameFilter;
-                return isContractDefinition && isMatchingContract;
+                return isContractDefinition && isContract && isMatchingContract;
             });
             if (!parsedContract) {
                 return false;
@@ -341,10 +346,10 @@ export class FirewallIntegrateUtils {
                 }
 
                 if (modifiers) {
-                    return `${func}${signature}${visibility}${modifiers}${MODIFIER_TO_ADD} ${returns}`;
+                    return `${func}${signature}${visibility}${modifiers} ${MODIFIER_TO_ADD}${returns}`;
                 }
 
-                return `${func}${signature}${visibility}${MODIFIER_TO_ADD} ${returns}`;
+                return `${func}${signature}${visibility} ${MODIFIER_TO_ADD}${returns}`;
             },
         );
 
