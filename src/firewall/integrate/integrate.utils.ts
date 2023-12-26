@@ -45,7 +45,7 @@ const RE_BLANK_SPACE = new RegExp(`(?:(?:\\s)|${RE_COMMENTS.source})`, 'g');
  */
 const RE_NAME = new RegExp(`\\w+`, 'g');
 const RE_CONTRACT_DECLARATION = new RegExp(
-    `(?<declaration>abstract${RE_BLANK_SPACE.source}+contract${RE_BLANK_SPACE.source}+(?<name>${RE_NAME.source}))`,
+    `(?<declaration>(?:abstract${RE_BLANK_SPACE.source}+)?contract${RE_BLANK_SPACE.source}+(?<name>${RE_NAME.source}))`,
     'g',
 );
 const RE_BASE_CONTRACTS = new RegExp(
@@ -158,8 +158,13 @@ export class FirewallIntegrateUtils {
     }
 
     private shouldIgnore(path: string): boolean {
-        const ignoreList = this.config.get<string[]>('fwIntegIgnore') ?? [];
+        const allowList = this.config.get<string[]>('fwIntegInclude') ?? [];
+        const ignoreList = this.config.get<string[]>('fwIntegExclude') ?? [];
+        const matchedAllowList = pathMatch(path, allowList);
         const matchedIgnoreList = pathMatch(path, ignoreList);
+        if (allowList.length && !matchedAllowList) {
+            return true;
+        }
         return matchedIgnoreList;
     }
 

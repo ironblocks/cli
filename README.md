@@ -32,15 +32,16 @@ Customize default config by adding a `.ib.cli.js` file at the working directory 
 
 ```js
 module.exports = {
-    fwIntegIgnore: ['examples', 'also/**.sol'],
-    fwIntegIgnoreOverrideDefaults: false,
+    fwIntegExclude: ['examples', 'also/**.sol'],
+    fwIntegExcludeOverrideDefaults: false,
 };
 ```
 
-| options                       | type        | required | description                                                                      | defaults         |
-|-------------------------------| ----------- | -------- | ---------------------------------------------------------------------------------|------------------|
-| fwIntegIgnore                 | string[]    | false    | solidity contract files and directories to ignore when integrating the firewall  | ["node_modules"] |
-| fwIntegIgnoreOverrideDefaults | boolean     | false    | whether to ignore the default firewall integration ignore list                   | false            |
+| options                        | type        | required | description                                                                                           | defaults         |
+|--------------------------------| ----------- | -------- | ------------------------------------------------------------------------------------------------------|------------------|
+| fwIntegInclude                 | string[]    | false    | allow list of solidity contract files and directories to consider when integrating with the firewall  | -                |
+| fwIntegExclude                 | string[]    | false    | ignore list of solidity contract files and directories to exclude when integrating with the firewall  | ["node_modules"] |
+| fwIntegExcludeOverrideDefaults | boolean     | false    | whether to ignore the default firewall integration exclude list                                       | false            |
 
 ## Commands
 ```bash
