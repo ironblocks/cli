@@ -15,7 +15,7 @@ type CLIConfig = {
 };
 
 const defaults: CLIConfig = {
-    fwIntegExclude: ['node_modules'],
+    fwIntegExclude: ['**/node_modules/*'],
 };
 
 export default async () => {
@@ -33,7 +33,7 @@ export default async () => {
     const config: CLIConfig = {
         fwIntegExclude: fwIntegExcludeDefaults
             .concat(localConfig.fwIntegExclude ?? [])
-            .map((pattern) => join(cwd(), pattern)),
+            .map((pattern) => join(pattern)),
     };
 
     return config;

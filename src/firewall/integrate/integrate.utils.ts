@@ -23,6 +23,7 @@ type SolidityConstruct = {
 
     kind?: string;
     name?: string;
+    path?: string;
     baseContracts?: SolidityConstruct[];
     baseName?: SolidityConstruct;
     namePath?: string;
@@ -90,8 +91,10 @@ const RE_METHOD_DEFINITION = new RegExp(
     'g',
 );
 
-const BASE_CONTRACT_TO_INHERIT = 'FirewallConsumerBase';
-const MODIFIER_TO_ADD = 'firewallProtected';
+const FW_IMPORT_PATH = '@ironblocks/firewall-consumer/contracts/FirewallConsumer.sol';
+const FW_IMPORT = `import "${FW_IMPORT_PATH}";`;
+const FW_BASE_CONTRACT = 'FirewallConsumer';
+const FW_PROTECTED_MODIFIER = 'firewallProtected';
 
 @Injectable()
 export class FirewallIntegrateUtils {
@@ -223,33 +226,32 @@ export class FirewallIntegrateUtils {
      * @returns true iff any changes were made to the file.
      */
     async customizeSolidityFile(path: string): Promise<boolean> {
-        const content = await readFile(path, 'utf8');
-        const contractNameFilter = parse(path).name;
+        const originalCode = await readFile(path, 'utf8');
+        const contractNamesToCustomize = new Set([parse(path).name]);
 
         try {
-            const parsed = parseSolidity(content, {
+            const parsed = parseSolidity(originalCode, {
                 tolerant: true,
                 range: true,
             }) as ParsedSolidityConstructs;
 
-            const parsedContract = parsed.children.find(({ type, kind, name }) => {
-                const isContractDefinition = type === 'ContractDefinition';
-                const isContract = kind === 'abstract' || kind === 'contract';
-                const isMatchingContract = name === contractNameFilter;
-                return isContractDefinition && isContract && isMatchingContract;
-            });
-            if (!parsedContract) {
+            let customizedCode: string;
+
+            customizedCode = parsed.children.reduceRight((customized, child) => {
+                return this.customizeContractInPlace(customized, child, contractNamesToCustomize);
+            }, originalCode);
+
+            if (
+                customizedCode === originalCode &&
+                !parsed.children.some(this.alreadyCustomizedContractHeader)
+            ) {
+                // No need to add firewall imports since the file is not using the firewall.
                 return false;
             }
 
-            const [contractStartIndex, contractEndIndex] = parsedContract.range;
-            const contractCode = content.substring(contractStartIndex, contractEndIndex + 1);
-            const customizedContractCode = this.customizeContractCode(parsedContract, contractCode);
-            const customizedCode =
-                content.slice(0, contractStartIndex) +
-                customizedContractCode +
-                content.slice(contractEndIndex + 1);
-            if (customizedCode === content) {
+            // Adding imports if needed.
+            customizedCode = this.customizeImports(parsed, customizedCode);
+            if (customizedCode === originalCode) {
                 return false;
             }
 
@@ -259,6 +261,48 @@ export class FirewallIntegrateUtils {
         } catch (err) {
             throw new Error(`unsupported file format '${path}'`);
         }
+    }
+
+    /**
+     * Customizing a contact in place only if it passes the name filter,
+     * and adding all of its base contracts to the filter so that they will be processed next (if they appear in the file).
+     *
+     * @param code
+     * @param contract
+     * @param contractNamesToCustomize
+     * @returns
+     */
+    private customizeContractInPlace(
+        code: string,
+        contract: SolidityConstruct,
+        contractNamesToCustomize: Set<string>,
+    ): string | null {
+        const { type, kind, name, range } = contract;
+        const isContractDefinition = type === 'ContractDefinition';
+        const isContract = kind === 'abstract' || kind === 'contract';
+        const isMatchingContract = contractNamesToCustomize.has(name);
+        const shouldCustomize = isContractDefinition && isContract && isMatchingContract;
+        if (!shouldCustomize) {
+            return code;
+        }
+
+        const [startIndex, endIndex] = range;
+        const contractCode = code.substring(startIndex, endIndex + 1);
+        const customizedContractCode = this.customizeContractCode(contract, contractCode);
+        if (
+            customizedContractCode !== contractCode ||
+            this.alreadyCustomizedContractHeader(contract)
+        ) {
+            (contract.baseContracts ?? []).forEach(({ baseName }) => {
+                if (baseName?.namePath && baseName?.namePath !== FW_BASE_CONTRACT) {
+                    contractNamesToCustomize.add(baseName.namePath);
+                }
+            });
+        }
+        // Editing the contract code section whithin the file.
+        const customizedCode =
+            code.slice(0, startIndex) + customizedContractCode + code.slice(endIndex + 1);
+        return customizedCode;
     }
 
     private customizeContractCode(contract: SolidityConstruct, contractCode: string): string {
@@ -293,11 +337,12 @@ export class FirewallIntegrateUtils {
             ) => {
                 if (baseContracts) {
                     const is = inheritance.substring(0, inheritance.length - baseContracts.length);
-                    const customizedInheritance = `${is}${baseContracts}, ${BASE_CONTRACT_TO_INHERIT}`;
+                    // Inheritance is placed leftmost to prevent inheritance linearization error.
+                    const customizedInheritance = `${is}${FW_BASE_CONTRACT}, ${baseContracts}`;
                     return `${declaration}${customizedInheritance}`;
                 }
 
-                return `${declaration} is ${BASE_CONTRACT_TO_INHERIT}`;
+                return `${declaration} is ${FW_BASE_CONTRACT}`;
             },
         );
         return customizedContractCode;
@@ -351,23 +396,63 @@ export class FirewallIntegrateUtils {
                 }
 
                 if (modifiers) {
-                    return `${func}${signature}${visibility}${modifiers} ${MODIFIER_TO_ADD}${returns}`;
+                    return `${func}${signature}${visibility}${modifiers} ${FW_PROTECTED_MODIFIER}${returns}`;
                 }
 
-                return `${func}${signature}${visibility} ${MODIFIER_TO_ADD}${returns}`;
+                return `${func}${signature}${visibility} ${FW_PROTECTED_MODIFIER}${returns}`;
             },
         );
 
         return customizedMethodCode;
     }
 
+    private customizeImports(parsed: ParsedSolidityConstructs, code: string): string {
+        const imports = parsed.children.filter(({ type }) => type === 'ImportDirective');
+        if (this.alreadyCustomizedImports(imports)) {
+            return code;
+        }
+
+        // In case there are existing importing.
+        if (imports.length) {
+            const [firstImport] = imports;
+            const [firstImportStartIndex, _firstImportEndIndex] = firstImport.range;
+            const customizedImports = `${FW_IMPORT}\r\n`;
+            // Editing imports section whithin the file.
+            const customizedCode =
+                code.slice(0, firstImportStartIndex) +
+                customizedImports +
+                code.slice(firstImportStartIndex);
+            return customizedCode;
+        }
+
+        const [firstDirective] = parsed.children;
+        // In case there is a pragma (and no existing imports).
+        if (firstDirective.type === 'PragmaDirective') {
+            const [_pragmaStartIndex, pragmaEndIndex] = firstDirective.range;
+            const customizedImports = `\r\n\r\n${FW_IMPORT}`;
+            // Editing imports section whithin the file.
+            const customizedCode =
+                code.slice(0, pragmaEndIndex + 1) +
+                customizedImports +
+                code.slice(pragmaEndIndex + 1);
+            return customizedCode;
+        }
+
+        return `${FW_IMPORT}\r\n\r\n${code}`;
+    }
+
+    private alreadyCustomizedImports(imports: SolidityConstruct[]): boolean {
+        const fwImport = imports.find(({ path }) => path === FW_IMPORT_PATH);
+        return !!fwImport;
+    }
+
     private alreadyCustomizedContractHeader(contract: SolidityConstruct): boolean {
         return (contract.baseContracts ?? []).some(
-            (base) => base.baseName?.namePath === BASE_CONTRACT_TO_INHERIT,
+            (base) => base.baseName?.namePath === FW_BASE_CONTRACT,
         );
     }
 
     private alreadyCustomizedContractMethod(method: SolidityConstruct): boolean {
-        return (method.modifiers ?? []).some((modifier) => modifier.name === MODIFIER_TO_ADD);
+        return (method.modifiers ?? []).some((modifier) => modifier.name === FW_PROTECTED_MODIFIER);
     }
 }

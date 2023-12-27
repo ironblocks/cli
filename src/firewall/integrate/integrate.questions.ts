@@ -10,7 +10,7 @@ export class FirewallIntegrateQuestions {
         name: 'installDependencies',
     })
     parseInstallDependencies(val: string): string {
-        const answer = { y: 'yes', n: 'no' }[val];
+        const answer = { y: 'yes', n: 'no' }[val.toLowerCase()];
         if (answer !== undefined) {
             return answer;
         }
