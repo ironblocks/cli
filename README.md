@@ -16,7 +16,7 @@ This CLI tool will help you to interact and easily integrate with our ecosystem.
 ## Installation
 
 ```bash
-$ npm install @ironblocks/cli
+$ npm install @ironblocks/cli -g
 ```
 
 ## Setup

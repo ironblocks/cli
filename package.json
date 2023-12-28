@@ -1,10 +1,21 @@
 {
-    "name": "ironblocks-cli",
+    "name": "@ironblocks/cli",
     "version": "0.0.1",
     "description": "",
-    "author": "",
     "private": true,
+    "author": "IRONBLOCKS LTD",
     "license": "UNLICENSED",
+    "keywords": [
+        "web3",
+        "security",
+        "ironblocks",
+        "cli"
+    ],
+    "repository": "https://github.com/ironblocks/cli",
+    "homepage": "https://github.com/ironblocks/cli#readme",
+    "bugs": {
+        "url": "https://github.com/ironblocks/cli/issues"
+    },
     "bin": {
         "ib": "build/main.js"
     },

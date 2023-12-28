@@ -6,6 +6,12 @@ import { CommandFactory, CommandRunner, CommandRunnerService } from 'nest-comman
 // Internal.
 import { AppModule } from './app/app.module';
 
+const CLI_DESCRIPTION = `\
+  🟧
+🟧   ironblocks CLI tool
+  🟧\
+`;
+
 async function bootstrap() {
     const app = await CommandFactory.createWithoutRunning(AppModule);
     setRootDescription(app);
@@ -14,13 +20,9 @@ async function bootstrap() {
 }
 
 function setRootDescription(app: INestApplicationContext): void {
-    const ROOT_DESCRIPTION = `\
-  🟧
-🟧   ironblocks CLI tool
-  🟧`;
     const runner = app.get<CommandRunner>(CommandRunnerService);
     // @ts-ignore
-    runner.commander.description(ROOT_DESCRIPTION);
+    runner.commander.description(CLI_DESCRIPTION);
 }
 
 bootstrap();
