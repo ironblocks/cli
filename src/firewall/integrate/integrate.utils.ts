@@ -96,6 +96,10 @@ const FW_IMPORT = `import "${FW_IMPORT_PATH}";`;
 const FW_BASE_CONTRACT = 'FirewallConsumer';
 const FW_PROTECTED_MODIFIER = 'firewallProtected';
 
+export interface IntegrateOptions {
+    verbose?: boolean;
+}
+
 @Injectable()
 export class FirewallIntegrateUtils {
     constructor(
@@ -171,16 +175,23 @@ export class FirewallIntegrateUtils {
         return matchedIgnoreList;
     }
 
-    async npmInstallFirewallConsumerIfNeeded(dirpath: string): Promise<void> {
-        await this.installNodeModuleIfNeeded('@ironblocks/firewall-consumer', dirpath);
+    async npmInstallFirewallConsumerIfNeeded(
+        dirpath: string,
+        options?: IntegrateOptions,
+    ): Promise<void> {
+        await this.installNodeModuleIfNeeded('@ironblocks/firewall-consumer', dirpath, options);
     }
 
-    private async installNodeModuleIfNeeded(dependency: string, dirpath: string): Promise<void> {
+    private async installNodeModuleIfNeeded(
+        dependency: string,
+        dirpath: string,
+        options?: IntegrateOptions,
+    ): Promise<void> {
         if (await this.isNodeModuleInstalled(dependency, dirpath)) {
             return;
         }
 
-        await this.installNodeModule(dependency, dirpath);
+        await this.installNodeModule(dependency, dirpath, options);
     }
 
     private async isNodeModuleInstalled(dependency: string, dirpath: string): Promise<boolean> {
@@ -193,7 +204,11 @@ export class FirewallIntegrateUtils {
         return false;
     }
 
-    private async installNodeModule(dependency: string, dirpath: string): Promise<void> {
+    private async installNodeModule(
+        dependency: string,
+        dirpath: string,
+        options?: IntegrateOptions,
+    ): Promise<void> {
         const answer = await this.inquirer.ask<{ installDependencies: string }>(
             'firewall-integrate-questions',
             undefined,
@@ -204,7 +219,13 @@ export class FirewallIntegrateUtils {
         }
 
         return new Promise((resolve, reject) => {
-            const spawned = spawn('npm', ['install', '--silent', '--force', dependency], {
+            const args = ['install'].concat(
+                !options?.verbose ? ['--silent'] : [],
+                ['--force'],
+                [dependency],
+            );
+
+            const spawned = spawn('npm', args, {
                 cwd: dirpath,
                 stdio: 'inherit',
                 detached: false,

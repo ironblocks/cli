@@ -4,7 +4,7 @@ import { dirname } from 'path';
 import { Injectable } from '@nestjs/common';
 // Internal.
 import { Logger } from '../../lib/logging/logger.service';
-import { FirewallIntegrateUtils } from './integrate.utils';
+import { FirewallIntegrateUtils, type IntegrateOptions } from './integrate.utils';
 
 @Injectable()
 export class FirewallIntegrateService {
@@ -13,10 +13,10 @@ export class FirewallIntegrateService {
         private readonly logger: Logger,
     ) {}
 
-    public async integContractFile(filepath: string): Promise<void> {
+    public async integContractFile(filepath: string, options?: IntegrateOptions): Promise<void> {
         await this.fwIntegUtils.assertFileExists(filepath);
         this.fwIntegUtils.assertSolidityFile(filepath);
-        await this.fwIntegUtils.npmInstallFirewallConsumerIfNeeded(dirname(filepath));
+        await this.fwIntegUtils.npmInstallFirewallConsumerIfNeeded(dirname(filepath), options);
         const customized = await this.fwIntegUtils.customizeSolidityFile(filepath);
         if (customized) {
             this.logger.log(`Customized file '${filepath}'`);
@@ -25,7 +25,11 @@ export class FirewallIntegrateService {
         }
     }
 
-    public async integContractsDir(dirpath: string, recursive: boolean): Promise<void> {
+    public async integContractsDir(
+        dirpath: string,
+        recursive: boolean,
+        options?: IntegrateOptions,
+    ): Promise<void> {
         await this.fwIntegUtils.assertDirExists(dirpath);
 
         let foundAnySolidityFiles: boolean = false;
@@ -35,7 +39,7 @@ export class FirewallIntegrateService {
             async (filepath) => {
                 if (!foundAnySolidityFiles) {
                     foundAnySolidityFiles = true;
-                    await this.fwIntegUtils.npmInstallFirewallConsumerIfNeeded(dirpath);
+                    await this.fwIntegUtils.npmInstallFirewallConsumerIfNeeded(dirpath, options);
                 }
 
                 const customized = await this.fwIntegUtils.customizeSolidityFile(filepath);

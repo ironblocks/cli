@@ -56,11 +56,12 @@ $ ib --help
 
 ### Firewall Integration
 
-| options   | type       | required | description                                                                                |
-|-----------| ---------- | -------- | -------------------------------------------------------------------------------------------|
-| -f --file | string     | false    | path to a solidity file to integrate with the firewall                                     |
-| -d --dir  | string     | false    | path to directory containing solidity files to integrate with the firewall (non recursive) |
-| -r --rec  | flag       | false    | special flag for the "-d" option, indicating whether should visit subdirectories or not    |
+| options       | type       | required | description                                                                                |
+|---------------| ---------- | -------- | -------------------------------------------------------------------------------------------|
+| -f --file     | string     | false    | path to a solidity file to integrate with the firewall                                     |
+| -d --dir      | string     | false    | path to directory containing solidity files to integrate with the firewall (non recursive) |
+| -r --rec      | flag       | false    | special flag for the "-d" option, indicating whether should visit subdirectories or not    |
+| -v --verbose  | flag       | false    | execute the command in "verbose" mode printing additional details along the execution      |
 
 <br>
 

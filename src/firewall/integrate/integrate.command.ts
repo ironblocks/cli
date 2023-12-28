@@ -9,6 +9,7 @@ interface CommandOptions {
     file?: string;
     dir?: string;
     rec?: boolean;
+    verbose?: boolean;
 }
 
 @SubCommand({
@@ -32,12 +33,20 @@ export class FirewallIntegrateCommand extends CommandRunner {
         }
 
         try {
+            const integOptions = {
+                verbose: options?.verbose,
+            };
+
             if (options?.file) {
-                return await this.fwIntegService.integContractFile(options.file);
+                return await this.fwIntegService.integContractFile(options.file, integOptions);
             }
 
-            if (options.dir) {
-                return await this.fwIntegService.integContractsDir(options.dir, options.rec);
+            if (options?.dir) {
+                return await this.fwIntegService.integContractsDir(
+                    options.dir,
+                    options.rec,
+                    integOptions,
+                );
             }
         } catch (err) {
             return this.command.error(`error: ${err.message}`);
@@ -70,6 +79,15 @@ export class FirewallIntegrateCommand extends CommandRunner {
         defaultValue: false,
     })
     parseRecursive(): boolean {
+        return true;
+    }
+
+    @Option({
+        flags: '-v, --verbose',
+        description: 'Provider additional details along the command execution',
+        defaultValue: false,
+    })
+    parseVerbose(): boolean {
         return true;
     }
 }
