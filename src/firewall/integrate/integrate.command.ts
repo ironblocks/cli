@@ -10,6 +10,7 @@ interface CommandOptions {
     dir?: string;
     rec?: boolean;
     verbose?: boolean;
+    internal?: boolean;
 }
 
 @SubCommand({
@@ -35,6 +36,8 @@ export class FirewallIntegrateCommand extends CommandRunner {
         try {
             const integOptions = {
                 verbose: options?.verbose,
+                external: true,
+                internal: options?.internal,
             };
 
             if (options?.file) {
@@ -88,6 +91,15 @@ export class FirewallIntegrateCommand extends CommandRunner {
         defaultValue: false,
     })
     parseVerbose(): boolean {
+        return true;
+    }
+
+    @Option({
+        flags: '-i, --internal',
+        description: 'Whether to add firewall protection for "internal" functions',
+        defaultValue: false,
+    })
+    parseInternal(): boolean {
         return true;
     }
 }

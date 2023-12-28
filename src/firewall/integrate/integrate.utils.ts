@@ -9,6 +9,7 @@ import { ConfigService } from '@nestjs/config';
 import { InquirerService } from 'nest-commander';
 import { parse as parseSolidity } from '@solidity-parser/parser';
 import { any as pathMatch } from 'micromatch';
+import { ethers } from 'ethers';
 
 type ParsedSolidityConstructs = {
     children: SolidityConstruct[];
@@ -30,6 +31,9 @@ type SolidityConstruct = {
     visibility?: string;
     isConstructor?: boolean;
     modifiers?: SolidityConstruct[];
+    parameters?: SolidityConstruct[];
+    typeName?: SolidityConstruct;
+    baseTypeName?: SolidityConstruct;
 };
 
 const execAsync = promisify(exec);
@@ -95,17 +99,45 @@ const FW_IMPORT_PATH = '@ironblocks/firewall-consumer/contracts/FirewallConsumer
 const FW_IMPORT = `import "${FW_IMPORT_PATH}";`;
 const FW_BASE_CONTRACT = 'FirewallConsumer';
 const FW_PROTECTED_MODIFIER = 'firewallProtected';
+const FW_PROTECTED_CUSTOM_MODIFIER = 'firewallProtectedCustom';
+
+type FirewallModifier = typeof FW_PROTECTED_MODIFIER | typeof FW_PROTECTED_CUSTOM_MODIFIER;
 
 export interface IntegrateOptions {
     verbose?: boolean;
+    external?: boolean;
+    internal?: boolean;
 }
 
 @Injectable()
 export class FirewallIntegrateUtils {
+    private modifierByVisibility: Record<string, FirewallModifier>;
+
+    private serializerByModifier: Record<
+        FirewallModifier,
+        (contract: SolidityConstruct, method: SolidityConstruct) => string
+    >;
+
     constructor(
         private readonly inquirer: InquirerService,
         private readonly config: ConfigService,
-    ) {}
+    ) {
+        this.modifierByVisibility = {
+            external: FW_PROTECTED_MODIFIER,
+            internal: FW_PROTECTED_CUSTOM_MODIFIER,
+        };
+
+        this.serializerByModifier = {
+            [FW_PROTECTED_MODIFIER]: () => FW_PROTECTED_MODIFIER,
+            [FW_PROTECTED_CUSTOM_MODIFIER]: (
+                contract: SolidityConstruct,
+                method: SolidityConstruct,
+            ) => {
+                const sigHash = this.calcSighash(contract, method);
+                return `${FW_PROTECTED_CUSTOM_MODIFIER}(abi.encodePacked(bytes4(${sigHash})))`;
+            },
+        };
+    }
 
     async assertFileExists(path: string): Promise<void> {
         try {
@@ -246,7 +278,7 @@ export class FirewallIntegrateUtils {
      * @param path
      * @returns true iff any changes were made to the file.
      */
-    async customizeSolidityFile(path: string): Promise<boolean> {
+    async customizeSolidityFile(path: string, options?: IntegrateOptions): Promise<boolean> {
         const originalCode = await readFile(path, 'utf8');
         const contractNamesToCustomize = new Set([parse(path).name]);
 
@@ -259,7 +291,12 @@ export class FirewallIntegrateUtils {
             let customizedCode: string;
 
             customizedCode = parsed.children.reduceRight((customized, child) => {
-                return this.customizeContractInPlace(customized, child, contractNamesToCustomize);
+                return this.customizeContractInPlace(
+                    customized,
+                    child,
+                    contractNamesToCustomize,
+                    options,
+                );
             }, originalCode);
 
             if (
@@ -297,6 +334,7 @@ export class FirewallIntegrateUtils {
         code: string,
         contract: SolidityConstruct,
         contractNamesToCustomize: Set<string>,
+        options?: IntegrateOptions,
     ): string | null {
         const { type, kind, name, range } = contract;
         const isContractDefinition = type === 'ContractDefinition';
@@ -309,7 +347,7 @@ export class FirewallIntegrateUtils {
 
         const [startIndex, endIndex] = range;
         const contractCode = code.substring(startIndex, endIndex + 1);
-        const customizedContractCode = this.customizeContractCode(contract, contractCode);
+        const customizedContractCode = this.customizeContractCode(contract, contractCode, options);
         if (
             customizedContractCode !== contractCode ||
             this.alreadyCustomizedContractHeader(contract)
@@ -326,15 +364,22 @@ export class FirewallIntegrateUtils {
         return customizedCode;
     }
 
-    private customizeContractCode(contract: SolidityConstruct, contractCode: string): string {
+    private customizeContractCode(
+        contract: SolidityConstruct,
+        contractCode: string,
+        options?: IntegrateOptions,
+    ): string {
         const alreadyCustomizedHeader = this.alreadyCustomizedContractHeader(contract);
         const methods = contract.subNodes.filter(({ type }) => type === 'FunctionDefinition');
-        const alreadyCustomizedSomeMethods = methods.some(this.alreadyCustomizedContractMethod);
+        const alreadyCustomizedSomeMethods = methods.some(
+            this.alreadyCustomizedContractMethod.bind(this),
+        );
         // Add custom modifiers to contract methods.
         const contractCodeWithCustomizedMethods = this.customizeContractMethods(
             contractCode,
             contract,
             methods,
+            options,
         );
 
         if (
@@ -373,6 +418,7 @@ export class FirewallIntegrateUtils {
         contractCode: string,
         contract: SolidityConstruct,
         methods: SolidityConstruct[],
+        options?: IntegrateOptions,
     ): string {
         const [contractStartIndex, _] = contract.range;
         // Customizing methods from the bottom up not to affect other methods' start and end indexes.
@@ -383,7 +429,12 @@ export class FirewallIntegrateUtils {
                 methodEndIndex - contractStartIndex,
             ];
             const methodCode = contractCode.substring(relativeStartIndex, relativeEndIndex + 1);
-            const customizedMethodCode = this.customizeMethodCode(method, methodCode);
+            const customizedMethodCode = this.customizeMethodCode(
+                contract,
+                method,
+                methodCode,
+                options,
+            );
             const customizedCode =
                 customized.slice(0, relativeStartIndex) +
                 customizedMethodCode +
@@ -393,9 +444,17 @@ export class FirewallIntegrateUtils {
         return customizedMethods;
     }
 
-    private customizeMethodCode(method: SolidityConstruct, methodCode: string): string {
+    private customizeMethodCode(
+        contract: SolidityConstruct,
+        method: SolidityConstruct,
+        methodCode: string,
+        options?: IntegrateOptions,
+    ): string {
         const alreadyCustomized = this.alreadyCustomizedContractMethod(method);
-        if (alreadyCustomized || method.visibility !== 'external') {
+        const modifier = this.modifierByVisibility[method.visibility];
+        const modifierSerializer = this.serializerByModifier[modifier];
+        const shouldCustomize = !!modifierSerializer && !!options[method.visibility];
+        if (alreadyCustomized || !shouldCustomize) {
             return methodCode;
         }
 
@@ -416,11 +475,13 @@ export class FirewallIntegrateUtils {
                     return match;
                 }
 
+                const modifierToAdd = modifierSerializer(contract, method);
+
                 if (modifiers) {
-                    return `${func}${signature}${visibility}${modifiers} ${FW_PROTECTED_MODIFIER}${returns}`;
+                    return `${func}${signature}${visibility}${modifiers} ${modifierToAdd}${returns}`;
                 }
 
-                return `${func}${signature}${visibility} ${FW_PROTECTED_MODIFIER}${returns}`;
+                return `${func}${signature}${visibility} ${modifierToAdd}${returns}`;
             },
         );
 
@@ -474,6 +535,22 @@ export class FirewallIntegrateUtils {
     }
 
     private alreadyCustomizedContractMethod(method: SolidityConstruct): boolean {
-        return (method.modifiers ?? []).some((modifier) => modifier.name === FW_PROTECTED_MODIFIER);
+        return (method.modifiers ?? []).some(
+            (modifier) => !!this.serializerByModifier[modifier.name],
+        );
+    }
+
+    private calcSighash(contract: SolidityConstruct, method: SolidityConstruct): string {
+        const contractName = contract.name;
+        const methodName = method.name!;
+        const paramTypes = (method.parameters ?? []).map(
+            (param) =>
+                param.typeName!.name ||
+                param.typeName!.namePath ||
+                param.typeName!.baseTypeName!.namePath,
+        );
+        const sig = `${contractName}.${methodName}(${paramTypes.join(',')})`;
+        const sigHash = ethers.id(sig).slice(0, 10);
+        return sigHash;
     }
 }

@@ -40,6 +40,7 @@ export default async () => {
     const overrides = {
         fw: {
             integ: {
+                ...defaults.fw.integ,
                 exclude: overrideDefaults ? [] : defaults.fw.integ.exclude,
             },
         },
@@ -48,11 +49,11 @@ export default async () => {
     const config: CLIConfig = {
         fw: {
             integ: {
-                include: defaults.fw.integ.include,
+                ...overrides.fw.integ,
+                ...(localConfig?.fw?.integ ?? {}),
                 exclude: overrides.fw.integ.exclude
                     .concat(localConfig?.fw?.integ?.exclude ?? [])
                     .map((pattern) => join(pattern)),
-                overrideDefaults: defaults.fw.integ.overrideDefaults,
             },
         },
     };
