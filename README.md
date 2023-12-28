@@ -32,16 +32,21 @@ Customize default config by adding a `.ib.cli.js` file at the working directory 
 
 ```js
 module.exports = {
-    fwIntegExclude: ['examples', 'also/**.sol'],
-    fwIntegExcludeOverrideDefaults: false,
+    fw: {
+        integ: {
+            include: [],
+            exclude: ['examples', 'also/**.sol'],
+            overrideDefaults: false,
+        },
+    },
 };
 ```
 
-| options                        | type        | required | description                                                                                           | defaults              |
-|--------------------------------| ----------- | -------- | ------------------------------------------------------------------------------------------------------|-----------------------|
-| fwIntegInclude                 | string[]    | false    | allow list of solidity contract files and directories to consider when integrating with the firewall  | -                     |
-| fwIntegExclude                 | string[]    | false    | ignore list of solidity contract files and directories to exclude when integrating with the firewall  | ["**/node_modules/*"] |
-| fwIntegExcludeOverrideDefaults | boolean     | false    | whether to ignore the default firewall integration exclude list                                       | false                 |
+| options                          | type        | required | description                                                                                           | defaults              |
+|----------------------------------| ----------- | -------- | ------------------------------------------------------------------------------------------------------|-----------------------|
+| fw.integ.include                 | string[]    | false    | allow list of solidity contract files and directories to consider when integrating with the firewall  | -                     |
+| fw.integ.exclude                 | string[]    | false    | ignore list of solidity contract files and directories to exclude when integrating with the firewall  | ["**/node_modules/*"] |
+| fw.integ.overrideDefaults        | boolean     | false    | whether to ignore the default firewall integration exclude list                                       | false                 |
 
 ## Commands
 ```bash
@@ -56,6 +61,8 @@ $ ib --help
 | -f --file | string     | false    | path to a solidity file to integrate with the firewall                                     |
 | -d --dir  | string     | false    | path to directory containing solidity files to integrate with the firewall (non recursive) |
 | -r --rec  | flag       | false    | special flag for the "-d" option, indicating whether should visit subdirectories or not    |
+
+<br>
 
 ```bash
 # Integrating a specific file with the firewall

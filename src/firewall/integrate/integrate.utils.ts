@@ -161,8 +161,8 @@ export class FirewallIntegrateUtils {
     }
 
     private shouldIgnore(path: string): boolean {
-        const allowList = this.config.get<string[]>('fwIntegInclude') ?? [];
-        const ignoreList = this.config.get<string[]>('fwIntegExclude') ?? [];
+        const allowList = this.config.get<string[]>('fw.integ.include') ?? [];
+        const ignoreList = this.config.get<string[]>('fw.integ.exclude') ?? [];
         const matchedAllowList = pathMatch(path, allowList);
         const matchedIgnoreList = pathMatch(path, ignoreList);
         if (allowList.length && !matchedAllowList) {

@@ -40,10 +40,10 @@ export class FirewallIntegrateService {
 
                 const customized = await this.fwIntegUtils.customizeSolidityFile(filepath);
                 if (customized && !customizedFiles.length) {
-                    this.logger.log(`Customized files:\n\t${filepath}`);
+                    this.logger.log(`Customized files:\n\s\s${filepath}`);
                     customizedFiles.push(filepath);
                 } else if (customized) {
-                    this.logger.log(`\t${filepath}`);
+                    this.logger.log(`\s\s${filepath}`);
                     customizedFiles.push(filepath);
                 }
             },
