@@ -52,13 +52,13 @@ $ ib --help
 
 ### Firewall Integration
 
-| options        | type       | required | description                                                                                |
-|----------------| ---------- | -------- | -------------------------------------------------------------------------------------------|
-| -f --file      | string     | false    | path to a solidity file to integrate with the firewall                                     |
-| -d --dir       | string     | false    | path to directory containing solidity files to integrate with the firewall (non recursive) |
-| -r --rec       | flag       | false    | special flag for the "-d" option, indicating whether should visit subdirectories or not    |
-| -v --verbose   | flag       | false    | execute the command in "verbose" mode printing additional details along the execution      |
-| -i --internal  | flag       | false    | whether to add firewall protection for "internal" functions                                |
+| options            | type       | required | description                                                                                |
+|--------------------| ---------- | -------- | -------------------------------------------------------------------------------------------|
+| -f<br> --file      | string     | false    | path to a solidity file to integrate with the firewall                                     |
+| -d<br> --dir       | string     | false    | path to directory containing solidity files to integrate with the firewall (non recursive) |
+| -r<br> --rec       | flag       | false    | special flag for the "-d" option, indicating whether should visit subdirectories or not    |
+| -v<br> --verbose   | flag       | false    | execute the command in "verbose" mode printing additional details along the execution      |
+| -i<br> --internal  | flag       | false    | whether to add firewall protection for "internal" functions                                |
 
 #### Usage Example
 

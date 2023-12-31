@@ -10,6 +10,8 @@ import { InquirerService } from 'nest-commander';
 import { parse as parseSolidity } from '@solidity-parser/parser';
 import { any as pathMatch } from 'micromatch';
 import { ethers } from 'ethers';
+// Internal.
+import { UnsupportedFileFormatError } from './errors/unsupported.file.format.error';
 
 type ParsedSolidityConstructs = {
     children: SolidityConstruct[];
@@ -317,7 +319,7 @@ export class FirewallIntegrateUtils {
             await writeFile(path, customizedCode);
             return true;
         } catch (err) {
-            throw new Error(`unsupported file format '${path}'`);
+            throw new UnsupportedFileFormatError();
         }
     }
 

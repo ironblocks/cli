@@ -5,6 +5,7 @@ import { Injectable } from '@nestjs/common';
 // Internal.
 import { Logger } from '../../lib/logging/logger.service';
 import { FirewallIntegrateUtils, type IntegrateOptions } from './integrate.utils';
+import { UnsupportedFileFormatError } from './errors/unsupported.file.format.error';
 
 @Injectable()
 export class FirewallIntegrateService {
@@ -17,11 +18,19 @@ export class FirewallIntegrateService {
         await this.fwIntegUtils.assertFileExists(filepath);
         this.fwIntegUtils.assertSolidityFile(filepath);
         await this.fwIntegUtils.npmInstallFirewallConsumerIfNeeded(dirname(filepath), options);
-        const customized = await this.fwIntegUtils.customizeSolidityFile(filepath, options);
-        if (customized) {
-            this.logger.log(`Customized file '${filepath}'`);
-        } else {
-            this.logger.log(`File was not changed '${filepath}'`);
+
+        try {
+            const customized = await this.fwIntegUtils.customizeSolidityFile(filepath, options);
+            if (customized) {
+                this.logger.log(`Customized file '${filepath}'`);
+            } else {
+                this.logger.log(`File was not changed '${filepath}'`);
+            }
+        } catch (err) {
+            if (err instanceof UnsupportedFileFormatError) {
+                throw new Error(`unsupported file format '${filepath}'`);
+            }
+            throw err;
         }
     }
 
@@ -34,6 +43,7 @@ export class FirewallIntegrateService {
 
         let foundAnySolidityFiles: boolean = false;
         const customizedFiles = [];
+        const unsupportedFiles = [];
 
         await this.fwIntegUtils.forEachSolidityFilesInDir(
             async (filepath) => {
@@ -42,19 +52,33 @@ export class FirewallIntegrateService {
                     await this.fwIntegUtils.npmInstallFirewallConsumerIfNeeded(dirpath, options);
                 }
 
-                const customized = await this.fwIntegUtils.customizeSolidityFile(filepath, options);
-                if (customized && !customizedFiles.length) {
-                    this.logger.log(`Customized files:`);
-                }
-                if (customized) {
-                    this.logger.log(`  ${filepath}`);
-                    customizedFiles.push(filepath);
+                try {
+                    const customized = await this.fwIntegUtils.customizeSolidityFile(
+                        filepath,
+                        options,
+                    );
+                    if (customized && !customizedFiles.length) {
+                        this.logger.log(`Customized files:`);
+                    }
+                    if (customized) {
+                        this.logger.log(`  ${filepath}`);
+                        customizedFiles.push(filepath);
+                    }
+                } catch (err) {
+                    if (err instanceof UnsupportedFileFormatError) {
+                        unsupportedFiles.push(filepath);
+                    } else {
+                        throw err;
+                    }
                 }
             },
             dirpath,
             recursive,
         );
 
+        if (unsupportedFiles.length) {
+            throw new Error(`unsupported files format\n  ${unsupportedFiles.join('\n  ')}`);
+        }
         if (!foundAnySolidityFiles) {
             throw new Error(`could not find any solidity files at '${dirpath}'`);
         }
