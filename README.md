@@ -1,5 +1,5 @@
 <p align="center">
-    <a href="https://www.ironblocks.com/" target="blank"><img src="https://app.ironblocks.com/assets/icons/ironblocks/logo.svg" width="200" alt="Nest Logo" /></a>
+    <a href="https://www.ironblocks.com/" target="blank"><img src="https://app.ironblocks.com/assets/icons/ironblocks/logo.svg" width="200" alt="Ironblocks Logo" /></a>
 </p>
 
 <p align="center">
@@ -17,13 +17,6 @@ This CLI tool will help you to interact and easily integrate with our ecosystem.
 
 ```bash
 $ npm install @ironblocks/cli -g
-```
-
-## Setup
-
-```bash
-$ npm run build
-$ npm link
 ```
 
 ## Config
@@ -49,6 +42,9 @@ module.exports = {
 | fw.integ.overrideDefaults        | boolean     | false    | whether to ignore the default firewall integration exclude list                                       | false                 |
 
 ## Commands
+
+#### Usage Example
+
 ```bash
 # List available commands
 $ ib --help
@@ -64,13 +60,15 @@ $ ib --help
 | -v --verbose   | flag       | false    | execute the command in "verbose" mode printing additional details along the execution      |
 | -i --internal  | flag       | false    | whether to add firewall protection for "internal" functions                                |
 
-<br>
+#### Usage Example
 
 ```bash
 # Integrating a specific file with the firewall
 $ ib fw integ -f /path/to/file.sol
+
 # Integrating all files in a directory
 $ ib fw integ -d /path/to/contracts
+
 # Integrating all files in a directory and its subdirectories
 $ ib fw integ -d /path/to/contracts -r
 ```
