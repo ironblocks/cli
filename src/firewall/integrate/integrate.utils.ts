@@ -11,7 +11,9 @@ import { parse as parseSolidity } from '@solidity-parser/parser';
 import { any as pathMatch } from 'micromatch';
 import { ethers } from 'ethers';
 // Internal.
+import { Logger } from '../../lib/logging/logger.service';
 import { UnsupportedFileFormatError } from './errors/unsupported.file.format.error';
+import { UnsupportedParamTypeError } from './errors/unsupported.param.type.error';
 
 type ParsedSolidityConstructs = {
     children: SolidityConstruct[];
@@ -36,6 +38,10 @@ type SolidityConstruct = {
     parameters?: SolidityConstruct[];
     typeName?: SolidityConstruct;
     baseTypeName?: SolidityConstruct;
+    length?: {
+        type?: string;
+        number?: string;
+    };
 };
 
 const execAsync = promisify(exec);
@@ -101,9 +107,9 @@ const FW_IMPORT_PATH = '@ironblocks/firewall-consumer/contracts/FirewallConsumer
 const FW_IMPORT = `import "${FW_IMPORT_PATH}";`;
 const FW_BASE_CONTRACT = 'FirewallConsumer';
 const FW_PROTECTED_MODIFIER = 'firewallProtected';
-const FW_PROTECTED_CUSTOM_MODIFIER = 'firewallProtectedCustom';
+const FW_PROTECTED_SIG_MODIFIER = 'firewallProtectedSig';
 
-type FirewallModifier = typeof FW_PROTECTED_MODIFIER | typeof FW_PROTECTED_CUSTOM_MODIFIER;
+type FirewallModifier = typeof FW_PROTECTED_MODIFIER | typeof FW_PROTECTED_SIG_MODIFIER;
 
 export interface IntegrateOptions {
     verbose?: boolean;
@@ -123,20 +129,21 @@ export class FirewallIntegrateUtils {
     constructor(
         private readonly inquirer: InquirerService,
         private readonly config: ConfigService,
+        private readonly logger: Logger,
     ) {
         this.modifierByVisibility = {
             external: FW_PROTECTED_MODIFIER,
-            internal: FW_PROTECTED_CUSTOM_MODIFIER,
+            internal: FW_PROTECTED_SIG_MODIFIER,
         };
 
         this.serializerByModifier = {
             [FW_PROTECTED_MODIFIER]: () => FW_PROTECTED_MODIFIER,
-            [FW_PROTECTED_CUSTOM_MODIFIER]: (
+            [FW_PROTECTED_SIG_MODIFIER]: (
                 contract: SolidityConstruct,
                 method: SolidityConstruct,
             ) => {
                 const sigHash = this.calcSighash(contract, method);
-                return `${FW_PROTECTED_CUSTOM_MODIFIER}(abi.encodePacked(bytes4(${sigHash})))`;
+                return `${FW_PROTECTED_SIG_MODIFIER}(bytes4(${sigHash}))`;
             },
         };
     }
@@ -460,34 +467,43 @@ export class FirewallIntegrateUtils {
             return methodCode;
         }
 
-        const customizedMethodCode = methodCode.replace(
-            RE_METHOD_DEFINITION,
-            (
-                match: string,
-                func: string = '',
-                signature: string,
-                name: string,
-                params: string = '',
-                visibility: string = '',
-                modifiers: string = '',
-                returns: string = '',
-            ) => {
-                const isImmutableState = !!modifiers.match(RE_IMMUTABLE_STATE);
-                if (isImmutableState) {
-                    return match;
-                }
+        try {
+            const customizedMethodCode = methodCode.replace(
+                RE_METHOD_DEFINITION,
+                (
+                    match: string,
+                    func: string = '',
+                    signature: string,
+                    name: string,
+                    params: string = '',
+                    visibility: string = '',
+                    modifiers: string = '',
+                    returns: string = '',
+                ) => {
+                    const isImmutableState = !!modifiers.match(RE_IMMUTABLE_STATE);
+                    if (isImmutableState) {
+                        return match;
+                    }
 
-                const modifierToAdd = modifierSerializer(contract, method);
+                    const modifierToAdd = modifierSerializer(contract, method);
 
-                if (modifiers) {
-                    return `${func}${signature}${visibility}${modifiers} ${modifierToAdd}${returns}`;
-                }
+                    if (modifiers) {
+                        return `${func}${signature}${visibility}${modifiers} ${modifierToAdd}${returns}`;
+                    }
 
-                return `${func}${signature}${visibility} ${modifierToAdd}${returns}`;
-            },
-        );
+                    return `${func}${signature}${visibility} ${modifierToAdd}${returns}`;
+                },
+            );
 
-        return customizedMethodCode;
+            return customizedMethodCode;
+        } catch (err) {
+            if (err instanceof UnsupportedParamTypeError) {
+                const warning = `cannot integrate function "${contract.name}.${method.name}", ${err.message}`;
+                this.logger.warn(warning);
+                return methodCode;
+            }
+            throw err;
+        }
     }
 
     private customizeImports(parsed: ParsedSolidityConstructs, code: string): string {
@@ -545,14 +561,30 @@ export class FirewallIntegrateUtils {
     private calcSighash(contract: SolidityConstruct, method: SolidityConstruct): string {
         const contractName = contract.name;
         const methodName = method.name!;
-        const paramTypes = (method.parameters ?? []).map(
-            (param) =>
-                param.typeName!.name ||
-                param.typeName!.namePath ||
-                param.typeName!.baseTypeName!.namePath,
-        );
+        const paramTypes = (method.parameters ?? []).map((param) => {
+            try {
+                return this.getParamTypeName(param.typeName);
+            } catch (err) {
+                throw new UnsupportedParamTypeError(`unsupported type of param "${param.name}"`);
+            }
+        });
         const sig = `${contractName}.${methodName}(${paramTypes.join(',')})`;
         const sigHash = ethers.id(sig).slice(0, 10);
         return sigHash;
+    }
+
+    private getParamTypeName(paramtType: SolidityConstruct): string {
+        const rawTypeName = paramtType?.name || paramtType?.namePath;
+        switch (paramtType?.type) {
+            case 'ArrayTypeName':
+                const baseTypeName = this.getParamTypeName(paramtType?.baseTypeName);
+                return `${baseTypeName}[${paramtType?.length?.number ?? ''}]`;
+            case 'UserDefinedTypeName':
+                return rawTypeName;
+            case 'ElementaryTypeName':
+                return rawTypeName;
+            default:
+                throw new Error();
+        }
     }
 }

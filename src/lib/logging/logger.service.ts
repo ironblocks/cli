@@ -12,9 +12,14 @@ export class Logger extends ConsoleLogger {
         _contextMessage: string,
         _timestampDiff: string,
     ): string {
-        if (logLevel === 'error') {
-            return `error: ${message}\r\n`;
+        message = typeof message === 'string' ? message : JSON.stringify(message);
+        switch (logLevel) {
+            case 'error':
+                return `error: ${message}\r\n`;
+            case 'warn':
+                return `warning: ${message}\r\n`;
+            default:
+                return `${message}\r\n`;
         }
-        return `${message}\r\n`;
     }
 }

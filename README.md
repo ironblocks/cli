@@ -28,7 +28,10 @@ module.exports = {
     fw: {
         integ: {
             include: [],
-            exclude: ['examples', 'also/**.sol'],
+            exclude: [
+                'examples',
+                'more-examples/**/*.sol'
+            ],
             overrideDefaults: false,
         },
     },
