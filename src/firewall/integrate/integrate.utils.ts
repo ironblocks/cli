@@ -582,6 +582,10 @@ export class FirewallIntegrateUtils {
             case 'UserDefinedTypeName':
                 return rawTypeName;
             case 'ElementaryTypeName':
+                if (rawTypeName === 'int' || rawTypeName === 'uint') {
+                    // Explicit type conversions: int => int256, uint => uint256.
+                    return `${rawTypeName}256`;
+                }
                 return rawTypeName;
             default:
                 throw new Error();
