@@ -15,36 +15,27 @@ import { Logger } from '../../lib/logging/logger.service';
 import { UnsupportedFileFormatError } from './errors/unsupported.file.format.error';
 import { UnsupportedParamTypeError } from './errors/unsupported.param.type.error';
 
-type ParsedSolidityConstructs = {
-    children: SolidityConstruct[];
-    errors: unknown[];
-    range: [number, number];
-};
-
-type SolidityConstruct = {
-    type: string;
-    range: [number, number];
-    subNodes?: SolidityConstruct[];
-
-    kind?: string;
-    name?: string;
-    path?: string;
-    baseContracts?: SolidityConstruct[];
-    baseName?: SolidityConstruct;
-    namePath?: string;
-    visibility?: string;
-    isConstructor?: boolean;
-    modifiers?: SolidityConstruct[];
-    parameters?: SolidityConstruct[];
-    typeName?: SolidityConstruct;
-    baseTypeName?: SolidityConstruct;
-    length?: {
-        type?: string;
-        number?: string;
-    };
-};
-
 const execAsync = promisify(exec);
+
+const FW_IMPORT_PATH = '@ironblocks/firewall-consumer/contracts/FirewallConsumer.sol';
+const FW_IMPORT = `import "${FW_IMPORT_PATH}";`;
+const FW_BASE_CONTRACT = 'FirewallConsumer';
+const FW_PROTECTED_MODIFIER = 'firewallProtected';
+const FW_PROTECTED_CUSTOM_MODIFIER = 'firewallProtectedCustom';
+const FW_PROTECTED_SIG_MODIFIER = 'firewallProtectedSig';
+const FW_INVARIANT_PROTECTED_MODIFIER = 'invariantProtected';
+
+export type FirewallModifier =
+    | typeof FW_PROTECTED_MODIFIER
+    | typeof FW_PROTECTED_SIG_MODIFIER
+    | typeof FW_INVARIANT_PROTECTED_MODIFIER;
+
+export interface IntegrateOptions {
+    verbose?: boolean;
+    external?: boolean;
+    internal?: boolean;
+    modifiers?: FirewallModifier[];
+}
 
 const RE_SOLIDITY_FILE_NAME = new RegExp(`\\w+\\.sol$`, 'g');
 
@@ -84,6 +75,10 @@ const RE_PARAMS = new RegExp(
     `(?<params>${RE_BLANK_SPACE.source}*[\\w,\\[\\]]+(?:${RE_BLANK_SPACE.source}*))*`,
     'g',
 );
+const RE_ARGS = new RegExp(
+    `(?:${RE_BLANK_SPACE.source}*[\\w,\\.\\(\\)\\[\\]]+(?:${RE_BLANK_SPACE.source}*))*`,
+    'g',
+);
 const RE_SIGNATURE = new RegExp(
     `(?<signature>${RE_BLANK_SPACE.source}+(?<name>${RE_NAME.source})${RE_BLANK_SPACE.source}*\\(${RE_PARAMS.source}\\))`,
     'g',
@@ -103,24 +98,46 @@ const RE_METHOD_DEFINITION = new RegExp(
     'g',
 );
 
-const FW_IMPORT_PATH = '@ironblocks/firewall-consumer/contracts/FirewallConsumer.sol';
-const FW_IMPORT = `import "${FW_IMPORT_PATH}";`;
-const FW_BASE_CONTRACT = 'FirewallConsumer';
-const FW_PROTECTED_MODIFIER = 'firewallProtected';
-const FW_PROTECTED_SIG_MODIFIER = 'firewallProtectedSig';
+const RE_FW_MODIFIER_NO_ARGS = new RegExp(
+    `(?:${FW_PROTECTED_CUSTOM_MODIFIER}|${FW_PROTECTED_MODIFIER}|${FW_PROTECTED_SIG_MODIFIER}|${FW_INVARIANT_PROTECTED_MODIFIER})`,
+    'g',
+);
+const RE_FW_MODIFIER = new RegExp(
+    `${RE_BLANK_SPACE.source}*${RE_FW_MODIFIER_NO_ARGS.source}(?:${RE_BLANK_SPACE.source}*\\(${RE_ARGS.source}\\))?`,
+    'g',
+);
 
-type FirewallModifier = typeof FW_PROTECTED_MODIFIER | typeof FW_PROTECTED_SIG_MODIFIER;
+type ParsedSolidityConstructs = {
+    children: SolidityConstruct[];
+    errors: unknown[];
+    range: [number, number];
+};
 
-export interface IntegrateOptions {
-    verbose?: boolean;
-    external?: boolean;
-    internal?: boolean;
-}
+type SolidityConstruct = {
+    type: string;
+    range: [number, number];
+    subNodes?: SolidityConstruct[];
+
+    kind?: string;
+    name?: string;
+    path?: string;
+    baseContracts?: SolidityConstruct[];
+    baseName?: SolidityConstruct;
+    namePath?: string;
+    visibility?: string;
+    isConstructor?: boolean;
+    modifiers?: SolidityConstruct[];
+    parameters?: SolidityConstruct[];
+    typeName?: SolidityConstruct;
+    baseTypeName?: SolidityConstruct;
+    length?: {
+        type?: string;
+        number?: string;
+    };
+};
 
 @Injectable()
 export class FirewallIntegrateUtils {
-    private modifierByVisibility: Record<string, FirewallModifier>;
-
     private serializerByModifier: Record<
         FirewallModifier,
         (contract: SolidityConstruct, method: SolidityConstruct) => string
@@ -131,11 +148,6 @@ export class FirewallIntegrateUtils {
         private readonly config: ConfigService,
         private readonly logger: Logger,
     ) {
-        this.modifierByVisibility = {
-            external: FW_PROTECTED_MODIFIER,
-            internal: FW_PROTECTED_SIG_MODIFIER,
-        };
-
         this.serializerByModifier = {
             [FW_PROTECTED_MODIFIER]: () => FW_PROTECTED_MODIFIER,
             [FW_PROTECTED_SIG_MODIFIER]: (
@@ -145,6 +157,7 @@ export class FirewallIntegrateUtils {
                 const sigHash = this.calcSighash(contract, method);
                 return `${FW_PROTECTED_SIG_MODIFIER}(bytes4(${sigHash}))`;
             },
+            [FW_INVARIANT_PROTECTED_MODIFIER]: () => FW_INVARIANT_PROTECTED_MODIFIER,
         };
     }
 
@@ -459,11 +472,12 @@ export class FirewallIntegrateUtils {
         methodCode: string,
         options?: IntegrateOptions,
     ): string {
-        const alreadyCustomized = this.alreadyCustomizedContractMethod(method);
-        const modifier = this.modifierByVisibility[method.visibility];
-        const modifierSerializer = this.serializerByModifier[modifier];
-        const shouldCustomize = !!modifierSerializer && !!options[method.visibility];
-        if (alreadyCustomized || !shouldCustomize) {
+        const modifiers = this.getModifiersToAdd(method, options);
+        const missingModifiers = modifiers.filter(
+            (name) => !method.modifiers?.find((modifier) => modifier?.name === name),
+        );
+        const shouldCustomize = missingModifiers.length && !!options[method.visibility];
+        if (!shouldCustomize) {
             return methodCode;
         }
 
@@ -485,13 +499,17 @@ export class FirewallIntegrateUtils {
                         return match;
                     }
 
-                    const modifierToAdd = modifierSerializer(contract, method);
+                    const modifiersToAdd = missingModifiers
+                        .map((name) => this.serializerByModifier[name](contract, method))
+                        .join(' ');
 
                     if (modifiers) {
-                        return `${func}${signature}${visibility}${modifiers} ${modifierToAdd}${returns}`;
+                        // Remove existing firewall modifiers.
+                        modifiers = modifiers.replace(RE_FW_MODIFIER, '');
+                        return `${func}${signature}${visibility}${modifiers} ${modifiersToAdd}${returns}`;
                     }
 
-                    return `${func}${signature}${visibility} ${modifierToAdd}${returns}`;
+                    return `${func}${signature}${visibility} ${modifiersToAdd}${returns}`;
                 },
             );
 
@@ -556,6 +574,23 @@ export class FirewallIntegrateUtils {
         return (method.modifiers ?? []).some(
             (modifier) => !!this.serializerByModifier[modifier.name],
         );
+    }
+
+    private getModifiersToAdd(
+        method: SolidityConstruct,
+        options?: IntegrateOptions,
+    ): FirewallModifier[] {
+        switch (method.visibility) {
+            case 'external':
+                if (options?.modifiers?.includes(FW_INVARIANT_PROTECTED_MODIFIER)) {
+                    return [FW_INVARIANT_PROTECTED_MODIFIER];
+                }
+                return [FW_PROTECTED_MODIFIER];
+            case 'internal':
+                return [FW_PROTECTED_SIG_MODIFIER];
+            default:
+                return [];
+        }
     }
 
     private calcSighash(contract: SolidityConstruct, method: SolidityConstruct): string {

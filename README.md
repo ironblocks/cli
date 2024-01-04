@@ -55,13 +55,17 @@ $ ib --help
 
 ### Firewall Integration
 
-| options            | type       | required | description                                                                                |
-|--------------------| ---------- | -------- | -------------------------------------------------------------------------------------------|
-| -f<br> --file      | string     | false    | path to a solidity file to integrate with the firewall                                     |
-| -d<br> --dir       | string     | false    | path to directory containing solidity files to integrate with the firewall (non recursive) |
-| -r<br> --rec       | flag       | false    | special flag for the "-d" option, indicating whether should visit subdirectories or not    |
-| -v<br> --verbose   | flag       | false    | execute the command in "verbose" mode printing additional details along the execution      |
-| -i<br> --internal  | flag       | false    | whether to add firewall protection for "internal" functions                                |
+| options           | type   | required | description                                                                                |
+|-------------------| -------| ---------| -------------------------------------------------------------------------------------------|
+| -f<br> --file     | string | false    | path to a solidity file to integrate with the firewall                                     |
+| -d<br> --dir      | string | false    | path to directory containing solidity files to integrate with the firewall (non recursive) |
+| -r<br> --rec      | flag   | false    | special flag for the "-d" option, indicating whether should visit subdirectories or not    |
+| -v<br> --verbose  | flag   | false    | execute the command in "verbose" mode printing additional details along the execution      |
+| -i<br> --internal | flag   | false    | whether to add firewall protection for "internal" functions                                |
+| -m<br> --modifiers| string | false    | set advanced modifiers. [options](#advanced-modifiers)                |
+
+#### Advanced Modifiers
+- `invariantProtected` - For applying the subscribed invariant policy.
 
 #### Usage Example
 
@@ -74,6 +78,12 @@ $ ib fw integ -d /path/to/contracts
 
 # Integrating all files in a directory and its subdirectories
 $ ib fw integ -d /path/to/contracts -r
+
+# Integrate internall functions as well
+$ ib fw integ -d /path/to/contracts -i
+
+# Integrate internall functions and use the "invariantProtected" modifier where possible
+$ ib fw integ -d /path/to/contracts -m invariantProtected
 ```
 
 ## License

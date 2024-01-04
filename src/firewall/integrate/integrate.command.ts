@@ -4,6 +4,9 @@ import { resolve } from 'path';
 import { CommandRunner, Option, SubCommand } from 'nest-commander';
 // Internal.
 import { FirewallIntegrateService } from './integrate.service';
+import type { FirewallModifier } from './integrate.utils';
+
+type CommandOption = ReturnType<CommandRunner['command']['createOption']>;
 
 interface CommandOptions {
     file?: string;
@@ -11,6 +14,7 @@ interface CommandOptions {
     rec?: boolean;
     verbose?: boolean;
     internal?: boolean;
+    modifiers?: FirewallModifier[];
 }
 
 @SubCommand({
@@ -22,8 +26,13 @@ export class FirewallIntegrateCommand extends CommandRunner {
         super();
     }
 
-    private setOptionConflicts(optionName: string, conflicts: string[]): void {
+    private getCommandOption(optionName: string): CommandOption {
         const option = this.command.options.find((option) => option.attributeName() === optionName);
+        return option;
+    }
+
+    private setOptionConflicts(optionName: string, conflicts: string[]): void {
+        const option = this.getCommandOption(optionName);
         option.conflicts(conflicts);
     }
 
@@ -38,6 +47,7 @@ export class FirewallIntegrateCommand extends CommandRunner {
                 verbose: options?.verbose,
                 external: true,
                 internal: options?.internal,
+                modifiers: options?.modifiers,
             };
 
             if (options?.file) {
@@ -101,5 +111,20 @@ export class FirewallIntegrateCommand extends CommandRunner {
     })
     parseInternal(): boolean {
         return true;
+    }
+
+    @Option({
+        flags: '-m, --modifiers <string...>',
+        description: 'Set advanced modifiers',
+    })
+    parseModifiers(val: string): FirewallModifier[] {
+        const ACCEPTED_MODIFIERS = ['invariantProtected'];
+        const thisOption = this.getCommandOption('modifiers');
+        // This is a hotfix.
+        // NestJS commander overriding "parseArg" immediately after setting it via the decorator.
+        thisOption.choices(ACCEPTED_MODIFIERS);
+        // @ts-ignore
+        const previous = this.command._optionValues['modifiers'];
+        return thisOption.parseArg(val, previous);
     }
 }
