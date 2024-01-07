@@ -25,6 +25,13 @@ const FW_PROTECTED_CUSTOM_MODIFIER = 'firewallProtectedCustom';
 const FW_PROTECTED_SIG_MODIFIER = 'firewallProtectedSig';
 const FW_INVARIANT_PROTECTED_MODIFIER = 'invariantProtected';
 
+const FIREWALL_MODIFIERS = [
+    FW_PROTECTED_MODIFIER,
+    FW_PROTECTED_CUSTOM_MODIFIER,
+    FW_PROTECTED_SIG_MODIFIER,
+    FW_INVARIANT_PROTECTED_MODIFIER,
+];
+
 export type FirewallModifier =
     | typeof FW_PROTECTED_MODIFIER
     | typeof FW_PROTECTED_SIG_MODIFIER
@@ -99,7 +106,7 @@ const RE_METHOD_DEFINITION = new RegExp(
 );
 
 const RE_FW_MODIFIER_NO_ARGS = new RegExp(
-    `(?:${FW_PROTECTED_CUSTOM_MODIFIER}|${FW_PROTECTED_MODIFIER}|${FW_PROTECTED_SIG_MODIFIER}|${FW_INVARIANT_PROTECTED_MODIFIER})`,
+    `(?:${FIREWALL_MODIFIERS.map((mod) => `\\b${mod}\\b`).join('|')})`,
     'g',
 );
 const RE_FW_MODIFIER = new RegExp(
@@ -472,11 +479,12 @@ export class FirewallIntegrateUtils {
         methodCode: string,
         options?: IntegrateOptions,
     ): string {
-        const modifiers = this.getModifiersToAdd(method, options);
-        const missingModifiers = modifiers.filter(
-            (name) => !method.modifiers?.find((modifier) => modifier?.name === name),
+        const firewallModifiers = (method.modifiers ?? []).filter((modifier) =>
+            FIREWALL_MODIFIERS.includes(modifier?.name),
         );
-        const shouldCustomize = missingModifiers.length && !!options[method.visibility];
+        const requiredModifiers = this.getModifiersToAdd(method, options);
+        const hasMismatchingModifiers = firewallModifiers.length !== requiredModifiers.length;
+        const shouldCustomize = hasMismatchingModifiers && !!options[method.visibility];
         if (!shouldCustomize) {
             return methodCode;
         }
@@ -499,7 +507,7 @@ export class FirewallIntegrateUtils {
                         return match;
                     }
 
-                    const modifiersToAdd = missingModifiers
+                    const modifiersToAdd = requiredModifiers
                         .map((name) => this.serializerByModifier[name](contract, method))
                         .join(' ');
 
@@ -583,7 +591,7 @@ export class FirewallIntegrateUtils {
         switch (method.visibility) {
             case 'external':
                 if (options?.modifiers?.includes(FW_INVARIANT_PROTECTED_MODIFIER)) {
-                    return [FW_INVARIANT_PROTECTED_MODIFIER];
+                    return [FW_PROTECTED_MODIFIER, FW_INVARIANT_PROTECTED_MODIFIER];
                 }
                 return [FW_PROTECTED_MODIFIER];
             case 'internal':
