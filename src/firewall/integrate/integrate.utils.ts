@@ -49,6 +49,8 @@ const RE_SOLIDITY_FILE_NAME = new RegExp(`\\w+\\.sol$`, 'g');
 const RE_COMMENTS = new RegExp(`(?:\\/\\/[^\\n]*|\\/\\*[\\s\\S]*?\\*\\/)`, 'g');
 const RE_BLANK_SPACE = new RegExp(`(?:(?:\\s)|${RE_COMMENTS.source})`, 'g');
 
+const RE_INDENTATION = new RegExp(`(?<indentation>[\\r\\s\\n]+)`, 'g');
+
 /**
  * Gradually composing a regex to match the following pattern:
  *
@@ -105,12 +107,21 @@ const RE_METHOD_DEFINITION = new RegExp(
     'g',
 );
 
+/**
+ * Gradually composing a regex to match the following pattern:
+ *
+ * <firewallModifier>(...params)(\s\r\n)?
+ */
 const RE_FW_MODIFIER_NO_ARGS = new RegExp(
     `(?:${FIREWALL_MODIFIERS.map((mod) => `\\b${mod}\\b`).join('|')})`,
     'g',
 );
+const RE_FW_MODIFIER_WITH_ARGS = new RegExp(
+    `${RE_FW_MODIFIER_NO_ARGS.source}(?:${RE_BLANK_SPACE.source}*\\(${RE_ARGS.source}\\))?`,
+    'g',
+);
 const RE_FW_MODIFIER = new RegExp(
-    `${RE_BLANK_SPACE.source}*${RE_FW_MODIFIER_NO_ARGS.source}(?:${RE_BLANK_SPACE.source}*\\(${RE_ARGS.source}\\))?`,
+    `${RE_BLANK_SPACE.source}*${RE_FW_MODIFIER_WITH_ARGS.source}(?:${RE_BLANK_SPACE.source}*)?`,
     'g',
 );
 
@@ -432,8 +443,9 @@ export class FirewallIntegrateUtils {
             ) => {
                 if (baseContracts) {
                     const is = inheritance.substring(0, inheritance.length - baseContracts.length);
+                    const [indentation] = baseContracts.match(RE_INDENTATION) ?? [' '];
                     // Inheritance is placed leftmost to prevent inheritance linearization error.
-                    const customizedInheritance = `${is}${FW_BASE_CONTRACT}, ${baseContracts}`;
+                    const customizedInheritance = `${is}${FW_BASE_CONTRACT},${indentation}${baseContracts}`;
                     return `${declaration}${customizedInheritance}`;
                 }
 
@@ -507,14 +519,15 @@ export class FirewallIntegrateUtils {
                         return match;
                     }
 
+                    const [indentation] = modifiers.match(RE_INDENTATION) ?? [' '];
                     const modifiersToAdd = requiredModifiers
                         .map((name) => this.serializerByModifier[name](contract, method))
-                        .join(' ');
+                        .join(indentation);
 
                     if (modifiers) {
                         // Remove existing firewall modifiers.
                         modifiers = modifiers.replace(RE_FW_MODIFIER, '');
-                        return `${func}${signature}${visibility}${modifiers} ${modifiersToAdd}${returns}`;
+                        return `${func}${signature}${visibility}${modifiers}${indentation}${modifiersToAdd}${returns}`;
                     }
 
                     return `${func}${signature}${visibility} ${modifiersToAdd}${returns}`;
