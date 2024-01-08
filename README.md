@@ -1,5 +1,5 @@
 <p align="center">
-    <a href="https://www.ironblocks.com/" target="blank"><img src="https://app.ironblocks.com/assets/icons/ironblocks/logo.svg" width="200" alt="Ironblocks Logo" /></a>
+    <a href="https://www.ironblocks.com/" target="blank"><img src="https://www.ironblocks.com/logo.svg" width="200" alt="Ironblocks Logo" /></a>
 </p>
 
 <p align="center">
@@ -83,7 +83,7 @@ $ ib fw integ -d /path/to/contracts -r
 $ ib fw integ -d /path/to/contracts -i
 
 # Integrate internall functions and use the "invariantProtected" modifier where possible
-$ ib fw integ -d /path/to/contracts -m invariantProtected
+$ ib fw integ -d /path/to/contracts -i -m invariantProtected
 ```
 
 ## License
