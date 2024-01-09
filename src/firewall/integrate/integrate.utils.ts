@@ -10,7 +10,7 @@ import { InquirerService } from 'nest-commander';
 import { parse as parseSolidity } from '@solidity-parser/parser';
 import { ethers } from 'ethers';
 import { any as pathMatch } from 'micromatch';
-import { satisfies } from 'semver';
+import { intersects } from 'semver';
 // Internal.
 import { Logger } from '../../lib/logging/logger.service';
 import { UnsupportedFileFormatError } from './errors/unsupported.file.format.error';
@@ -378,7 +378,7 @@ export class FirewallIntegrateUtils {
             return;
         }
         const { value } = pragma;
-        if (!!value && !satisfies(value, SUPPORTED_SOLIDITY_VERSIONS)) {
+        if (!!value && !intersects(value, SUPPORTED_SOLIDITY_VERSIONS)) {
             throw new UnsupportedSolidityVersionError(value);
         }
     }
