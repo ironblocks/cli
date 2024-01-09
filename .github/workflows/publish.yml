@@ -3,7 +3,7 @@ name: "publish package to npm"
 on:
   push:
     branches:
-      - "develop"
+      - "main"
 
 jobs:
   # Publish to npm.

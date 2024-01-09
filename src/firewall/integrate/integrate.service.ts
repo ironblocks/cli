@@ -84,7 +84,8 @@ export class FirewallIntegrateService {
         );
 
         if (failedToCustomizeFiles.length) {
-            const message = `could not customize files\n  ${failedToCustomizeFiles.join('\n  ')}`;
+            const files = failedToCustomizeFiles.join('\n  ');
+            const message = `unsupported solidity version, or bad files format\n  ${files}`;
             throw new Error(message);
         }
         if (!foundAnySolidityFiles) {
