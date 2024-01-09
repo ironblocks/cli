@@ -8,12 +8,14 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InquirerService } from 'nest-commander';
 import { parse as parseSolidity } from '@solidity-parser/parser';
-import { any as pathMatch } from 'micromatch';
 import { ethers } from 'ethers';
+import { any as pathMatch } from 'micromatch';
+import { satisfies } from 'semver';
 // Internal.
 import { Logger } from '../../lib/logging/logger.service';
 import { UnsupportedFileFormatError } from './errors/unsupported.file.format.error';
 import { UnsupportedParamTypeError } from './errors/unsupported.param.type.error';
+import { UnsupportedSolidityVersionError } from './errors/unsupported.solidity.version.error';
 
 const execAsync = promisify(exec);
 
@@ -32,10 +34,7 @@ const FIREWALL_MODIFIERS = [
     FW_INVARIANT_PROTECTED_MODIFIER,
 ];
 
-export type FirewallModifier =
-    | typeof FW_PROTECTED_MODIFIER
-    | typeof FW_PROTECTED_SIG_MODIFIER
-    | typeof FW_INVARIANT_PROTECTED_MODIFIER;
+export type FirewallModifier = (typeof FIREWALL_MODIFIERS)[number];
 
 export interface IntegrateOptions {
     verbose?: boolean;
@@ -43,6 +42,8 @@ export interface IntegrateOptions {
     internal?: boolean;
     modifiers?: FirewallModifier[];
 }
+
+export const SUPPORTED_SOLIDITY_VERSIONS = '>= 0.8 < 0.8.20';
 
 const RE_SOLIDITY_FILE_NAME = new RegExp(`\\w+\\.sol$`, 'g');
 
@@ -139,6 +140,7 @@ type SolidityConstruct = {
     kind?: string;
     name?: string;
     path?: string;
+    value?: string;
     baseContracts?: SolidityConstruct[];
     baseName?: SolidityConstruct;
     namePath?: string;
@@ -237,8 +239,8 @@ export class FirewallIntegrateUtils {
     }
 
     private shouldIgnore(path: string): boolean {
-        const allowList = this.config.get<string[]>('fw.integ.include') ?? [];
-        const ignoreList = this.config.get<string[]>('fw.integ.exclude') ?? [];
+        const allowList = this.config.get<string[]>('fw.integ.include') || [];
+        const ignoreList = this.config.get<string[]>('fw.integ.exclude') || [];
         const matchedAllowList = pathMatch(path, allowList);
         const matchedIgnoreList = pathMatch(path, ignoreList);
         if (allowList.length && !matchedAllowList) {
@@ -319,17 +321,14 @@ export class FirewallIntegrateUtils {
      * @returns true iff any changes were made to the file.
      */
     async customizeSolidityFile(path: string, options?: IntegrateOptions): Promise<boolean> {
-        const originalCode = await readFile(path, 'utf8');
         const contractNamesToCustomize = new Set([parse(path).name]);
 
+        const originalCode = await readFile(path, 'utf8');
+        const parsed = this.parseSolidityCode(originalCode);
+        this.validateSolidityVersion(parsed);
+
         try {
-            const parsed = parseSolidity(originalCode, {
-                tolerant: true,
-                range: true,
-            }) as ParsedSolidityConstructs;
-
             let customizedCode: string;
-
             customizedCode = parsed.children.reduceRight((customized, child) => {
                 return this.customizeContractInPlace(
                     customized,
@@ -358,6 +357,29 @@ export class FirewallIntegrateUtils {
             return true;
         } catch (err) {
             throw new UnsupportedFileFormatError();
+        }
+    }
+
+    private parseSolidityCode(code: string): ParsedSolidityConstructs {
+        try {
+            const parsed = parseSolidity(code, {
+                tolerant: true,
+                range: true,
+            }) as ParsedSolidityConstructs;
+            return parsed;
+        } catch (err) {
+            throw new UnsupportedFileFormatError();
+        }
+    }
+
+    private validateSolidityVersion(parsed: ParsedSolidityConstructs): void {
+        const pragma = (parsed?.children ?? []).find(({ type }) => type === 'PragmaDirective');
+        if (!pragma) {
+            return;
+        }
+        const { value } = pragma;
+        if (!!value && !satisfies(value, SUPPORTED_SOLIDITY_VERSIONS)) {
+            throw new UnsupportedSolidityVersionError(value);
         }
     }
 
@@ -392,7 +414,7 @@ export class FirewallIntegrateUtils {
             customizedContractCode !== contractCode ||
             this.alreadyCustomizedContractHeader(contract)
         ) {
-            (contract.baseContracts ?? []).forEach(({ baseName }) => {
+            (contract.baseContracts || []).forEach(({ baseName }) => {
                 if (baseName?.namePath && baseName?.namePath !== FW_BASE_CONTRACT) {
                     contractNamesToCustomize.add(baseName.namePath);
                 }
@@ -443,7 +465,7 @@ export class FirewallIntegrateUtils {
             ) => {
                 if (baseContracts) {
                     const is = inheritance.substring(0, inheritance.length - baseContracts.length);
-                    const [indentation] = baseContracts.match(RE_INDENTATION) ?? [' '];
+                    const [indentation] = baseContracts.match(RE_INDENTATION) || [' '];
                     // Inheritance is placed leftmost to prevent inheritance linearization error.
                     const customizedInheritance = `${is}${FW_BASE_CONTRACT},${indentation}${baseContracts}`;
                     return `${declaration}${customizedInheritance}`;
@@ -491,7 +513,7 @@ export class FirewallIntegrateUtils {
         methodCode: string,
         options?: IntegrateOptions,
     ): string {
-        const firewallModifiers = (method.modifiers ?? []).filter((modifier) =>
+        const firewallModifiers = (method.modifiers || []).filter((modifier) =>
             FIREWALL_MODIFIERS.includes(modifier?.name),
         );
         const requiredModifiers = this.getModifiersToAdd(method, options);
@@ -519,7 +541,7 @@ export class FirewallIntegrateUtils {
                         return match;
                     }
 
-                    const [indentation] = modifiers.match(RE_INDENTATION) ?? [' '];
+                    const [indentation] = modifiers.match(RE_INDENTATION) || [' '];
                     const modifiersToAdd = requiredModifiers
                         .map((name) => this.serializerByModifier[name](contract, method))
                         .join(indentation);
@@ -586,13 +608,13 @@ export class FirewallIntegrateUtils {
     }
 
     private alreadyCustomizedContractHeader(contract: SolidityConstruct): boolean {
-        return (contract.baseContracts ?? []).some(
+        return (contract.baseContracts || []).some(
             (base) => base.baseName?.namePath === FW_BASE_CONTRACT,
         );
     }
 
     private alreadyCustomizedContractMethod(method: SolidityConstruct): boolean {
-        return (method.modifiers ?? []).some(
+        return (method.modifiers || []).some(
             (modifier) => !!this.serializerByModifier[modifier.name],
         );
     }
@@ -617,7 +639,7 @@ export class FirewallIntegrateUtils {
     private calcSighash(contract: SolidityConstruct, method: SolidityConstruct): string {
         const contractName = contract.name;
         const methodName = method.name!;
-        const paramTypes = (method.parameters ?? []).map((param) => {
+        const paramTypes = (method.parameters || []).map((param) => {
             try {
                 return this.getParamTypeName(param.typeName);
             } catch (err) {
@@ -634,7 +656,7 @@ export class FirewallIntegrateUtils {
         switch (paramtType?.type) {
             case 'ArrayTypeName':
                 const baseTypeName = this.getParamTypeName(paramtType?.baseTypeName);
-                return `${baseTypeName}[${paramtType?.length?.number ?? ''}]`;
+                return `${baseTypeName}[${paramtType?.length?.number || ''}]`;
             case 'UserDefinedTypeName':
                 return rawTypeName;
             case 'ElementaryTypeName':

@@ -6,6 +6,7 @@ import { Injectable } from '@nestjs/common';
 import { Logger } from '../../lib/logging/logger.service';
 import { FirewallIntegrateUtils, type IntegrateOptions } from './integrate.utils';
 import { UnsupportedFileFormatError } from './errors/unsupported.file.format.error';
+import { UnsupportedSolidityVersionError } from './errors/unsupported.solidity.version.error';
 
 @Injectable()
 export class FirewallIntegrateService {
@@ -27,6 +28,9 @@ export class FirewallIntegrateService {
                 this.logger.log(`File was not changed '${filepath}'`);
             }
         } catch (err) {
+            if (err instanceof UnsupportedSolidityVersionError) {
+                throw new Error(`unsupported solidity version '${err.version}' '${filepath}'`);
+            }
             if (err instanceof UnsupportedFileFormatError) {
                 throw new Error(`unsupported file format '${filepath}'`);
             }
@@ -43,7 +47,7 @@ export class FirewallIntegrateService {
 
         let foundAnySolidityFiles: boolean = false;
         const customizedFiles = [];
-        const unsupportedFiles = [];
+        const failedToCustomizeFiles = [];
 
         await this.fwIntegUtils.forEachSolidityFilesInDir(
             async (filepath) => {
@@ -65,8 +69,11 @@ export class FirewallIntegrateService {
                         customizedFiles.push(filepath);
                     }
                 } catch (err) {
-                    if (err instanceof UnsupportedFileFormatError) {
-                        unsupportedFiles.push(filepath);
+                    if (
+                        err instanceof UnsupportedSolidityVersionError ||
+                        err instanceof UnsupportedSolidityVersionError
+                    ) {
+                        failedToCustomizeFiles.push(filepath);
                     } else {
                         throw err;
                     }
@@ -76,8 +83,9 @@ export class FirewallIntegrateService {
             recursive,
         );
 
-        if (unsupportedFiles.length) {
-            throw new Error(`unsupported files format\n  ${unsupportedFiles.join('\n  ')}`);
+        if (failedToCustomizeFiles.length) {
+            const message = `could not customize files\n  ${failedToCustomizeFiles.join('\n  ')}`;
+            throw new Error(message);
         }
         if (!foundAnySolidityFiles) {
             throw new Error(`could not find any solidity files at '${dirpath}'`);

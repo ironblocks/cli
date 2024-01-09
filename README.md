@@ -13,6 +13,10 @@
 
 This CLI tool will help you to interact and easily integrate with our ecosystem.
 
+## Compatibility
+
+Solidity versions `>= 0.8 < 0.8.20`.
+
 ## Installation
 
 ```bash

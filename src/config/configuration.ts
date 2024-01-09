@@ -31,7 +31,7 @@ const defaults = {
 export default async () => {
     let localConfig: CLIConfig = {};
     try {
-        localConfig = (await import(LOCAL_CONFIG_PATH)) ?? {};
+        localConfig = (await import(LOCAL_CONFIG_PATH)) || {};
     } catch (err) {
         // No valid local config.
     }
@@ -50,9 +50,9 @@ export default async () => {
         fw: {
             integ: {
                 ...overrides.fw.integ,
-                ...(localConfig?.fw?.integ ?? {}),
+                ...(localConfig?.fw?.integ || {}),
                 exclude: overrides.fw.integ.exclude
-                    .concat(localConfig?.fw?.integ?.exclude ?? [])
+                    .concat(localConfig?.fw?.integ?.exclude || [])
                     .map((pattern) => join(pattern)),
             },
         },
