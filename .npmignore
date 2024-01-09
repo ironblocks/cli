@@ -1,0 +1,8 @@
+*
+
+!package.json
+!package-json.json
+
+!README.md
+
+!build/**/*.js
