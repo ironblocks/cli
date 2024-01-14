@@ -32,7 +32,7 @@ const FIREWALL_MODIFIERS = [
     FW_PROTECTED_CUSTOM_MODIFIER,
     FW_PROTECTED_SIG_MODIFIER,
     FW_INVARIANT_PROTECTED_MODIFIER,
-];
+] as const;
 
 export type FirewallModifier = (typeof FIREWALL_MODIFIERS)[number];
 
@@ -146,6 +146,7 @@ type SolidityConstruct = {
     namePath?: string;
     visibility?: string;
     isConstructor?: boolean;
+    body?: SolidityConstruct;
     modifiers?: SolidityConstruct[];
     parameters?: SolidityConstruct[];
     typeName?: SolidityConstruct;
@@ -158,9 +159,8 @@ type SolidityConstruct = {
 
 @Injectable()
 export class FirewallIntegrateUtils {
-    private serializerByModifier: Record<
-        FirewallModifier,
-        (contract: SolidityConstruct, method: SolidityConstruct) => string
+    private serializerByModifier: Partial<
+        Record<FirewallModifier, (contract: SolidityConstruct, method: SolidityConstruct) => string>
     >;
 
     constructor(
@@ -513,12 +513,14 @@ export class FirewallIntegrateUtils {
         methodCode: string,
         options?: IntegrateOptions,
     ): string {
+        const isAbstract = !method.body;
         const firewallModifiers = (method.modifiers || []).filter((modifier) =>
-            FIREWALL_MODIFIERS.includes(modifier?.name),
+            FIREWALL_MODIFIERS.includes(modifier?.name as FirewallModifier),
         );
         const requiredModifiers = this.getModifiersToAdd(method, options);
         const hasMismatchingModifiers = firewallModifiers.length !== requiredModifiers.length;
-        const shouldCustomize = hasMismatchingModifiers && !!options[method.visibility];
+        const shouldCustomize =
+            !isAbstract && hasMismatchingModifiers && !!options[method.visibility];
         if (!shouldCustomize) {
             return methodCode;
         }
