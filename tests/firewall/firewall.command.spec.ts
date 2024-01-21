@@ -7,6 +7,7 @@ import * as sinon from 'sinon';
 import { SinonSandbox, SinonStub } from 'sinon';
 // Internal.
 import { AppModule } from '../../src/app/app.module';
+import { replaceSingleSpace } from '../lib/utils';
 import { FirewallIntegrateCommandTestSuite } from './integrate/integrate.command.spec';
 
 export function FirewallCommandTestSuite() {
@@ -43,13 +44,11 @@ function CommandTestSuite() {
     });
 
     function assertHelpText(text: string): void {
+        text = replaceSingleSpace(text);
         assert(text.includes('Firewall utilities for developers'), 'Missing command description');
+        assert(text.includes('-h, --help display help for command'), 'Missing help option flag');
         assert(
-            text.includes('-h, --help       display help for command'),
-            'Missing help option flag',
-        );
-        assert(
-            text.includes("integ [options]  Integrate your contracts with Ironblocks' firewall"),
+            text.includes("integ [options] Integrate your contracts with Ironblocks' firewall"),
             'Missing firewall integrate command',
         );
     }

@@ -7,6 +7,7 @@ import * as sinon from 'sinon';
 import { SinonSandbox, SinonStub } from 'sinon';
 // Internal.
 import { AppModule } from '../../../src/app/app.module';
+import { replaceSingleSpace } from '../../lib/utils';
 
 export function FirewallIntegrateCommandTestSuite() {
     describe('Firewall Integreate Command', CommandTestSuite.bind(this));
@@ -40,38 +41,36 @@ function CommandTestSuite() {
     });
 
     function assertHelpText(text: string): void {
+        text = replaceSingleSpace(text);
         assert(
             text.includes("Integrate your contracts with Ironblocks' firewall"),
             'Missing command description',
         );
         assert(
-            text.includes('-f, --file <string>          path to contract file to customize'),
+            text.includes('-f, --file <string> path to contract file to customize'),
             'Missing file option flag',
         );
         assert(
-            text.includes('-d, --dir <string>           path to contracts directory to customize'),
+            text.includes('-d, --dir <string> path to contracts directory to customize'),
             'Missing directory option flag',
         );
         assert(
             text.includes(
-                '-r, --rec                    recurse on all the contract files in the directory (default: false)',
+                '-r, --rec recurse on all the contract files in the directory (default: false)',
             ),
             'Missing recursive option flag',
         );
         assert(
             text.includes(
-                '-i, --internal               whether to add firewall protection for "internal" functions (default: false)',
+                '-i, --internal whether to add firewall protection for "internal" functions (default: false)',
             ),
             'Missing internal modifiers option flag',
         );
         assert(
-            text.includes('-m, --modifiers <string...>  set advanced modifiers'),
+            text.includes('-m, --modifiers <string...> set advanced modifiers'),
             'Missing advanced modifiers option flag',
         );
-        assert(
-            text.includes('-h, --help                   display help for command'),
-            'Missing help option flag',
-        );
+        assert(text.includes('-h, --help display help for command'), 'Missing help option flag');
     }
 
     it("it should display firewall integrate command's help", async () => {

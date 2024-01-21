@@ -7,6 +7,7 @@ import * as sinon from 'sinon';
 import { SinonSandbox, SinonStub } from 'sinon';
 // Internal.
 import { AppModule } from '../../src/app/app.module';
+import { replaceSingleSpace } from '../lib/utils';
 import { FirewallCommandTestSuite } from '../firewall/firewall.command.spec';
 
 export function RootCommandTestSuite() {
@@ -43,12 +44,10 @@ function CommandTestSuite() {
     });
 
     function assertHelpText(text: string): void {
+        text = replaceSingleSpace(text);
         assert(text.includes('ironblocks CLI tool'), 'Missing command description');
-        assert(text.includes('-h, --help  display help for command'), 'Missing help option flag');
-        assert(
-            text.includes('fw          Firewall utilities for developers'),
-            'Missing firewall command',
-        );
+        assert(text.includes('-h, --help display help for command'), 'Missing help option flag');
+        assert(text.includes('fw Firewall utilities for developers'), 'Missing firewall command');
     }
 
     it("it should display root command's help", async () => {
