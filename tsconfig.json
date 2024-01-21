@@ -6,7 +6,7 @@
         "emitDecoratorMetadata": true,
         "experimentalDecorators": true,
         "allowSyntheticDefaultImports": true,
-        "target": "ES2021",
+        "target": "es2022",
         "sourceMap": true,
         "outDir": "./build",
         "baseUrl": "./",
@@ -17,5 +17,13 @@
         "strictBindCallApply": false,
         "forceConsistentCasingInFileNames": false,
         "noFallthroughCasesInSwitch": false
-    }
+    },
+    "include": [
+        "src",
+        "tests"
+    ],
+    "exclude": [
+        "build",
+        "node_modules"
+    ]
 }

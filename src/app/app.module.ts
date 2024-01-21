@@ -4,6 +4,7 @@ import { ConfigModule } from '@nestjs/config';
 // Internal.
 import config from '../config/configuration';
 import { FirewallModule } from '../firewall/firewall.module';
+import { AppCommand } from './app.command';
 
 @Module({
     imports: [
@@ -13,6 +14,6 @@ import { FirewallModule } from '../firewall/firewall.module';
         }),
         FirewallModule,
     ],
-    providers: [FirewallModule],
+    providers: [AppCommand],
 })
 export class AppModule {}

@@ -29,6 +29,30 @@
             "sourceMaps": true,
             "outputCapture": "std",
             "program": "./src/main.ts",
+        },
+
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Test CLI",
+            "cwd": "${workspaceRoot}",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "runtimeArgs": [
+                "--inspect-brk",
+                // Tell V8 to compile ahead of time so breakpoints work correctly.
+                "--nolazy",
+                // Ensure ts-node is loaded before trying to execute.
+                "--require",
+                "ts-node/register",
+                "node_modules/.bin/mocha",
+                "--runInBand",
+                "ts-node/register",
+                "./tests/**/*.ts",
+            ],
+            "sourceMaps": true,
+            "outputCapture": "std",
         }
     ]
 }
