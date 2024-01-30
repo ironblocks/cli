@@ -1,6 +1,6 @@
 {
     "name": "@ironblocks/cli",
-    "version": "1.0.3",
+    "version": "1.0.4",
     "description": "",
     "author": "IRONBLOCKS LTD",
     "license": "MIT",
@@ -16,7 +16,7 @@
         "url": "https://github.com/ironblocks/cli/issues"
     },
     "bin": {
-        "ib": "build/main.js"
+        "ib": "build/src/main.js"
     },
     "scripts": {
         "build": "nest build",
@@ -24,7 +24,7 @@
         "start": "nest start",
         "start:dev": "nest start --watch",
         "start:debug": "nest start --debug --watch",
-        "start:prod": "node build/main.js",
+        "start:prod": "node build/src/main.js",
         "lint": "eslint \"{src,libs,tests}/**/*.ts\" --fix",
         "test": "ts-mocha -n loader=ts-node/esm -p tsconfig.json --exit 'tests/**/*.ts'",
         "test:cov": "npx nyc npm run test"
