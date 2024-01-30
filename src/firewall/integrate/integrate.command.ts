@@ -70,7 +70,7 @@ export class FirewallIntegrateCommand extends CommandRunner {
 
     @Option({
         flags: '-f, --file <string>',
-        description: 'Path to contract file to customize',
+        description: 'path to contract file to customize',
     })
     parseFilePath(val: string): string {
         this.setOptionConflicts('file', ['dir']);
@@ -79,7 +79,7 @@ export class FirewallIntegrateCommand extends CommandRunner {
 
     @Option({
         flags: '-d, --dir <string>',
-        description: 'Path to contracts directory to customize',
+        description: 'path to contracts directory to customize',
     })
     parseDirPath(val: string): string {
         this.setOptionConflicts('dir', ['file']);
@@ -88,7 +88,7 @@ export class FirewallIntegrateCommand extends CommandRunner {
 
     @Option({
         flags: '-r, --rec',
-        description: 'Recurse on all the contract files in the directory',
+        description: 'recurse on all the contract files in the directory',
         defaultValue: false,
     })
     parseRecursive(): boolean {
@@ -97,7 +97,7 @@ export class FirewallIntegrateCommand extends CommandRunner {
 
     @Option({
         flags: '-v, --verbose',
-        description: 'Provider additional details along the command execution',
+        description: 'provider additional details along the command execution',
         defaultValue: false,
     })
     parseVerbose(): boolean {
@@ -106,7 +106,7 @@ export class FirewallIntegrateCommand extends CommandRunner {
 
     @Option({
         flags: '-i, --internal',
-        description: 'Whether to add firewall protection for "internal" functions',
+        description: 'whether to add firewall protection for "internal" functions',
         defaultValue: false,
     })
     parseInternal(): boolean {
@@ -115,7 +115,7 @@ export class FirewallIntegrateCommand extends CommandRunner {
 
     @Option({
         flags: '-m, --modifiers <string...>',
-        description: 'Set advanced modifiers',
+        description: 'set advanced modifiers',
     })
     parseModifiers(val: string): FirewallModifier[] {
         const ACCEPTED_MODIFIERS = ['invariantProtected'];
