@@ -5,5 +5,4 @@
 
 !README.md
 
-!build/**/*.js
-!build/tests
+!build/src/**/*.js
