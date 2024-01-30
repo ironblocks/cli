@@ -18,28 +18,20 @@ export function RootCommandTestSuite() {
 
 function CommandTestSuite() {
     let sandbox: SinonSandbox;
-    let stdoutStub: SinonStub;
-    let stderrStub: SinonStub;
     let exitStub: SinonStub;
+    let stdoutStub: SinonStub;
     let commandInstance: TestingModule;
 
-    before(async () => {
+    beforeEach(async () => {
         sandbox = sinon.createSandbox();
-        stdoutStub = sandbox.stub(process.stdout, 'write');
-        stderrStub = sandbox.stub(process.stderr, 'write');
         exitStub = sandbox.stub(process, 'exit');
+        stdoutStub = sandbox.stub(process.stdout, 'write');
         commandInstance = await CommandTestFactory.createTestingCommand({
             imports: [AppModule],
         }).compile();
     });
 
     afterEach(() => {
-        stdoutStub.reset();
-        stderrStub.reset();
-        exitStub.reset();
-    });
-
-    after(() => {
         sandbox.restore();
     });
 

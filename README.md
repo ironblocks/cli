@@ -83,10 +83,10 @@ $ ib fw integ -d /path/to/contracts
 # Integrating all files in a directory and its subdirectories
 $ ib fw integ -d /path/to/contracts -r
 
-# Integrate internall functions as well
+# Integrate internal functions as well
 $ ib fw integ -d /path/to/contracts -i
 
-# Integrate internall functions and use the "invariantProtected" modifier where possible
+# Integrate internal functions and use the "invariantProtected" modifier where possible
 $ ib fw integ -d /path/to/contracts -i -m invariantProtected
 ```
 
