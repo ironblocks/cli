@@ -27,6 +27,9 @@ const FW_PROTECTED_CUSTOM_MODIFIER = 'firewallProtectedCustom';
 const FW_PROTECTED_SIG_MODIFIER = 'firewallProtectedSig';
 const FW_INVARIANT_PROTECTED_MODIFIER = 'invariantProtected';
 
+const WARNING_COMMENT_PUBLIC_MUTABLE_FUNCTION =
+    '/** TODO: consider changing visibility to external */';
+
 const FIREWALL_MODIFIERS = [
     FW_PROTECTED_MODIFIER,
     FW_PROTECTED_CUSTOM_MODIFIER,
@@ -38,6 +41,7 @@ export type FirewallModifier = (typeof FIREWALL_MODIFIERS)[number];
 
 export interface IntegrateOptions {
     verbose?: boolean;
+    public?: boolean;
     external?: boolean;
     internal?: boolean;
     modifiers?: FirewallModifier[];
@@ -545,17 +549,28 @@ export class FirewallIntegrateUtils {
                     }
 
                     const [indentation] = modifiers.match(RE_INDENTATION) || [' '];
-                    const modifiersToAdd = requiredModifiers
-                        .map((name) => this.serializerByModifier[name](contract, method))
+                    const modifiersToAdd = requiredModifiers.map((name) =>
+                        this.serializerByModifier[name](contract, method),
+                    );
+                    const commentsToAdd = [];
+                    if (method.visibility === 'public') {
+                        commentsToAdd.push(WARNING_COMMENT_PUBLIC_MUTABLE_FUNCTION);
+                        this.logger.buffer(
+                            'warn',
+                            `'${contract.name}' contract contains a public function '${contract.name}' - consider changing the visibility to external'`,
+                        );
+                    }
+                    const modifiersAndCommentsToAdd = modifiersToAdd
+                        .concat(commentsToAdd)
                         .join(indentation);
 
                     if (modifiers) {
                         // Remove existing firewall modifiers.
                         modifiers = modifiers.replace(RE_FW_MODIFIER, '');
-                        return `${func}${signature}${visibility}${modifiers}${indentation}${modifiersToAdd}${returns}`;
+                        return `${func}${signature}${visibility}${modifiers}${indentation}${modifiersAndCommentsToAdd}${returns}`;
                     }
 
-                    return `${func}${signature}${visibility} ${modifiersToAdd}${returns}`;
+                    return `${func}${signature}${visibility} ${modifiersAndCommentsToAdd}${returns}`;
                 },
             );
 
@@ -633,6 +648,8 @@ export class FirewallIntegrateUtils {
         options?: IntegrateOptions,
     ): FirewallModifier[] {
         switch (method.visibility) {
+            case 'public':
+            // Fall-through.
             case 'external':
                 if (options?.modifiers?.includes(FW_INVARIANT_PROTECTED_MODIFIER)) {
                     return [FW_PROTECTED_MODIFIER, FW_INVARIANT_PROTECTED_MODIFIER];

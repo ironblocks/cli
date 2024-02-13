@@ -45,6 +45,7 @@ export class FirewallIntegrateCommand extends CommandRunner {
         try {
             const integOptions = {
                 verbose: options?.verbose,
+                public: true,
                 external: true,
                 internal: options?.internal,
                 modifiers: options?.modifiers,
