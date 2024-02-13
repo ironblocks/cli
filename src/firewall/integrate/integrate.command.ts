@@ -123,7 +123,7 @@ export class FirewallIntegrateCommand extends CommandRunner {
         // This is a hotfix.
         // NestJS commander overriding "parseArg" immediately after setting it via the decorator.
         thisOption.choices(ACCEPTED_MODIFIERS);
-        // @ts-ignore
+        // @ts-expect-error accessing private variable.
         const previous = this.command._optionValues['modifiers'];
         return thisOption.parseArg(val, previous);
     }

@@ -49,6 +49,7 @@ const RE_SOLIDITY_FILE_NAME = new RegExp(`\\w+\\.sol$`, 'g');
 
 const RE_COMMENTS = new RegExp(`(?:\\/\\/[^\\n]*|\\/\\*[\\s\\S]*?\\*\\/)`, 'g');
 const RE_BLANK_SPACE = new RegExp(`(?:(?:\\s)|${RE_COMMENTS.source})`, 'g');
+const RE_EMPTY_LINE = new RegExp('^\\s*$', 'gm');
 
 const RE_INDENTATION = new RegExp(`(?<indentation>[\\r\\s\\n]+)`, 'g');
 
@@ -579,7 +580,13 @@ export class FirewallIntegrateUtils {
         if (imports.length) {
             const [firstImport] = imports;
             const [firstImportStartIndex, _firstImportEndIndex] = firstImport.range;
-            const customizedImports = `${FW_IMPORT}\r\n`;
+            const lastImport = imports[imports.length - 1];
+            const [_lastImportStartIndex, lastImportEndIndex] = lastImport.range;
+            const hasEmptyLineBreaks = !!code
+                .substring(firstImportStartIndex, lastImportEndIndex)
+                .match(RE_EMPTY_LINE);
+            const numLineBreaksToAdd = hasEmptyLineBreaks ? 2 : 1;
+            const customizedImports = FW_IMPORT + '\r\n'.repeat(numLineBreaksToAdd);
             // Editing imports section whithin the file.
             const customizedCode =
                 code.slice(0, firstImportStartIndex) +
