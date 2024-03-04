@@ -13,6 +13,7 @@ interface CommandOptions {
     dir?: string;
     rec?: boolean;
     verbose?: boolean;
+    public?: boolean;
     internal?: boolean;
     modifiers?: FirewallModifier[];
 }
@@ -45,8 +46,8 @@ export class FirewallIntegrateCommand extends CommandRunner {
         try {
             const integOptions = {
                 verbose: options?.verbose,
-                public: true,
                 external: true,
+                public: options?.public,
                 internal: options?.internal,
                 modifiers: options?.modifiers,
             };
@@ -102,6 +103,15 @@ export class FirewallIntegrateCommand extends CommandRunner {
         defaultValue: false,
     })
     parseVerbose(): boolean {
+        return true;
+    }
+
+    @Option({
+        flags: '-p, --public',
+        description: 'whether to add firewall protection for "public" functions',
+        defaultValue: false,
+    })
+    parsePublic(): boolean {
         return true;
     }
 
