@@ -6,7 +6,9 @@ import { CommandFactory } from 'nest-commander';
 import { AppModule } from './app/app.module';
 
 async function bootstrap() {
-    await CommandFactory.run(AppModule);
+    const app = await CommandFactory.runWithoutClosing(AppModule);
+    app.enableShutdownHooks();
+    await app.close();
 }
 
 bootstrap();

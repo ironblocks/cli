@@ -27,6 +27,9 @@ const FW_PROTECTED_CUSTOM_MODIFIER = 'firewallProtectedCustom';
 const FW_PROTECTED_SIG_MODIFIER = 'firewallProtectedSig';
 const FW_INVARIANT_PROTECTED_MODIFIER = 'invariantProtected';
 
+const WARNING_COMMENT_PUBLIC_MUTABLE_FUNCTION =
+    '/** TODO: consider changing visibility to external */';
+
 const FIREWALL_MODIFIERS = [
     FW_PROTECTED_MODIFIER,
     FW_PROTECTED_CUSTOM_MODIFIER,
@@ -38,6 +41,7 @@ export type FirewallModifier = (typeof FIREWALL_MODIFIERS)[number];
 
 export interface IntegrateOptions {
     verbose?: boolean;
+    public?: boolean;
     external?: boolean;
     internal?: boolean;
     modifiers?: FirewallModifier[];
@@ -49,6 +53,7 @@ const RE_SOLIDITY_FILE_NAME = new RegExp(`\\w+\\.sol$`, 'g');
 
 const RE_COMMENTS = new RegExp(`(?:\\/\\/[^\\n]*|\\/\\*[\\s\\S]*?\\*\\/)`, 'g');
 const RE_BLANK_SPACE = new RegExp(`(?:(?:\\s)|${RE_COMMENTS.source})`, 'g');
+const RE_EMPTY_LINE = new RegExp('^\\s*$', 'gm');
 
 const RE_INDENTATION = new RegExp(`(?<indentation>[\\r\\s\\n]+)`, 'g');
 
@@ -544,17 +549,28 @@ export class FirewallIntegrateUtils {
                     }
 
                     const [indentation] = modifiers.match(RE_INDENTATION) || [' '];
-                    const modifiersToAdd = requiredModifiers
-                        .map((name) => this.serializerByModifier[name](contract, method))
+                    const modifiersToAdd = requiredModifiers.map((name) =>
+                        this.serializerByModifier[name](contract, method),
+                    );
+                    const commentsToAdd = [];
+                    if (method.visibility === 'public') {
+                        commentsToAdd.push(WARNING_COMMENT_PUBLIC_MUTABLE_FUNCTION);
+                        this.logger.buffer(
+                            'warn',
+                            `'${contract.name}' contract contains a public function '${contract.name}' - consider changing the visibility to external'`,
+                        );
+                    }
+                    const modifiersAndCommentsToAdd = modifiersToAdd
+                        .concat(commentsToAdd)
                         .join(indentation);
 
                     if (modifiers) {
                         // Remove existing firewall modifiers.
                         modifiers = modifiers.replace(RE_FW_MODIFIER, '');
-                        return `${func}${signature}${visibility}${modifiers}${indentation}${modifiersToAdd}${returns}`;
+                        return `${func}${signature}${visibility}${modifiers}${indentation}${modifiersAndCommentsToAdd}${returns}`;
                     }
 
-                    return `${func}${signature}${visibility} ${modifiersToAdd}${returns}`;
+                    return `${func}${signature}${visibility} ${modifiersAndCommentsToAdd}${returns}`;
                 },
             );
 
@@ -579,7 +595,13 @@ export class FirewallIntegrateUtils {
         if (imports.length) {
             const [firstImport] = imports;
             const [firstImportStartIndex, _firstImportEndIndex] = firstImport.range;
-            const customizedImports = `${FW_IMPORT}\r\n`;
+            const lastImport = imports[imports.length - 1];
+            const [_lastImportStartIndex, lastImportEndIndex] = lastImport.range;
+            const hasEmptyLineBreaks = !!code
+                .substring(firstImportStartIndex, lastImportEndIndex)
+                .match(RE_EMPTY_LINE);
+            const numLineBreaksToAdd = hasEmptyLineBreaks ? 2 : 1;
+            const customizedImports = FW_IMPORT + '\r\n'.repeat(numLineBreaksToAdd);
             // Editing imports section whithin the file.
             const customizedCode =
                 code.slice(0, firstImportStartIndex) +
@@ -626,6 +648,8 @@ export class FirewallIntegrateUtils {
         options?: IntegrateOptions,
     ): FirewallModifier[] {
         switch (method.visibility) {
+            case 'public':
+            // Fall-through.
             case 'external':
                 if (options?.modifiers?.includes(FW_INVARIANT_PROTECTED_MODIFIER)) {
                     return [FW_PROTECTED_MODIFIER, FW_INVARIANT_PROTECTED_MODIFIER];

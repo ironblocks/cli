@@ -13,6 +13,7 @@ interface CommandOptions {
     dir?: string;
     rec?: boolean;
     verbose?: boolean;
+    public?: boolean;
     internal?: boolean;
     modifiers?: FirewallModifier[];
 }
@@ -46,6 +47,7 @@ export class FirewallIntegrateCommand extends CommandRunner {
             const integOptions = {
                 verbose: options?.verbose,
                 external: true,
+                public: options?.public,
                 internal: options?.internal,
                 modifiers: options?.modifiers,
             };
@@ -105,6 +107,15 @@ export class FirewallIntegrateCommand extends CommandRunner {
     }
 
     @Option({
+        flags: '-p, --public',
+        description: 'whether to add firewall protection for "public" functions',
+        defaultValue: false,
+    })
+    parsePublic(): boolean {
+        return true;
+    }
+
+    @Option({
         flags: '-i, --internal',
         description: 'whether to add firewall protection for "internal" functions',
         defaultValue: false,
@@ -123,7 +134,7 @@ export class FirewallIntegrateCommand extends CommandRunner {
         // This is a hotfix.
         // NestJS commander overriding "parseArg" immediately after setting it via the decorator.
         thisOption.choices(ACCEPTED_MODIFIERS);
-        // @ts-ignore
+        // @ts-expect-error accessing private variable.
         const previous = this.command._optionValues['modifiers'];
         return thisOption.parseArg(val, previous);
     }

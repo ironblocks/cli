@@ -133,7 +133,7 @@ function CommandTestSuite() {
     });
 
     describe('file', () => {
-        async function assertCustomized(expectedOutput: string): Promise<void> {
+        function assertCustomized(expectedOutput: string): void {
             const customizedFilePath = writeFileStub.firstCall?.args[0];
             const actualCustomized = writeFileStub.firstCall?.args[1];
             const expectedCustomized = expectedOutput;
@@ -161,7 +161,7 @@ function CommandTestSuite() {
                         path.join(EXAMPLES_OUTPUT_DIR, 'external-only/Standalone.sol'),
                     )
                 ).toString();
-                await assertCustomized(expectedCustomized);
+                assertCustomized(expectedCustomized);
             });
 
             it('it should add external and internal firewall modifiers to external functions', async () => {
@@ -181,7 +181,7 @@ function CommandTestSuite() {
                         path.join(EXAMPLES_OUTPUT_DIR, 'external-internal/Standalone.sol'),
                     )
                 ).toString();
-                await assertCustomized(expectedCustomized);
+                assertCustomized(expectedCustomized);
             });
         });
 
@@ -202,7 +202,7 @@ function CommandTestSuite() {
                         path.join(EXAMPLES_OUTPUT_DIR, 'external-only/MultipleInheritance.sol'),
                     )
                 ).toString();
-                await assertCustomized(expectedCustomized);
+                assertCustomized(expectedCustomized);
             });
         });
 
@@ -223,7 +223,7 @@ function CommandTestSuite() {
                         path.join(EXAMPLES_OUTPUT_DIR, 'external-only/PartiallyAbstract.sol'),
                     )
                 ).toString();
-                await assertCustomized(expectedCustomized);
+                assertCustomized(expectedCustomized);
             });
         });
 

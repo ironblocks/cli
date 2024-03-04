@@ -6,7 +6,7 @@ abstract contract PartiallyAbstract {
 
     function abstractExternalFunction(bytes calldata param) external virtual;
 
-    function abstractPublicFunction(bytes calldata param) public virtual;
+    function abstractPublicFunction(bytes calldata param) public view virtual;
 
     function nonAbstractPrivateFunction(bytes calldata param) private {
         // some code.
@@ -20,7 +20,7 @@ abstract contract PartiallyAbstract {
         // some code.
     }
 
-    function nonAbstractPublicFunction(bytes calldata param) public {
+    function nonAbstractPublicFunction(bytes calldata param) public pure {
         // some code.
     }
 }

@@ -66,7 +66,7 @@ $ ib --help
 | -r<br> --rec      | flag   | false    | special flag for the "-d" option, indicating whether should visit subdirectories or not    |
 | -v<br> --verbose  | flag   | false    | execute the command in "verbose" mode printing additional details along the execution      |
 | -i<br> --internal | flag   | false    | whether to add firewall protection for "internal" functions                                |
-| -m<br> --modifiers| string | false    | set advanced modifiers. [options](#advanced-modifiers)                |
+| -m<br> --modifiers| string | false    | set advanced modifiers. [options](#advanced-modifiers)                                     |
 
 #### Advanced Modifiers
 - `invariantProtected` - For applying the subscribed invariant policy.
