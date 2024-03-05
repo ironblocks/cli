@@ -43,6 +43,7 @@
         "semver": "^7.5.4"
     },
     "devDependencies": {
+        "@ironblocks/firewall-consumer": "^1.0.5",
         "@nestjs/cli": "^10.0.0",
         "@nestjs/schematics": "^10.0.0",
         "@nestjs/testing": "^10.3.0",
