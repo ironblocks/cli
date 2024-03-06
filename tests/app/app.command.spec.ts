@@ -6,7 +6,6 @@ import { CommandTestFactory } from 'nest-commander-testing';
 // Internal.
 import { AppModule } from '../../src/app/app.module';
 import { DESCRIPTION, FLAGS } from '../../src/app/app.command.descriptor';
-import { replaceSingleSpace } from '../lib/utils';
 
 
 describe('Command: ib', () => {
