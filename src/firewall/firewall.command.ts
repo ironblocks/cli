@@ -7,8 +7,8 @@ import { DESCRIPTION, NAME } from './firewall.command.descriptor';
 import { Logger } from '../lib/logging/logger.service';
 
 @Command({
-    name: colors.bold.cyan(NAME),
-    description: colors.white(DESCRIPTION),
+    name: NAME,
+    description: DESCRIPTION,
     subCommands: [FirewallIntegrateCommand],
 })
 export class FirewallCommand extends CommandRunner {

@@ -7,8 +7,8 @@ import { FirewallCommand } from '../firewall/firewall.command';
 import { Logger } from '../lib/logging/logger.service';
 
 @RootCommand({
-    name: colors.bold.cyan(NAME),
-    description: colors.bold.cyan(DESCRIPTION),
+    name: NAME,
+    description: DESCRIPTION,
     subCommands: [FirewallCommand]
 })
 export class AppCommand extends CommandRunner {
