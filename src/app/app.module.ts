@@ -5,6 +5,7 @@ import { ConfigModule } from '@nestjs/config';
 import config from '../config/configuration';
 import { FirewallModule } from '../firewall/firewall.module';
 import { AppCommand } from './app.command';
+import { LoggerModule } from '../lib/logging/logger.module';
 
 @Module({
     imports: [
@@ -13,6 +14,7 @@ import { AppCommand } from './app.command';
             load: [config],
         }),
         FirewallModule,
+        LoggerModule
     ],
     providers: [AppCommand],
 })

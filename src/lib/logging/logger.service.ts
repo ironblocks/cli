@@ -1,25 +1,26 @@
-// 3rd party.
-import {} from '@nestjs/common/utils';
-import { ConsoleLogger, Injectable, LogLevel } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
+import { consola } from 'consola';
 
 @Injectable()
-export class Logger extends ConsoleLogger {
-    protected formatMessage(
-        logLevel: LogLevel,
-        message: string,
-        _pidMessage: string,
-        _formattedLogLevel: string,
-        _contextMessage: string,
-        _timestampDiff: string,
-    ): string {
-        message = typeof message === 'string' ? message : JSON.stringify(message);
-        switch (logLevel) {
-            case 'error':
-                return `error: ${message}\r\n`;
-            case 'warn':
-                return `warning: ${message}\r\n`;
-            default:
-                return `${message}\r\n`;
-        }
+export class Logger {
+
+    log(message: string) {
+        consola.info(message);
+    }
+
+    error(message: string) {
+        consola.error(message);
+    }
+
+    warn(message: string) {
+        consola.warn(message);
+    }
+
+    debug(message: string) {
+        consola.debug(message);
+    }
+
+    verbose(message: string) {
+        consola.trace(message);
     }
 }
