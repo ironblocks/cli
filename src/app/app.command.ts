@@ -1,5 +1,5 @@
 // 3rd party.
-import { CommandRunner, Help, Option, RootCommand } from 'nest-commander';
+import { CommandRunner, RootCommand } from 'nest-commander';
 // Internal.
 import { DESCRIPTION } from './app.command.descriptor';
 import { FirewallCommand } from '../firewall/firewall.command';
