@@ -8,12 +8,9 @@ import { SinonSandbox, SinonStub } from 'sinon';
 // Internal.
 import { AppModule } from '../../src/app/app.module';
 import { replaceSingleSpace } from '../lib/utils';
-import { FirewallIntegrateCommandTestSuite } from './integrate/integrate.command.spec';
 
 export function FirewallCommandTestSuite() {
     describe('Firewall Command', CommandTestSuite.bind(this));
-
-    FirewallIntegrateCommandTestSuite();
 }
 
 function CommandTestSuite() {

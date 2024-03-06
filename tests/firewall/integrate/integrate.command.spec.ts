@@ -12,11 +12,8 @@ import { AppModule } from '../../../src/app/app.module';
 import { FirewallIntegrateUtils } from '../../../src/firewall/integrate/integrate.utils';
 import { replaceCRLF, replaceSingleSpace } from '../../lib/utils';
 
-export function FirewallIntegrateCommandTestSuite() {
-    describe('Firewall Integreate Command', CommandTestSuite.bind(this));
-}
 
-function CommandTestSuite() {
+describe('Firewall Integrate Command', () => {
     const EXAMPLES_OUTPUT_DIR = path.join(__dirname, 'example-files', 'output');
 
     let sandbox: SinonSandbox;
@@ -245,4 +242,4 @@ function CommandTestSuite() {
             });
         });
     });
-}
+});
