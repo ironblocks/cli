@@ -27,7 +27,7 @@
         "start:prod": "node build/src/main.js",
         "lint": "eslint \"{src,libs,tests}/**/*.ts\" --fix",
         "test": "ts-mocha -n loader=ts-node/esm -p tsconfig.json --exit 'tests/**/*.ts'",
-        "test:cov": "npx nyc npm run test"
+        "test:cov": "nyc npm run test"
     },
     "dependencies": {
         "@nestjs/common": "^10.0.0",
