@@ -7,8 +7,8 @@ import { DESCRIPTION, NAME } from './firewall.command.descriptor';
 import { Logger } from '../lib/logging/logger.service';
 
 @Command({
-    name: NAME,
-    description: DESCRIPTION,
+    name: colors.bold.cyan(NAME),
+    description: colors.white(DESCRIPTION),
     subCommands: [FirewallIntegrateCommand],
 })
 export class FirewallCommand extends CommandRunner {
@@ -20,7 +20,7 @@ export class FirewallCommand extends CommandRunner {
 
         if (userPassedAnInvalidCommand) {
             this.logger.error(`Invalid command: ${passedParams.join(' ')}`);
-            return this.command.error(`Run ${colors.cyan('ib fw --help')} for usage information`);
+            return this.command.error(`Run ${colors.bold.cyan('ib fw --help')} for usage information`);
         }
         else {
             // Default behavior is to show usage information
