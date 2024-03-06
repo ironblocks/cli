@@ -47,4 +47,11 @@ describe('Command: ib', () => {
         const commandOutput = writeSpy.mock.calls[0][0];
         expect(commandOutput).toContain(`${FLAGS.HELP.flags}  ${FLAGS.HELP.description}`);
     });
+
+    it("displays the logo in the usage information'", async () => {
+        await CommandTestFactory.run(commandInstance);
+
+        const commandOutput = writeSpy.mock.calls[0][0];
+        expect(commandOutput).toContain(`${DESCRIPTION}`);
+    });
 });
