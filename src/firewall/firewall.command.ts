@@ -2,10 +2,11 @@
 import { CommandRunner, Command } from 'nest-commander';
 // Internal.
 import { FirewallIntegrateCommand } from './integrate/integrate.command';
+import { DESCRIPTION, NAME } from './firewall.command.descriptor';
 
 @Command({
-    name: 'fw',
-    description: 'Firewall utilities for developers',
+    name: NAME,
+    description: DESCRIPTION,
     subCommands: [FirewallIntegrateCommand],
 })
 export class FirewallCommand extends CommandRunner {
