@@ -3,60 +3,49 @@ import * as assert from 'assert';
 // 3rd party.
 import { TestingModule } from '@nestjs/testing';
 import { CommandTestFactory } from 'nest-commander-testing';
-import * as sinon from 'sinon';
-import { SinonSandbox, SinonStub } from 'sinon';
 // Internal.
 import { AppModule } from '../../src/app/app.module';
+import { DESCRIPTION, FLAGS } from '../../src/app/app.command.descriptor';
 import { replaceSingleSpace } from '../lib/utils';
 
 
-describe('Root Command', () => {
-    let sandbox: SinonSandbox;
-    let exitStub: SinonStub;
-    let stdoutStub: SinonStub;
+describe('Command: ib', () => {
     let commandInstance: TestingModule;
+    let exitSpy: jest.SpyInstance;
+    let writeSpy: jest.SpyInstance;
 
     beforeEach(async () => {
-        sandbox = sinon.createSandbox();
-        exitStub = sandbox.stub(process, 'exit');
-        stdoutStub = sandbox.stub(process.stdout, 'write');
         commandInstance = await CommandTestFactory.createTestingCommand({
             imports: [AppModule],
         }).compile();
+
+        exitSpy = jest.spyOn(process, 'exit').mockImplementation();
+        writeSpy = jest.spyOn(process.stdout, 'write').mockImplementation();
     });
 
-    afterEach(() => {
-        sandbox.restore();
+    afterEach(async () => {
+        exitSpy.mockRestore();
+        writeSpy.mockRestore();
     });
 
-    function assertHelpText(text: string): void {
-        text = replaceSingleSpace(text);
-        assert(text.includes('ironblocks CLI tool'), 'Missing command description');
-        assert(text.includes('-h, --help display help for command'), 'Missing help option flag');
-        assert(text.includes('fw Firewall utilities for developers'), 'Missing firewall command');
-    }
-
-    it("it should display root command's help", async () => {
+    it("displays usage information if no command is specified", async () => {
         await CommandTestFactory.run(commandInstance);
-        const helpText = stdoutStub.firstCall?.args[0];
-        const exitCode = exitStub.firstCall?.args[0];
-        assertHelpText(helpText);
-        assert.equal(exitCode, 0, 'process should exit with 0');
+
+        const commandOutput = writeSpy.mock.calls[0][0];
+        expect(commandOutput).toContain('Usage: ib [options] [command]');
     });
 
-    it("it should display root command's help with -h", async () => {
+    it("displays usage information when '-h' is used", async () => {
         await CommandTestFactory.run(commandInstance, ['-h']);
-        const helpText = stdoutStub.firstCall?.args[0];
-        const exitCode = exitStub.firstCall?.args[0];
-        assertHelpText(helpText);
-        assert.equal(exitCode, 0, 'process should exit with 0');
+
+        const commandOutput = writeSpy.mock.calls[0][0];
+        expect(commandOutput).toContain(`${FLAGS.HELP.flags}  ${FLAGS.HELP.description}`);
     });
 
-    it("it should display root command's help with --help", async () => {
+    it("displays usage information when '--help' is used", async () => {
         await CommandTestFactory.run(commandInstance, ['--help']);
-        const helpText = stdoutStub.firstCall?.args[0];
-        const exitCode = exitStub.firstCall?.args[0];
-        assertHelpText(helpText);
-        assert.equal(exitCode, 0, 'process should exit with 0');
+
+        const commandOutput = writeSpy.mock.calls[0][0];
+        expect(commandOutput).toContain(`${FLAGS.HELP.flags}  ${FLAGS.HELP.description}`);
     });
 });

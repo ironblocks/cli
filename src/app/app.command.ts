@@ -1,16 +1,13 @@
 // 3rd party.
 import { CommandRunner, Option, RootCommand } from 'nest-commander';
 // Internal.
+import { DESCRIPTION, FLAGS } from './app.command.descriptor';
 import { FirewallCommand } from '../firewall/firewall.command';
 
-const CLI_DESCRIPTION = `\
-  🟧
-🟧   ironblocks CLI tool
-  🟧\
-`;
 
 @RootCommand({
-    description: CLI_DESCRIPTION,
+    name: 'ib',
+    description: DESCRIPTION,
     subCommands: [FirewallCommand],
 })
 export class AppCommand extends CommandRunner {
@@ -23,10 +20,7 @@ export class AppCommand extends CommandRunner {
         this.command.help();
     }
 
-    @Option({
-        flags: '-h, --help',
-        description: 'display help for command',
-    })
+    @Option(FLAGS.HELP)
     parseHelp(): boolean {
         return true;
     }
