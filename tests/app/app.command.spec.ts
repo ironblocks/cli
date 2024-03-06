@@ -57,8 +57,6 @@ describe('Command: ib', () => {
 
     it('exits with a non-zero exit code if an invalid command is specified', async () => {
         await CommandTestFactory.run(commandInstance, ['invalid-command']);
-        expect(process.exitCode).toBe(1);
-
-        process.exitCode = 0;
+        expect(exitSpy).toHaveBeenCalledWith(1);
     });
 });

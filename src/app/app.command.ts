@@ -21,11 +21,7 @@ export class AppCommand extends CommandRunner {
 
         if (userPassedAnInvalidCommand) {
             this.logger.error(`Invalid command: ${passedParams.join(' ')}`);
-
-            // At this point, we want to show our custom error message
-            // while still making sure the shell exits with a non-zero exit code
-            this.logger.log(`Run ${colors.cyan('ib --help')} for usage information`);
-            process.exitCode = 1;
+            return this.command.error(`Run ${colors.cyan('ib --help')} for usage information`);
         }
         else {
             // Default behavior is to show usage information
