@@ -9,11 +9,8 @@ import { SinonSandbox, SinonStub } from 'sinon';
 import { AppModule } from '../../src/app/app.module';
 import { replaceSingleSpace } from '../lib/utils';
 
-export function FirewallCommandTestSuite() {
-    describe('Firewall Command', CommandTestSuite.bind(this));
-}
 
-function CommandTestSuite() {
+describe('Firewall Command', () => {
     let sandbox: SinonSandbox;
     let exitStub: SinonStub;
     let stdoutStub: SinonStub;
@@ -65,4 +62,4 @@ function CommandTestSuite() {
         assertHelpText(helpText);
         assert.equal(exitCode, 0, 'process should exit with 0');
     });
-}
+});
