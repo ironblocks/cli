@@ -1,2 +1,2 @@
 export const NAME = 'fw';
-export const DESCRIPTION = 'firewall utilities for developers';
+export const DESCRIPTION = 'Firewall utilities for developers';
