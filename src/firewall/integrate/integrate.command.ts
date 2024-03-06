@@ -2,9 +2,12 @@
 import { resolve } from 'path';
 // 3rd party.
 import { CommandRunner, Option, SubCommand } from 'nest-commander';
+import * as colors from 'colors';
 // Internal.
 import { FirewallIntegrateService } from './integrate.service';
 import type { FirewallModifier } from './integrate.utils';
+import { Logger } from '../../lib/logging/logger.service';
+import { DESCRIPTION, NAME } from './integrate.command.descriptor';
 
 type CommandOption = ReturnType<CommandRunner['command']['createOption']>;
 
@@ -18,11 +21,14 @@ interface CommandOptions {
 }
 
 @SubCommand({
-    name: 'integ',
-    description: "Integrate your contracts with Ironblocks' firewall",
+    name: NAME,
+    description: DESCRIPTION,
 })
 export class FirewallIntegrateCommand extends CommandRunner {
-    constructor(private readonly fwIntegService: FirewallIntegrateService) {
+    constructor(
+        private readonly logger: Logger,
+        private readonly fwIntegService: FirewallIntegrateService
+    ) {
         super();
     }
 
@@ -37,9 +43,11 @@ export class FirewallIntegrateCommand extends CommandRunner {
     }
 
     async run(passedParams: string[], options?: CommandOptions): Promise<void> {
-        const [unkownArg] = passedParams;
-        if (!!unkownArg) {
-            return this.command.error(`error: uknown argument '${unkownArg}'`);
+        const userPassedAnInvalidCommand = passedParams.length > 0;
+
+        if (userPassedAnInvalidCommand) {
+            this.logger.error(`Invalid command: ${passedParams.join(' ')}`);
+            return this.command.error(`Run ${colors.bold.cyan('ib fw integ --help')} for usage information`);
         }
 
         try {
