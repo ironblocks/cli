@@ -2,12 +2,12 @@
 import { CommandRunner, RootCommand } from 'nest-commander';
 import * as colors from 'colors';
 // Internal.
-import { DESCRIPTION } from './app.command.descriptor';
+import { DESCRIPTION, NAME } from './app.command.descriptor';
 import { FirewallCommand } from '../firewall/firewall.command';
 import { Logger } from '../lib/logging/logger.service';
 
 @RootCommand({
-    name: 'ib',
+    name: NAME,
     description: DESCRIPTION,
     subCommands: [FirewallCommand]
 })

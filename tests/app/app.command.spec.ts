@@ -2,7 +2,7 @@ import { TestingModule } from '@nestjs/testing';
 import { CommandTestFactory } from 'nest-commander-testing';
 
 import { AppModule } from '../../src/app/app.module';
-import { DESCRIPTION } from '../../src/app/app.command.descriptor';
+import { DESCRIPTION, NAME } from '../../src/app/app.command.descriptor';
 
 
 describe('Command: ib', () => {
@@ -38,7 +38,14 @@ describe('Command: ib', () => {
         await CommandTestFactory.run(commandInstance);
 
         const commandOutput = stdoutSpy.mock.calls[0][0];
-        expect(commandOutput).toContain(`${DESCRIPTION}`);
+        expect(commandOutput).toContain(DESCRIPTION);
+    });
+
+    it('displays the name of the command in the usage information', async () => {
+        await CommandTestFactory.run(commandInstance);
+
+        const commandOutput = stdoutSpy.mock.calls[0][0];
+        expect(commandOutput).toContain(NAME);
     });
 
     it('displays an error message if an invalid command is specified', async () => {
