@@ -5,7 +5,7 @@ import { TestingModule } from '@nestjs/testing';
 import { CommandTestFactory } from 'nest-commander-testing';
 // Internal.
 import { AppModule } from '../../src/app/app.module';
-import { DESCRIPTION, FLAGS } from '../../src/app/app.command.descriptor';
+import { DESCRIPTION } from '../../src/app/app.command.descriptor';
 
 
 describe('Command: ib', () => {
@@ -32,20 +32,6 @@ describe('Command: ib', () => {
 
         const commandOutput = writeSpy.mock.calls[0][0];
         expect(commandOutput).toContain('Usage: ib [options] [command]');
-    });
-
-    it("displays usage information when '-h' is used", async () => {
-        await CommandTestFactory.run(commandInstance, ['-h']);
-
-        const commandOutput = writeSpy.mock.calls[0][0];
-        expect(commandOutput).toContain(`${FLAGS.HELP.flags}  ${FLAGS.HELP.description}`);
-    });
-
-    it("displays usage information when '--help' is used", async () => {
-        await CommandTestFactory.run(commandInstance, ['--help']);
-
-        const commandOutput = writeSpy.mock.calls[0][0];
-        expect(commandOutput).toContain(`${FLAGS.HELP.flags}  ${FLAGS.HELP.description}`);
     });
 
     it("displays the logo in the usage information'", async () => {

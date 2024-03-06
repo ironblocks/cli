@@ -1,7 +1,7 @@
 // 3rd party.
-import { CommandRunner, Option, RootCommand } from 'nest-commander';
+import { CommandRunner, Help, Option, RootCommand } from 'nest-commander';
 // Internal.
-import { DESCRIPTION, FLAGS } from './app.command.descriptor';
+import { DESCRIPTION } from './app.command.descriptor';
 import { FirewallCommand } from '../firewall/firewall.command';
 
 
@@ -11,17 +11,9 @@ import { FirewallCommand } from '../firewall/firewall.command';
     subCommands: [FirewallCommand],
 })
 export class AppCommand extends CommandRunner {
-    async run(passedParams: string[]): Promise<void> {
-        const [unkownCommand] = passedParams;
-        if (!!unkownCommand) {
-            return this.command.error(`error: uknown command '${unkownCommand}'`);
-        }
-        // Output information about available subcommands.
-        this.command.help();
-    }
 
-    @Option(FLAGS.HELP)
-    parseHelp(): boolean {
-        return true;
+    // Default behavior is just to output usage information
+    async run(passedParams: string[]): Promise<void> {
+        this.command.help();
     }
 }
