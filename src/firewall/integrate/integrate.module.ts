@@ -4,7 +4,7 @@ import { Module } from '@nestjs/common';
 import { Logger } from '../../lib/logging/logger.service';
 import { FirewallIntegrateCommand } from './integrate.command';
 import { FirewallIntegrateQuestions } from './integrate.questions';
-import { FirewallIntegrateService } from './integrate.service';
+import { IntegrateService } from './integrate.service';
 import { FirewallIntegrateUtils } from './integrate.utils';
 import { LoggerModule } from '../../lib/logging/logger.module';
 
@@ -14,7 +14,7 @@ import { LoggerModule } from '../../lib/logging/logger.module';
     providers: [
         FirewallIntegrateCommand,
         FirewallIntegrateQuestions,
-        FirewallIntegrateService,
+        IntegrateService,
         FirewallIntegrateUtils,
         Logger,
     ],

@@ -9,7 +9,7 @@ import { UnsupportedFileFormatError } from './errors/unsupported.file.format.err
 import { UnsupportedSolidityVersionError } from './errors/unsupported.solidity.version.error';
 
 @Injectable()
-export class FirewallIntegrateService {
+export class IntegrateService {
     constructor(
         private readonly fwIntegUtils: FirewallIntegrateUtils,
         private readonly logger: Logger,

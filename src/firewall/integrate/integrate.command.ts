@@ -4,7 +4,7 @@ import { resolve } from 'path';
 import { CommandRunner, Option, SubCommand } from 'nest-commander';
 import * as colors from 'colors';
 // Internal.
-import { FirewallIntegrateService } from './integrate.service';
+import { IntegrateService } from './integrate.service';
 import type { FirewallModifier } from './integrate.utils';
 import { Logger } from '../../lib/logging/logger.service';
 import { DESCRIPTION, NAME } from './integrate.command.descriptor';
@@ -27,7 +27,7 @@ interface CommandOptions {
 export class FirewallIntegrateCommand extends CommandRunner {
     constructor(
         private readonly logger: Logger,
-        private readonly fwIntegService: FirewallIntegrateService
+        private readonly integrationService: IntegrateService
     ) {
         super();
     }
@@ -59,11 +59,11 @@ export class FirewallIntegrateCommand extends CommandRunner {
             };
 
             if (options?.file) {
-                return await this.fwIntegService.integContractFile(options.file, integOptions);
+                return await this.integrationService.integContractFile(options.file, integOptions);
             }
 
             if (options?.dir) {
-                return await this.fwIntegService.integContractsDir(
+                return await this.integrationService.integContractsDir(
                     options.dir,
                     options.rec,
                     integOptions,
