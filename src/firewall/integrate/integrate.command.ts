@@ -9,6 +9,7 @@ import type { FirewallModifier } from './integrate.utils';
 import { Logger } from '../../lib/logging/logger.service';
 import { DESCRIPTION, NAME } from './integrate.command.descriptor';
 import { DependenciesService } from '../../dependencies/dependencies.service';
+import { IntegrationError } from './integration.errors';
 
 type CommandOption = ReturnType<CommandRunner['command']['createOption']>;
 
@@ -45,11 +46,8 @@ export class FirewallIntegrateCommand extends CommandRunner {
     }
 
     async run(passedParams: string[], options?: CommandOptions): Promise<void> {
-        const userPassedAnInvalidCommand = passedParams.length > 0;
-        if (userPassedAnInvalidCommand) {
-            this.logger.error(`Invalid command: ${passedParams.join(' ')}`);
-            return this.command.error(`Run ${colors.bold.cyan('ib fw integ --help')} for usage information`);
-        }
+        this.validateParams(passedParams);
+        this.validateOptions(options);
 
         try {
             this.logger.log('Starting integration');
@@ -80,7 +78,26 @@ export class FirewallIntegrateCommand extends CommandRunner {
                 );
             }
         } catch (err) {
-            return this.command.error(`error: ${err.message}`);
+            this.command.error(`error: ${err.message}`);
+        }
+    }
+
+    private validateParams(params: string[]) {
+        const userPassedAnInvalidCommand = params.length > 0;
+
+        if (userPassedAnInvalidCommand) {
+            this.logger.error(`Invalid command: ${params.join(' ')}`);
+            this.command.error(`Run ${colors.bold.cyan('ib fw integ --help')} for usage information`);
+        }
+    }
+
+    private validateOptions(options?: CommandOptions): void {
+        const missingFileOption = Boolean(options.file) === false;
+        const missingDirOption = Boolean(options.dir) === false;
+
+        if (missingFileOption && missingDirOption) {
+            this.logger.error('No file or directory specified');
+            this.command.error(`Run ${colors.bold.cyan('ib fw integ --help')} for usage information`);
         }
     }
 

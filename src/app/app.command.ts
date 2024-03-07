@@ -17,15 +17,16 @@ export class AppCommand extends CommandRunner {
     }
 
     async run(passedParams: string[]): Promise<void> {
-        const userPassedAnInvalidCommand = passedParams.length > 0;
+        this.validateParams(passedParams);
+        this.command.help();
+    }
+
+    private validateParams(params: string[]) {
+        const userPassedAnInvalidCommand = params.length > 0;
 
         if (userPassedAnInvalidCommand) {
-            this.logger.error(`Invalid command: ${passedParams.join(' ')}`);
-            return this.command.error(`Run ${colors.cyan('ib --help')} for usage information`);
-        }
-        else {
-            // Default behavior is to show usage information
-            this.command.help();
+            this.logger.error(`Invalid command: ${params.join(' ')}`);
+            this.command.error(`Run ${colors.bold.cyan('ib --help')} for usage information`);
         }
     }
 }
