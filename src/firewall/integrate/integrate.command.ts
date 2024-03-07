@@ -8,7 +8,7 @@ import { IntegrationService } from './integrate.service';
 import type { FirewallModifier } from './integrate.utils';
 import { Logger } from '../../lib/logging/logger.service';
 import { DESCRIPTION, NAME } from './integrate.command.descriptor';
-import { DependenciesService } from 'src/dependencies/dependencies.service';
+import { DependenciesService } from '../../dependencies/dependencies.service';
 
 type CommandOption = ReturnType<CommandRunner['command']['createOption']>;
 

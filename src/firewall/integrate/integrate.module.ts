@@ -7,8 +7,7 @@ import { FirewallIntegrateQuestions } from './integrate.questions';
 import { IntegrationService } from './integrate.service';
 import { FirewallIntegrateUtils } from './integrate.utils';
 import { LoggerModule } from '../../lib/logging/logger.module';
-import { DependenciesModule } from 'src/dependencies/dependencies.module';
-import { DependenciesQuestions } from 'src/dependencies/dependencies.questions';
+import { DependenciesModule } from '../../dependencies/dependencies.module';
 
 @Module({
     imports: [LoggerModule, DependenciesModule],
