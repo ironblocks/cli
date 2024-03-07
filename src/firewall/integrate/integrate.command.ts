@@ -4,10 +4,11 @@ import { resolve } from 'path';
 import { CommandRunner, Option, SubCommand } from 'nest-commander';
 import * as colors from 'colors';
 // Internal.
-import { IntegrateService } from './integrate.service';
+import { IntegrationService } from './integrate.service';
 import type { FirewallModifier } from './integrate.utils';
 import { Logger } from '../../lib/logging/logger.service';
 import { DESCRIPTION, NAME } from './integrate.command.descriptor';
+import { DependenciesService } from 'src/dependencies/dependencies.service';
 
 type CommandOption = ReturnType<CommandRunner['command']['createOption']>;
 
@@ -27,7 +28,8 @@ interface CommandOptions {
 export class FirewallIntegrateCommand extends CommandRunner {
     constructor(
         private readonly logger: Logger,
-        private readonly integrationService: IntegrateService
+        private readonly integrationService: IntegrationService,
+        private readonly dependenciesService: DependenciesService
     ) {
         super();
     }
@@ -44,10 +46,18 @@ export class FirewallIntegrateCommand extends CommandRunner {
 
     async run(passedParams: string[], options?: CommandOptions): Promise<void> {
         const userPassedAnInvalidCommand = passedParams.length > 0;
-
         if (userPassedAnInvalidCommand) {
             this.logger.error(`Invalid command: ${passedParams.join(' ')}`);
             return this.command.error(`Run ${colors.bold.cyan('ib fw integ --help')} for usage information`);
+        }
+
+        try {
+            this.logger.log('Starting integration');
+            await this.dependenciesService.assertDependencies();
+        }
+        catch (e) {
+            this.logger.error(e.message);
+            return this.command.error('Integration failed');
         }
 
         try {
@@ -72,8 +82,6 @@ export class FirewallIntegrateCommand extends CommandRunner {
         } catch (err) {
             return this.command.error(`error: ${err.message}`);
         }
-
-        this.command.help();
     }
 
     @Option({

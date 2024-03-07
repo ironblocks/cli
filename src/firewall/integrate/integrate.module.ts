@@ -4,19 +4,21 @@ import { Module } from '@nestjs/common';
 import { Logger } from '../../lib/logging/logger.service';
 import { FirewallIntegrateCommand } from './integrate.command';
 import { FirewallIntegrateQuestions } from './integrate.questions';
-import { IntegrateService } from './integrate.service';
+import { IntegrationService } from './integrate.service';
 import { FirewallIntegrateUtils } from './integrate.utils';
 import { LoggerModule } from '../../lib/logging/logger.module';
+import { DependenciesModule } from 'src/dependencies/dependencies.module';
+import { DependenciesQuestions } from 'src/dependencies/dependencies.questions';
 
 @Module({
-    imports: [LoggerModule],
+    imports: [LoggerModule, DependenciesModule],
 
     providers: [
+        Logger,
         FirewallIntegrateCommand,
         FirewallIntegrateQuestions,
-        IntegrateService,
-        FirewallIntegrateUtils,
-        Logger,
+        IntegrationService,
+        FirewallIntegrateUtils
     ],
 })
-export class FirewallIntegrateModule {}
+export class IntegrationModule {}

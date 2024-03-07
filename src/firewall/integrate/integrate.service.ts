@@ -9,7 +9,7 @@ import { UnsupportedFileFormatError } from './errors/unsupported.file.format.err
 import { UnsupportedSolidityVersionError } from './errors/unsupported.solidity.version.error';
 
 @Injectable()
-export class IntegrateService {
+export class IntegrationService {
     constructor(
         private readonly fwIntegUtils: FirewallIntegrateUtils,
         private readonly logger: Logger,
@@ -18,7 +18,6 @@ export class IntegrateService {
     public async integContractFile(filepath: string, options?: IntegrateOptions): Promise<void> {
         await this.fwIntegUtils.assertFileExists(filepath);
         this.fwIntegUtils.assertSolidityFile(filepath);
-        await this.fwIntegUtils.npmInstallFirewallConsumerIfNeeded(dirname(filepath), options);
 
         try {
             const customized = await this.fwIntegUtils.customizeSolidityFile(filepath, options);
@@ -53,7 +52,6 @@ export class IntegrateService {
             async (filepath) => {
                 if (!foundAnySolidityFiles) {
                     foundAnySolidityFiles = true;
-                    await this.fwIntegUtils.npmInstallFirewallConsumerIfNeeded(dirpath, options);
                 }
 
                 try {
