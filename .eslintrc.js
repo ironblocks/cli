@@ -27,7 +27,7 @@ module.exports = {
                 // Indent with spaces.
                 "tabWidth": 4,
                 // Max line length.
-                "printWidth": 100,
+                "printWidth": 120,
             }
         ],
     },
