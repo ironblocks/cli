@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { FilesService } from '@/files/files.services';
+import { FilesService } from '@/files/files.service';
 
 @Module({
     providers: [FilesService],

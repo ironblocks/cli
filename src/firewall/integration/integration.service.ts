@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 
 import { Logger } from '@/lib/logging/logger.service';
-import { FilesService } from '@/files/files.services';
+import { FilesService } from '@/files/files.service';
 import { IntegrationError } from '@/firewall/integration/integration.errors';
 import { UnsupportedFileFormatError } from '@/firewall/integration/errors/unsupported.file.format.error';
 import { UnsupportedSolidityVersionError } from '@/firewall/integration/errors/unsupported.solidity.version.error';

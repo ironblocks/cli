@@ -1,6 +1,5 @@
-import * as fs from 'fs/promises';
-
 import { Injectable } from '@nestjs/common';
+import { FilesService } from '@/files/files.service';
 
 enum ProjectTypes {
     Foundry = 'foundry',
@@ -13,6 +12,8 @@ type ProjectInfo = {
 
 @Injectable()
 export class ProjectInfoService {
+    constructor(private filesService: FilesService) {}
+
     async getProjectInfo(): Promise<ProjectInfo> {
         const type = (await this.isFoundryProject()) ? ProjectTypes.Foundry : ProjectTypes.Hardhat;
 
@@ -20,11 +21,6 @@ export class ProjectInfoService {
     }
 
     async isFoundryProject(): Promise<boolean> {
-        try {
-            await fs.access('foundry.toml', fs.constants.F_OK);
-            return true;
-        } catch (e) {
-            return false;
-        }
+        return this.filesService.doesFileExist('foundry.toml');
     }
 }
