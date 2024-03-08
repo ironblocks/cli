@@ -24,6 +24,7 @@ describe('StandaloneCommand Decorator', () => {
     // Some mocks we'll use for our tests
     let mockLogger: Logger;
     let mockCommand;
+    let command: TestCommand;
 
     beforeEach(() => {
         mockLogger = {
@@ -33,38 +34,27 @@ describe('StandaloneCommand Decorator', () => {
         mockCommand = {
             error: jest.fn()
         };
-    });
 
-    afterEach(() => {
-        mockLogger = null;
-        mockCommand = null;
+        command = new TestCommand(mockLogger, mockCommand);
     });
 
     it('logs an error message when extra parameters are passed', () => {
-        const command = new TestCommand(mockLogger, mockCommand);
         command.run(['extra', 'parameters']);
-
         expect(mockLogger.error).toHaveBeenCalledWith('Invalid command: extra parameters');
     });
 
     it('errors the command when extra parameters are passed', () => {
-        const command = new TestCommand(mockLogger, mockCommand);
         command.run(['extra', 'parameters']);
-
         expect(mockCommand.error).toHaveBeenCalledWith(`Run ${colors.bold.cyan('test --help')} for usage information`);
     });
 
     it('cancels execution when extra parameters are passed', () => {
-        const command = new TestCommand(mockLogger, mockCommand);
         command.run(['extra', 'parameters']);
-
         expect(command.wasRun).toBe(false);
     });
 
     it('runs the command when no extra parameters are passed', () => {
-        const command = new TestCommand(mockLogger, mockCommand);
         command.run([]);
-
         expect(command.wasRun).toBe(true);
     });
 });
