@@ -1,8 +1,9 @@
-import { Module } from "@nestjs/common";
-import { ProjectInfoModule } from "../project-info/project-info.module";
-import { DependenciesService } from "./dependencies.service";
-import { LoggerModule } from "../lib/logging/logger.module";
-import { DependenciesQuestions } from "./dependencies.questions";
+import { Module } from '@nestjs/common';
+
+import { LoggerModule } from '@/lib/logging/logger.module';
+import { ProjectInfoModule } from '@/project-info/project-info.module';
+import { DependenciesService } from '@/dependencies/dependencies.service';
+import { DependenciesQuestions } from '@/dependencies/dependencies.questions';
 
 @Module({
     imports: [ProjectInfoModule, LoggerModule],

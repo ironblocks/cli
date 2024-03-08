@@ -4,7 +4,6 @@ import { CommandTestFactory } from 'nest-commander-testing';
 import { AppModule } from '../../src/app/app.module';
 import { DESCRIPTION, NAME } from '../../src/app/app.command.descriptor';
 
-
 describe('Command: ib', () => {
     let commandInstance: TestingModule;
     let exitSpy: jest.SpyInstance;
@@ -13,7 +12,7 @@ describe('Command: ib', () => {
 
     beforeEach(async () => {
         commandInstance = await CommandTestFactory.createTestingCommand({
-            imports: [AppModule],
+            imports: [AppModule]
         }).compile();
 
         exitSpy = jest.spyOn(process, 'exit').mockImplementation();

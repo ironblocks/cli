@@ -5,7 +5,6 @@ import { CommandTestFactory } from 'nest-commander-testing';
 import { AppModule } from '../../src/app/app.module';
 import { DESCRIPTION, NAME } from '../../src/firewall/firewall.command.descriptor';
 
-
 describe('Sub-Command: fw', () => {
     let commandInstance: TestingModule;
     let exitSpy: jest.SpyInstance;
@@ -14,7 +13,7 @@ describe('Sub-Command: fw', () => {
 
     beforeEach(async () => {
         commandInstance = await CommandTestFactory.createTestingCommand({
-            imports: [AppModule],
+            imports: [AppModule]
         }).compile();
 
         exitSpy = jest.spyOn(process, 'exit').mockImplementation();
@@ -27,7 +26,6 @@ describe('Sub-Command: fw', () => {
         stdoutSpy.mockRestore();
         stderrSpy.mockRestore();
     });
-
 
     it('displays usage information if no command is specified', async () => {
         await CommandTestFactory.run(commandInstance, ['fw']);

@@ -1,21 +1,18 @@
-// Builtin.
-import { dirname } from 'path';
-// 3rd party.
 import { Injectable } from '@nestjs/common';
-// Internal.
-import { Logger } from '../../lib/logging/logger.service';
-import { FirewallIntegrateUtils, type IntegrateOptions } from './integrate.utils';
-import { UnsupportedFileFormatError } from './errors/unsupported.file.format.error';
-import { UnsupportedSolidityVersionError } from './errors/unsupported.solidity.version.error';
-import { FilesService } from '../../files/files.services';
-import { IntegrationError } from './integration.errors';
+
+import { Logger } from '@/lib/logging/logger.service';
+import { FilesService } from '@/files/files.services';
+import { IntegrationError } from '@/firewall/integrate/integration.errors';
+import { UnsupportedFileFormatError } from '@/firewall/integrate/errors/unsupported.file.format.error';
+import { UnsupportedSolidityVersionError } from '@/firewall/integrate/errors/unsupported.solidity.version.error';
+import { FirewallIntegrateUtils, type IntegrateOptions } from '@/firewall/integrate/integrate.utils';
 
 @Injectable()
 export class IntegrationService {
     constructor(
         private readonly fwIntegUtils: FirewallIntegrateUtils,
         private readonly filesServices: FilesService,
-        private readonly logger: Logger,
+        private readonly logger: Logger
     ) {}
 
     public async integContractFile(filepath: string, options?: IntegrateOptions): Promise<void> {
@@ -40,11 +37,7 @@ export class IntegrationService {
         }
     }
 
-    public async integContractsDir(
-        dirpath: string,
-        recursive: boolean,
-        options?: IntegrateOptions,
-    ): Promise<void> {
+    public async integContractsDir(dirpath: string, recursive: boolean, options?: IntegrateOptions): Promise<void> {
         await this.fwIntegUtils.assertDirExists(dirpath);
 
         let foundAnySolidityFiles: boolean = false;
@@ -58,10 +51,7 @@ export class IntegrationService {
                 }
 
                 try {
-                    const customized = await this.fwIntegUtils.customizeSolidityFile(
-                        filepath,
-                        options,
-                    );
+                    const customized = await this.fwIntegUtils.customizeSolidityFile(filepath, options);
                     if (customized && !customizedFiles.length) {
                         this.logger.log(`Customized files:`);
                     }
@@ -81,7 +71,7 @@ export class IntegrationService {
                 }
             },
             dirpath,
-            recursive,
+            recursive
         );
 
         if (failedToCustomizeFiles.length) {

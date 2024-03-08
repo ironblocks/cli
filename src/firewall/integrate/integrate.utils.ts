@@ -1,23 +1,18 @@
-// Builtin.
-import { exec, spawn } from 'child_process';
-import { stat, readdir, readFile, writeFile } from 'fs/promises';
 import { join, parse } from 'path';
-import { promisify } from 'util';
-// 3rd party.
+import { stat, readdir, readFile, writeFile } from 'fs/promises';
+
+import { ethers } from 'ethers';
+import { intersects } from 'semver';
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InquirerService } from 'nest-commander';
-import { parse as parseSolidity } from '@solidity-parser/parser';
-import { ethers } from 'ethers';
 import { any as pathMatch } from 'micromatch';
-import { intersects } from 'semver';
-// Internal.
-import { Logger } from '../../lib/logging/logger.service';
-import { UnsupportedFileFormatError } from './errors/unsupported.file.format.error';
-import { UnsupportedParamTypeError } from './errors/unsupported.param.type.error';
-import { UnsupportedSolidityVersionError } from './errors/unsupported.solidity.version.error';
+import { parse as parseSolidity } from '@solidity-parser/parser';
 
-const execAsync = promisify(exec);
+import { Logger } from '@/lib/logging/logger.service';
+import { UnsupportedParamTypeError } from '@/firewall/integrate/errors/unsupported.param.type.error';
+import { UnsupportedFileFormatError } from '@/firewall/integrate/errors/unsupported.file.format.error';
+import { UnsupportedSolidityVersionError } from '@/firewall/integrate/errors/unsupported.solidity.version.error';
 
 const FW_IMPORT_PATH = '@ironblocks/firewall-consumer/contracts/FirewallConsumer.sol';
 const FW_IMPORT = `import "${FW_IMPORT_PATH}";`;
@@ -31,7 +26,7 @@ const FIREWALL_MODIFIERS = [
     FW_PROTECTED_MODIFIER,
     FW_PROTECTED_CUSTOM_MODIFIER,
     FW_PROTECTED_SIG_MODIFIER,
-    FW_INVARIANT_PROTECTED_MODIFIER,
+    FW_INVARIANT_PROTECTED_MODIFIER
 ] as const;
 
 export type FirewallModifier = (typeof FIREWALL_MODIFIERS)[number];
@@ -43,7 +38,7 @@ export interface IntegrateOptions {
     modifiers?: FirewallModifier[];
 }
 
-export const SUPPORTED_SOLIDITY_VERSIONS = '>= 0.8 < 0.8.20';
+export const SUPPORTED_SOLIDITY_VERSIONS = '>= 0.8';
 
 const RE_SOLIDITY_FILE_NAME = new RegExp(`\\w+\\.sol$`, 'g');
 
@@ -60,20 +55,14 @@ const RE_INDENTATION = new RegExp(`(?<indentation>[\\r\\s\\n]+)`, 'g');
 const RE_NAME = new RegExp(`\\w+`, 'g');
 const RE_CONTRACT_DECLARATION = new RegExp(
     `(?<declaration>(?:abstract${RE_BLANK_SPACE.source}+)?contract${RE_BLANK_SPACE.source}+(?<name>${RE_NAME.source}))`,
-    'g',
+    'g'
 );
-const RE_BASE_CONTRACTS = new RegExp(
-    `(?<baseContracts>(?:${RE_BLANK_SPACE.source}*[\\w,]+)+)`,
-    'g',
-);
+const RE_BASE_CONTRACTS = new RegExp(`(?<baseContracts>(?:${RE_BLANK_SPACE.source}*[\\w,]+)+)`, 'g');
 const RE_INHERITANCE = new RegExp(
     `(?<inheritance>${RE_BLANK_SPACE.source}+is${RE_BLANK_SPACE.source}+${RE_BASE_CONTRACTS.source})`,
-    'g',
+    'g'
 );
-const RE_CONTRACT_DEFINITION = new RegExp(
-    `^${RE_CONTRACT_DECLARATION.source}${RE_INHERITANCE.source}?`,
-    'g',
-);
+const RE_CONTRACT_DEFINITION = new RegExp(`^${RE_CONTRACT_DECLARATION.source}${RE_INHERITANCE.source}?`, 'g');
 
 /**
  * Gradually composing a regex to match the following pattern:
@@ -81,31 +70,19 @@ const RE_CONTRACT_DEFINITION = new RegExp(
  * (function)? <signature>(<name>(...params)) <visibility>? <modifiers>? (returns (...params)?)?
  */
 const RE_FUNCTION = new RegExp(`(?<func>function)`, 'g');
-const RE_PARAMS = new RegExp(
-    `(?<params>${RE_BLANK_SPACE.source}*[\\w,\\[\\]]+(?:${RE_BLANK_SPACE.source}*))*`,
-    'g',
-);
-const RE_ARGS = new RegExp(
-    `(?:${RE_BLANK_SPACE.source}*[\\w,\\.\\(\\)\\[\\]]+(?:${RE_BLANK_SPACE.source}*))*`,
-    'g',
-);
+const RE_PARAMS = new RegExp(`(?<params>${RE_BLANK_SPACE.source}*[\\w,\\[\\]]+(?:${RE_BLANK_SPACE.source}*))*`, 'g');
+const RE_ARGS = new RegExp(`(?:${RE_BLANK_SPACE.source}*[\\w,\\.\\(\\)\\[\\]]+(?:${RE_BLANK_SPACE.source}*))*`, 'g');
 const RE_SIGNATURE = new RegExp(
     `(?<signature>${RE_BLANK_SPACE.source}+(?<name>${RE_NAME.source})${RE_BLANK_SPACE.source}*\\(${RE_PARAMS.source}\\))`,
-    'g',
+    'g'
 );
-const RE_VISIBILITY = new RegExp(
-    `(?<visibility>${RE_BLANK_SPACE.source}*(?:public|external|internal|private))`,
-    'g',
-);
-const RE_MODIFIERS = new RegExp(
-    `(?<modifiers>(?:${RE_BLANK_SPACE.source}*(?!returns)[\\w,\\.\\(\\)\\[\\]]+)*)`,
-    'g',
-);
+const RE_VISIBILITY = new RegExp(`(?<visibility>${RE_BLANK_SPACE.source}*(?:public|external|internal|private))`, 'g');
+const RE_MODIFIERS = new RegExp(`(?<modifiers>(?:${RE_BLANK_SPACE.source}*(?!returns)[\\w,\\.\\(\\)\\[\\]]+)*)`, 'g');
 const RE_IMMUTABLE_STATE = new RegExp(`\\pure|view\\b`, 'i');
 const RE_RETURNS = new RegExp(`(?<returns>${RE_BLANK_SPACE.source}*returns[^{]+)`, 'g');
 const RE_METHOD_DEFINITION = new RegExp(
     `^${RE_FUNCTION.source}?${RE_SIGNATURE.source}${RE_VISIBILITY.source}?${RE_MODIFIERS.source}?${RE_RETURNS.source}?`,
-    'g',
+    'g'
 );
 
 /**
@@ -113,17 +90,14 @@ const RE_METHOD_DEFINITION = new RegExp(
  *
  * <firewallModifier>(...params)(\s\r\n)?
  */
-const RE_FW_MODIFIER_NO_ARGS = new RegExp(
-    `(?:${FIREWALL_MODIFIERS.map((mod) => `\\b${mod}\\b`).join('|')})`,
-    'g',
-);
+const RE_FW_MODIFIER_NO_ARGS = new RegExp(`(?:${FIREWALL_MODIFIERS.map((mod) => `\\b${mod}\\b`).join('|')})`, 'g');
 const RE_FW_MODIFIER_WITH_ARGS = new RegExp(
     `${RE_FW_MODIFIER_NO_ARGS.source}(?:${RE_BLANK_SPACE.source}*\\(${RE_ARGS.source}\\))?`,
-    'g',
+    'g'
 );
 const RE_FW_MODIFIER = new RegExp(
     `${RE_BLANK_SPACE.source}*${RE_FW_MODIFIER_WITH_ARGS.source}(?:${RE_BLANK_SPACE.source}*)?`,
-    'g',
+    'g'
 );
 
 type ParsedSolidityConstructs = {
@@ -166,18 +140,15 @@ export class FirewallIntegrateUtils {
     constructor(
         private readonly inquirer: InquirerService,
         private readonly config: ConfigService,
-        private readonly logger: Logger,
+        private readonly logger: Logger
     ) {
         this.serializerByModifier = {
             [FW_PROTECTED_MODIFIER]: () => FW_PROTECTED_MODIFIER,
-            [FW_PROTECTED_SIG_MODIFIER]: (
-                contract: SolidityConstruct,
-                method: SolidityConstruct,
-            ) => {
+            [FW_PROTECTED_SIG_MODIFIER]: (contract: SolidityConstruct, method: SolidityConstruct) => {
                 const sigHash = this.calcSighash(contract, method);
                 return `${FW_PROTECTED_SIG_MODIFIER}(bytes4(${sigHash}))`;
             },
-            [FW_INVARIANT_PROTECTED_MODIFIER]: () => FW_INVARIANT_PROTECTED_MODIFIER,
+            [FW_INVARIANT_PROTECTED_MODIFIER]: () => FW_INVARIANT_PROTECTED_MODIFIER
         };
     }
 
@@ -216,7 +187,7 @@ export class FirewallIntegrateUtils {
     async forEachSolidityFilesInDir(
         cb: (filepath: string) => unknown | Promise<unknown>,
         dirpath: string,
-        recursive: boolean,
+        recursive: boolean
     ): Promise<void> {
         const directoriesQueue: string[] = [dirpath];
         while (directoriesQueue.length) {
@@ -265,18 +236,10 @@ export class FirewallIntegrateUtils {
         try {
             let customizedCode: string;
             customizedCode = parsed.children.reduceRight((customized, child) => {
-                return this.customizeContractInPlace(
-                    customized,
-                    child,
-                    contractNamesToCustomize,
-                    options,
-                );
+                return this.customizeContractInPlace(customized, child, contractNamesToCustomize, options);
             }, originalCode);
 
-            if (
-                customizedCode === originalCode &&
-                !parsed.children.some(this.alreadyCustomizedContractHeader)
-            ) {
+            if (customizedCode === originalCode && !parsed.children.some(this.alreadyCustomizedContractHeader)) {
                 // No need to add firewall imports since the file is not using the firewall.
                 return false;
             }
@@ -299,7 +262,7 @@ export class FirewallIntegrateUtils {
         try {
             const parsed = parseSolidity(code, {
                 tolerant: true,
-                range: true,
+                range: true
             }) as ParsedSolidityConstructs;
             return parsed;
         } catch (err) {
@@ -331,7 +294,7 @@ export class FirewallIntegrateUtils {
         code: string,
         contract: SolidityConstruct,
         contractNamesToCustomize: Set<string>,
-        options?: IntegrateOptions,
+        options?: IntegrateOptions
     ): string | null {
         const { type, kind, name, range } = contract;
         const isContractDefinition = type === 'ContractDefinition';
@@ -345,10 +308,7 @@ export class FirewallIntegrateUtils {
         const [startIndex, endIndex] = range;
         const contractCode = code.substring(startIndex, endIndex + 1);
         const customizedContractCode = this.customizeContractCode(contract, contractCode, options);
-        if (
-            customizedContractCode !== contractCode ||
-            this.alreadyCustomizedContractHeader(contract)
-        ) {
+        if (customizedContractCode !== contractCode || this.alreadyCustomizedContractHeader(contract)) {
             (contract.baseContracts || []).forEach(({ baseName }) => {
                 if (baseName?.namePath && baseName?.namePath !== FW_BASE_CONTRACT) {
                     contractNamesToCustomize.add(baseName.namePath);
@@ -356,27 +316,24 @@ export class FirewallIntegrateUtils {
             });
         }
         // Editing the contract code section whithin the file.
-        const customizedCode =
-            code.slice(0, startIndex) + customizedContractCode + code.slice(endIndex + 1);
+        const customizedCode = code.slice(0, startIndex) + customizedContractCode + code.slice(endIndex + 1);
         return customizedCode;
     }
 
     private customizeContractCode(
         contract: SolidityConstruct,
         contractCode: string,
-        options?: IntegrateOptions,
+        options?: IntegrateOptions
     ): string {
         const alreadyCustomizedHeader = this.alreadyCustomizedContractHeader(contract);
         const methods = contract.subNodes.filter(({ type }) => type === 'FunctionDefinition');
-        const alreadyCustomizedSomeMethods = methods.some(
-            this.alreadyCustomizedContractMethod.bind(this),
-        );
+        const alreadyCustomizedSomeMethods = methods.some(this.alreadyCustomizedContractMethod.bind(this));
         // Add custom modifiers to contract methods.
         const contractCodeWithCustomizedMethods = this.customizeContractMethods(
             contractCode,
             contract,
             methods,
-            options,
+            options
         );
 
         if (
@@ -396,7 +353,7 @@ export class FirewallIntegrateUtils {
                 declaration: string,
                 name: string,
                 inheritance: string = '',
-                baseContracts: string = '',
+                baseContracts: string = ''
             ) => {
                 if (baseContracts) {
                     const is = inheritance.substring(0, inheritance.length - baseContracts.length);
@@ -407,7 +364,7 @@ export class FirewallIntegrateUtils {
                 }
 
                 return `${declaration} is ${FW_BASE_CONTRACT}`;
-            },
+            }
         );
         return customizedContractCode;
     }
@@ -416,7 +373,7 @@ export class FirewallIntegrateUtils {
         contractCode: string,
         contract: SolidityConstruct,
         methods: SolidityConstruct[],
-        options?: IntegrateOptions,
+        options?: IntegrateOptions
     ): string {
         const [contractStartIndex, _] = contract.range;
         // Customizing methods from the bottom up not to affect other methods' start and end indexes.
@@ -424,19 +381,12 @@ export class FirewallIntegrateUtils {
             const [methodStartIndex, methodEndIndex] = method.range;
             const [relativeStartIndex, relativeEndIndex] = [
                 methodStartIndex - contractStartIndex,
-                methodEndIndex - contractStartIndex,
+                methodEndIndex - contractStartIndex
             ];
             const methodCode = contractCode.substring(relativeStartIndex, relativeEndIndex + 1);
-            const customizedMethodCode = this.customizeMethodCode(
-                contract,
-                method,
-                methodCode,
-                options,
-            );
+            const customizedMethodCode = this.customizeMethodCode(contract, method, methodCode, options);
             const customizedCode =
-                customized.slice(0, relativeStartIndex) +
-                customizedMethodCode +
-                customized.slice(relativeEndIndex + 1);
+                customized.slice(0, relativeStartIndex) + customizedMethodCode + customized.slice(relativeEndIndex + 1);
             return customizedCode;
         }, contractCode);
         return customizedMethods;
@@ -446,16 +396,15 @@ export class FirewallIntegrateUtils {
         contract: SolidityConstruct,
         method: SolidityConstruct,
         methodCode: string,
-        options?: IntegrateOptions,
+        options?: IntegrateOptions
     ): string {
         const isAbstract = !method.body;
         const firewallModifiers = (method.modifiers || []).filter((modifier) =>
-            FIREWALL_MODIFIERS.includes(modifier?.name as FirewallModifier),
+            FIREWALL_MODIFIERS.includes(modifier?.name as FirewallModifier)
         );
         const requiredModifiers = this.getModifiersToAdd(method, options);
         const hasMismatchingModifiers = firewallModifiers.length !== requiredModifiers.length;
-        const shouldCustomize =
-            !isAbstract && hasMismatchingModifiers && !!options[method.visibility];
+        const shouldCustomize = !isAbstract && hasMismatchingModifiers && !!options[method.visibility];
         if (!shouldCustomize) {
             return methodCode;
         }
@@ -471,7 +420,7 @@ export class FirewallIntegrateUtils {
                     params: string = '',
                     visibility: string = '',
                     modifiers: string = '',
-                    returns: string = '',
+                    returns: string = ''
                 ) => {
                     const isImmutableState = !!modifiers.match(RE_IMMUTABLE_STATE);
                     if (isImmutableState) {
@@ -490,7 +439,7 @@ export class FirewallIntegrateUtils {
                     }
 
                     return `${func}${signature}${visibility} ${modifiersToAdd}${returns}`;
-                },
+                }
             );
 
             return customizedMethodCode;
@@ -517,9 +466,7 @@ export class FirewallIntegrateUtils {
             const customizedImports = `${FW_IMPORT}\r\n`;
             // Editing imports section whithin the file.
             const customizedCode =
-                code.slice(0, firstImportStartIndex) +
-                customizedImports +
-                code.slice(firstImportStartIndex);
+                code.slice(0, firstImportStartIndex) + customizedImports + code.slice(firstImportStartIndex);
             return customizedCode;
         }
 
@@ -530,9 +477,7 @@ export class FirewallIntegrateUtils {
             const customizedImports = `\r\n\r\n${FW_IMPORT}`;
             // Editing imports section whithin the file.
             const customizedCode =
-                code.slice(0, pragmaEndIndex + 1) +
-                customizedImports +
-                code.slice(pragmaEndIndex + 1);
+                code.slice(0, pragmaEndIndex + 1) + customizedImports + code.slice(pragmaEndIndex + 1);
             return customizedCode;
         }
 
@@ -545,21 +490,14 @@ export class FirewallIntegrateUtils {
     }
 
     private alreadyCustomizedContractHeader(contract: SolidityConstruct): boolean {
-        return (contract.baseContracts || []).some(
-            (base) => base.baseName?.namePath === FW_BASE_CONTRACT,
-        );
+        return (contract.baseContracts || []).some((base) => base.baseName?.namePath === FW_BASE_CONTRACT);
     }
 
     private alreadyCustomizedContractMethod(method: SolidityConstruct): boolean {
-        return (method.modifiers || []).some(
-            (modifier) => !!this.serializerByModifier[modifier.name],
-        );
+        return (method.modifiers || []).some((modifier) => !!this.serializerByModifier[modifier.name]);
     }
 
-    private getModifiersToAdd(
-        method: SolidityConstruct,
-        options?: IntegrateOptions,
-    ): FirewallModifier[] {
+    private getModifiersToAdd(method: SolidityConstruct, options?: IntegrateOptions): FirewallModifier[] {
         switch (method.visibility) {
             case 'external':
                 if (options?.modifiers?.includes(FW_INVARIANT_PROTECTED_MODIFIER)) {

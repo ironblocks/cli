@@ -1,9 +1,8 @@
-import { Injectable } from '@nestjs/common';
 import { consola } from 'consola';
+import { Injectable } from '@nestjs/common';
 
 @Injectable()
 export class Logger {
-
     log(message: string) {
         consola.info(message);
     }

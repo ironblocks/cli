@@ -1,15 +1,11 @@
-// 3rd party.
 import { Module } from '@nestjs/common';
-// Internal.
-import { FirewallCommand } from './firewall.command';
-import { IntegrationModule } from './integrate/integrate.module';
-import { LoggerModule } from '../lib/logging/logger.module';
+
+import { LoggerModule } from '@/lib/logging/logger.module';
+import { FirewallCommand } from '@/firewall/firewall.command';
+import { IntegrationModule } from '@/firewall/integrate/integrate.module';
 
 @Module({
-    imports: [
-        IntegrationModule,
-        LoggerModule
-    ],
-    providers: [FirewallCommand],
+    imports: [IntegrationModule, LoggerModule],
+    providers: [FirewallCommand]
 })
 export class FirewallModule {}

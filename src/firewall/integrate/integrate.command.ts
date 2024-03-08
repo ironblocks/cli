@@ -1,15 +1,14 @@
-// Builtin.
-import { resolve } from 'path';
-// 3rd party.
-import { CommandRunner, Option, SubCommand } from 'nest-commander';
 import * as colors from 'colors';
-// Internal.
-import { IntegrationService } from './integrate.service';
-import type { FirewallModifier } from './integrate.utils';
-import { Logger } from '../../lib/logging/logger.service';
-import { DESCRIPTION, NAME } from './integrate.command.descriptor';
-import { DependenciesService } from '../../dependencies/dependencies.service';
-import { IntegrationError } from './integration.errors';
+import { resolve } from 'path';
+
+import { CommandRunner, Option, SubCommand } from 'nest-commander';
+
+import { Logger } from '@/lib/logging/logger.service';
+import { StandaloneCommand } from '@/commands/standalone-command.decorator';
+import { IntegrationService } from '@/firewall/integrate/integrate.service';
+import { DependenciesService } from '@/dependencies/dependencies.service';
+import type { FirewallModifier } from '@/firewall/integrate/integrate.utils';
+import { DESCRIPTION, FULL_NAME, NAME } from '@/firewall/integrate/integrate.command.descriptor';
 
 type CommandOption = ReturnType<CommandRunner['command']['createOption']>;
 
@@ -24,7 +23,7 @@ interface CommandOptions {
 
 @SubCommand({
     name: NAME,
-    description: DESCRIPTION,
+    description: DESCRIPTION
 })
 export class FirewallIntegrateCommand extends CommandRunner {
     constructor(
@@ -45,8 +44,8 @@ export class FirewallIntegrateCommand extends CommandRunner {
         option.conflicts(conflicts);
     }
 
+    @StandaloneCommand(FULL_NAME)
     async run(passedParams: string[], options?: CommandOptions): Promise<void> {
-        this.validateParams(passedParams);
         this.validateOptions(options);
 
         try {
@@ -57,7 +56,7 @@ export class FirewallIntegrateCommand extends CommandRunner {
                 verbose: options?.verbose,
                 external: true,
                 internal: options?.internal,
-                modifiers: options?.modifiers,
+                modifiers: options?.modifiers
             };
 
             if (options?.file) {
@@ -65,25 +64,13 @@ export class FirewallIntegrateCommand extends CommandRunner {
             }
 
             if (options?.dir) {
-                return await this.integrationService.integContractsDir(
-                    options.dir,
-                    options.rec,
-                    integOptions,
-                );
+                return await this.integrationService.integContractsDir(options.dir, options.rec, integOptions);
             }
-        }
-        catch (e) {
+
+            this.logger.log('All done!');
+        } catch (e) {
             this.logger.error(e.message);
             this.command.error('Integration failed');
-        }
-    }
-
-    private validateParams(params: string[]) {
-        const userPassedAnInvalidCommand = params.length > 0;
-
-        if (userPassedAnInvalidCommand) {
-            this.logger.error(`Invalid command: ${params.join(' ')}`);
-            this.command.error(`Run ${colors.bold.cyan('ib fw integ --help')} for usage information`);
         }
     }
 
@@ -99,7 +86,7 @@ export class FirewallIntegrateCommand extends CommandRunner {
 
     @Option({
         flags: '-f, --file <string>',
-        description: 'path to contract file to customize',
+        description: 'path to contract file to customize'
     })
     parseFilePath(val: string): string {
         this.setOptionConflicts('file', ['dir']);
@@ -108,7 +95,7 @@ export class FirewallIntegrateCommand extends CommandRunner {
 
     @Option({
         flags: '-d, --dir <string>',
-        description: 'path to contracts directory to customize',
+        description: 'path to contracts directory to customize'
     })
     parseDirPath(val: string): string {
         this.setOptionConflicts('dir', ['file']);
@@ -118,7 +105,7 @@ export class FirewallIntegrateCommand extends CommandRunner {
     @Option({
         flags: '-r, --rec',
         description: 'recurse on all the contract files in the directory',
-        defaultValue: false,
+        defaultValue: false
     })
     parseRecursive(): boolean {
         return true;
@@ -127,7 +114,7 @@ export class FirewallIntegrateCommand extends CommandRunner {
     @Option({
         flags: '-v, --verbose',
         description: 'provider additional details along the command execution',
-        defaultValue: false,
+        defaultValue: false
     })
     parseVerbose(): boolean {
         return true;
@@ -136,7 +123,7 @@ export class FirewallIntegrateCommand extends CommandRunner {
     @Option({
         flags: '-i, --internal',
         description: 'whether to add firewall protection for "internal" functions',
-        defaultValue: false,
+        defaultValue: false
     })
     parseInternal(): boolean {
         return true;
@@ -144,7 +131,7 @@ export class FirewallIntegrateCommand extends CommandRunner {
 
     @Option({
         flags: '-m, --modifiers <string...>',
-        description: 'set advanced modifiers',
+        description: 'set advanced modifiers'
     })
     parseModifiers(val: string): FirewallModifier[] {
         const ACCEPTED_MODIFIERS = ['invariantProtected'];

@@ -4,7 +4,6 @@ import { CommandTestFactory } from 'nest-commander-testing';
 import { AppModule } from '../../../src/app/app.module';
 import { DESCRIPTION, NAME } from '../../../src/firewall/integrate/integrate.command.descriptor';
 
-
 describe('Sub-Command: integ', () => {
     let commandInstance: TestingModule;
     let exitSpy: jest.SpyInstance;
@@ -13,7 +12,7 @@ describe('Sub-Command: integ', () => {
 
     beforeEach(async () => {
         commandInstance = await CommandTestFactory.createTestingCommand({
-            imports: [AppModule],
+            imports: [AppModule]
         }).compile();
 
         exitSpy = jest.spyOn(process, 'exit').mockImplementation();
@@ -26,7 +25,6 @@ describe('Sub-Command: integ', () => {
         stdoutSpy.mockRestore();
         stderrSpy.mockRestore();
     });
-
 
     it('displays an error message if both -d and -f flags are missing', async () => {
         await CommandTestFactory.run(commandInstance, ['fw', 'integ']);

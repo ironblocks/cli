@@ -1,10 +1,9 @@
-// 3rd party.
 import { CommandRunner, RootCommand } from 'nest-commander';
-import * as colors from 'colors';
-// Internal.
-import { DESCRIPTION, NAME } from './app.command.descriptor';
-import { FirewallCommand } from '../firewall/firewall.command';
-import { Logger } from '../lib/logging/logger.service';
+
+import { Logger } from '@/lib/logging/logger.service';
+import { FirewallCommand } from '@/firewall/firewall.command';
+import { StandaloneCommand } from '@/commands/standalone-command.decorator';
+import { DESCRIPTION, NAME, FULL_NAME } from '@/app/app.command.descriptor';
 
 @RootCommand({
     name: NAME,
@@ -16,17 +15,8 @@ export class AppCommand extends CommandRunner {
         super();
     }
 
+    @StandaloneCommand(FULL_NAME)
     async run(passedParams: string[]): Promise<void> {
-        this.validateParams(passedParams);
         this.command.help();
-    }
-
-    private validateParams(params: string[]) {
-        const userPassedAnInvalidCommand = params.length > 0;
-
-        if (userPassedAnInvalidCommand) {
-            this.logger.error(`Invalid command: ${params.join(' ')}`);
-            this.command.error(`Run ${colors.bold.cyan('ib --help')} for usage information`);
-        }
     }
 }

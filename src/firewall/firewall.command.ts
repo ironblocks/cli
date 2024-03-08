@@ -1,31 +1,22 @@
-// 3rd party.
 import { CommandRunner, Command } from 'nest-commander';
-import * as colors from 'colors';
-// Internal.
-import { FirewallIntegrateCommand } from './integrate/integrate.command';
-import { DESCRIPTION, NAME } from './firewall.command.descriptor';
-import { Logger } from '../lib/logging/logger.service';
+
+import { Logger } from '@/lib/logging/logger.service';
+import { StandaloneCommand } from '@/commands/standalone-command.decorator';
+import { FirewallIntegrateCommand } from '@/firewall/integrate/integrate.command';
+import { DESCRIPTION, FULL_NAME, NAME } from '@/firewall/firewall.command.descriptor';
 
 @Command({
     name: NAME,
     description: DESCRIPTION,
-    subCommands: [FirewallIntegrateCommand],
+    subCommands: [FirewallIntegrateCommand]
 })
 export class FirewallCommand extends CommandRunner {
     constructor(private readonly logger: Logger) {
         super();
     }
+
+    @StandaloneCommand(FULL_NAME)
     async run(passedParams: string[]): Promise<void> {
-        this.validateParams(passedParams);
         this.command.help();
-    }
-
-    private validateParams(params: string[]) {
-        const userPassedAnInvalidCommand = params.length > 0;
-
-        if (userPassedAnInvalidCommand) {
-            this.logger.error(`Invalid command: ${params.join(' ')}`);
-            this.command.error(`Run ${colors.bold.cyan('ib fw --help')} for usage information`);
-        }
     }
 }
