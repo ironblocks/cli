@@ -1,6 +1,6 @@
 export class DependencyError extends Error {
     constructor(message: string) {
         super(message);
-        this.name = 'DependencyCheckError';
+        this.name = 'DependencyError';
     }
 }
