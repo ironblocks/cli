@@ -1,5 +1,9 @@
 import { FilesService } from '@/files/files.service';
 
+//
+// Due to how ES6 modules work, we need to mock the fs/promises module using jest.mock
+// before any of our tests run. This is because the module is imported at the top of the
+// file, and the mock needs to be in place before the module is imported.
 jest.mock('fs/promises', () => ({
     access: jest.fn(),
     constants: {
