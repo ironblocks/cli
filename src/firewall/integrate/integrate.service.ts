@@ -7,16 +7,19 @@ import { Logger } from '../../lib/logging/logger.service';
 import { FirewallIntegrateUtils, type IntegrateOptions } from './integrate.utils';
 import { UnsupportedFileFormatError } from './errors/unsupported.file.format.error';
 import { UnsupportedSolidityVersionError } from './errors/unsupported.solidity.version.error';
+import { FilesService } from '../../files/files.services';
+import { IntegrationError } from './integration.errors';
 
 @Injectable()
 export class IntegrationService {
     constructor(
         private readonly fwIntegUtils: FirewallIntegrateUtils,
+        private readonly filesServices: FilesService,
         private readonly logger: Logger,
     ) {}
 
     public async integContractFile(filepath: string, options?: IntegrateOptions): Promise<void> {
-        await this.fwIntegUtils.assertFileExists(filepath);
+        await this.validateFileExists(filepath);
         this.fwIntegUtils.assertSolidityFile(filepath);
 
         try {
@@ -91,6 +94,14 @@ export class IntegrationService {
         }
         if (!customizedFiles.length) {
             this.logger.log(`No files were changed at '${dirpath}'`);
+        }
+    }
+
+    private async validateFileExists(filepath: string) {
+        const fileExists = await this.filesServices.doesFileExist(filepath);
+
+        if (fileExists === false) {
+            throw new IntegrationError(`File does not exist '${filepath}'`);
         }
     }
 }

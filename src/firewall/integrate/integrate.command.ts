@@ -52,13 +52,7 @@ export class FirewallIntegrateCommand extends CommandRunner {
         try {
             this.logger.log('Starting integration');
             await this.dependenciesService.assertDependencies();
-        }
-        catch (e) {
-            this.logger.error(e.message);
-            return this.command.error('Integration failed');
-        }
 
-        try {
             const integOptions = {
                 verbose: options?.verbose,
                 external: true,
@@ -77,8 +71,10 @@ export class FirewallIntegrateCommand extends CommandRunner {
                     integOptions,
                 );
             }
-        } catch (err) {
-            this.command.error(`error: ${err.message}`);
+        }
+        catch (e) {
+            this.logger.error(e.message);
+            this.command.error('Integration failed');
         }
     }
 
