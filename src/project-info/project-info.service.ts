@@ -1,12 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { FilesService } from '@/files/files.service';
 
-enum ProjectTypes {
+export enum ProjectTypes {
     Foundry = 'foundry',
     Hardhat = 'hardhat'
 }
 
-type ProjectInfo = {
+export type ProjectInfo = {
     type: ProjectTypes;
 };
 
