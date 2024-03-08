@@ -1,8 +1,8 @@
 import { TestingModule } from '@nestjs/testing';
 import { CommandTestFactory } from 'nest-commander-testing';
 
-import { AppModule } from '../../../src/app/app.module';
-import { DependenciesService } from '../../../src/dependencies/dependencies.service';
+import { AppModule } from '@/app/app.module';
+import { DependenciesService } from '@/dependencies/dependencies.service';
 
 describe('Sub-Command Option: integ --file', () => {
     let commandInstance: TestingModule;

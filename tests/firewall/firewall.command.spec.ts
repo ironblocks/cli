@@ -2,8 +2,8 @@
 import { TestingModule } from '@nestjs/testing';
 import { CommandTestFactory } from 'nest-commander-testing';
 
-import { AppModule } from '../../src/app/app.module';
-import { DESCRIPTION, NAME } from '../../src/firewall/firewall.command.descriptor';
+import { AppModule } from '@/app/app.module';
+import { DESCRIPTION, NAME } from '@/firewall/firewall.command.descriptor';
 
 describe('Sub-Command: fw', () => {
     let commandInstance: TestingModule;

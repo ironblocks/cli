@@ -16,7 +16,7 @@ import {
     HARDHAT_DEPENDENCIES,
     HARDHAT_DEPENDENCIES_INSTALL_COMMAND,
     HARDHAT_DEPENDENCIES_LIST_COMMAND
-} from './dependencies.constants';
+} from '@/dependencies/dependencies.constants';
 
 const execAsync = promisify(exec);
 

@@ -1,8 +1,8 @@
 import { TestingModule } from '@nestjs/testing';
 import { CommandTestFactory } from 'nest-commander-testing';
 
-import { AppModule } from '../../src/app/app.module';
-import { DESCRIPTION, NAME } from '../../src/app/app.command.descriptor';
+import { AppModule } from '@/app/app.module';
+import { DESCRIPTION, NAME } from '@/app/app.command.descriptor';
 
 describe('Command: ib', () => {
     let commandInstance: TestingModule;

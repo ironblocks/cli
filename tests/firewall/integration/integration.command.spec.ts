@@ -1,8 +1,8 @@
 import { TestingModule } from '@nestjs/testing';
 import { CommandTestFactory } from 'nest-commander-testing';
 
-import { AppModule } from '../../../src/app/app.module';
-import { DESCRIPTION, NAME } from '../../../src/firewall/integration/integration.command.descriptor';
+import { AppModule } from '@/app/app.module';
+import { DESCRIPTION, NAME } from '@/firewall/integration/integration.command.descriptor';
 
 describe('Sub-Command: integ', () => {
     let commandInstance: TestingModule;
