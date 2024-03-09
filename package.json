@@ -1,14 +1,18 @@
 {
     "name": "@ironblocks/cli",
-    "version": "1.0.4",
+    "version": "1.0.5",
     "description": "",
-    "author": "IRONBLOCKS LTD",
+    "author": "Ironblocks LTD",
     "license": "MIT",
     "keywords": [
         "web3",
         "security",
         "ironblocks",
-        "cli"
+        "cli",
+        "firewall",
+        "blockchain",
+        "ethereum",
+        "solidity"
     ],
     "repository": "https://github.com/ironblocks/cli",
     "homepage": "https://github.com/ironblocks/cli#readme",
