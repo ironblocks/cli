@@ -1,6 +1,6 @@
 {
     "name": "@ironblocks/cli",
-    "version": "1.0.5",
+    "version": "1.0.6",
     "description": "",
     "author": "Ironblocks LTD",
     "license": "MIT",
@@ -23,7 +23,7 @@
         "ib": "build/src/main.js"
     },
     "scripts": {
-        "build": "nest build",
+        "build": "nest build && cp package.json build",
         "format": "prettier --write \"src/**/*.ts\" \"tests/**/*.ts\"",
         "start": "nest start",
         "start:dev": "nest start --watch",

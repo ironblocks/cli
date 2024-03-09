@@ -1,4 +1,5 @@
-import { CommandRunner, RootCommand } from 'nest-commander';
+import * as colors from 'colors';
+import { CommandRunner, Option, RootCommand } from 'nest-commander';
 
 import { LoggerService } from '@/lib/logging/logger.service';
 import { FirewallCommand } from '@/firewall/firewall.command';
@@ -16,7 +17,18 @@ export class AppCommand extends CommandRunner {
     }
 
     @StandaloneCommand(FULL_NAME)
-    async run(passedParams: string[]): Promise<void> {
-        this.command.help();
+    async run(passedParams: string[], options?: any): Promise<void> {
+        if (options.version) {
+            const pkg = require('../../package.json');
+            this.logger.log(`Ironblocks CLI ${colors.cyan('v' + pkg.version)}`);
+        } else {
+            this.command.help();
+        }
     }
+
+    @Option({
+        flags: '-v, --version',
+        description: 'Show version information'
+    })
+    parseVersion(): void {}
 }
