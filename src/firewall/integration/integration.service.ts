@@ -22,7 +22,7 @@ export class IntegrationService {
         try {
             const customized = await this.fwIntegUtils.customizeSolidityFile(filepath, options);
             if (customized) {
-                this.logger.log(`Customized file '${filepath}'`);
+                this.logger.log(`Firewall added to '${filepath}'`);
             } else {
                 this.logger.log(`File was not changed '${filepath}'`);
             }
