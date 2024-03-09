@@ -1,6 +1,6 @@
 import { CommandRunner, Command } from 'nest-commander';
 
-import { Logger } from '@/lib/logging/logger.service';
+import { LoggerService } from '@/lib/logging/logger.service';
 import { StandaloneCommand } from '@/commands/standalone-command.decorator';
 import { IntegrationCommand } from '@/firewall/integration/integration.command';
 import { DESCRIPTION, FULL_NAME, NAME } from '@/firewall/firewall.command.descriptor';
@@ -11,7 +11,7 @@ import { DESCRIPTION, FULL_NAME, NAME } from '@/firewall/firewall.command.descri
     subCommands: [IntegrationCommand]
 })
 export class FirewallCommand extends CommandRunner {
-    constructor(private readonly logger: Logger) {
+    constructor(private readonly logger: LoggerService) {
         super();
     }
 

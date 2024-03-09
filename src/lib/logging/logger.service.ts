@@ -1,8 +1,10 @@
+import * as ora from 'ora';
+
 import { consola } from 'consola';
 import { Injectable } from '@nestjs/common';
 
 @Injectable()
-export class Logger {
+export class LoggerService {
     log(message: string) {
         consola.info(message);
     }
@@ -21,5 +23,9 @@ export class Logger {
 
     verbose(message: string) {
         consola.trace(message);
+    }
+
+    spinner(message: string) {
+        return ora(message).start();
     }
 }

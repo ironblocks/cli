@@ -5,10 +5,14 @@ import {
     QUESTION_NAME,
     QUESTION_SET_NAME,
     QUESTION_TYPE
-} from '@/dependencies/dependencies.questions.descriptor';
+} from '@/framework/install-dependencies.questions.descriptor';
+
+export type InstallDependenciesAnswers = {
+    installDependencies: boolean;
+};
 
 @QuestionSet({ name: QUESTION_SET_NAME })
-export class DependenciesQuestions {
+export class InstallDependenciesQuestions {
     @Question({
         type: QUESTION_TYPE,
         name: QUESTION_NAME,

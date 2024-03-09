@@ -9,7 +9,7 @@ import { InquirerService } from 'nest-commander';
 import { any as pathMatch } from 'micromatch';
 import { parse as parseSolidity } from '@solidity-parser/parser';
 
-import { Logger } from '@/lib/logging/logger.service';
+import { LoggerService } from '@/lib/logging/logger.service';
 import { UnsupportedParamTypeError } from '@/firewall/integration/errors/unsupported.param.type.error';
 import { UnsupportedFileFormatError } from '@/firewall/integration/errors/unsupported.file.format.error';
 import { UnsupportedSolidityVersionError } from '@/firewall/integration/errors/unsupported.solidity.version.error';
@@ -90,7 +90,7 @@ const RE_METHOD_DEFINITION = new RegExp(
  *
  * <firewallModifier>(...params)(\s\r\n)?
  */
-const RE_FW_MODIFIER_NO_ARGS = new RegExp(`(?:${FIREWALL_MODIFIERS.map((mod) => `\\b${mod}\\b`).join('|')})`, 'g');
+const RE_FW_MODIFIER_NO_ARGS = new RegExp(`(?:${FIREWALL_MODIFIERS.map(mod => `\\b${mod}\\b`).join('|')})`, 'g');
 const RE_FW_MODIFIER_WITH_ARGS = new RegExp(
     `${RE_FW_MODIFIER_NO_ARGS.source}(?:${RE_BLANK_SPACE.source}*\\(${RE_ARGS.source}\\))?`,
     'g'
@@ -140,7 +140,7 @@ export class IntegrationUtils {
     constructor(
         private readonly inquirer: InquirerService,
         private readonly config: ConfigService,
-        private readonly logger: Logger
+        private readonly logger: LoggerService
     ) {
         this.serializerByModifier = {
             [FW_PROTECTED_MODIFIER]: () => FW_PROTECTED_MODIFIER,
@@ -399,7 +399,7 @@ export class IntegrationUtils {
         options?: IntegrateOptions
     ): string {
         const isAbstract = !method.body;
-        const firewallModifiers = (method.modifiers || []).filter((modifier) =>
+        const firewallModifiers = (method.modifiers || []).filter(modifier =>
             FIREWALL_MODIFIERS.includes(modifier?.name as FirewallModifier)
         );
         const requiredModifiers = this.getModifiersToAdd(method, options);
@@ -429,7 +429,7 @@ export class IntegrationUtils {
 
                     const [indentation] = modifiers.match(RE_INDENTATION) || [' '];
                     const modifiersToAdd = requiredModifiers
-                        .map((name) => this.serializerByModifier[name](contract, method))
+                        .map(name => this.serializerByModifier[name](contract, method))
                         .join(indentation);
 
                     if (modifiers) {
@@ -490,11 +490,11 @@ export class IntegrationUtils {
     }
 
     private alreadyCustomizedContractHeader(contract: SolidityConstruct): boolean {
-        return (contract.baseContracts || []).some((base) => base.baseName?.namePath === FW_BASE_CONTRACT);
+        return (contract.baseContracts || []).some(base => base.baseName?.namePath === FW_BASE_CONTRACT);
     }
 
     private alreadyCustomizedContractMethod(method: SolidityConstruct): boolean {
-        return (method.modifiers || []).some((modifier) => !!this.serializerByModifier[modifier.name]);
+        return (method.modifiers || []).some(modifier => !!this.serializerByModifier[modifier.name]);
     }
 
     private getModifiersToAdd(method: SolidityConstruct, options?: IntegrateOptions): FirewallModifier[] {
@@ -514,7 +514,7 @@ export class IntegrationUtils {
     private calcSighash(contract: SolidityConstruct, method: SolidityConstruct): string {
         const contractName = contract.name;
         const methodName = method.name!;
-        const paramTypes = (method.parameters || []).map((param) => {
+        const paramTypes = (method.parameters || []).map(param => {
             try {
                 return this.getParamTypeName(param.typeName);
             } catch (err) {

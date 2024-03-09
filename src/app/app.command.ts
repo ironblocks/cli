@@ -1,6 +1,6 @@
 import { CommandRunner, RootCommand } from 'nest-commander';
 
-import { Logger } from '@/lib/logging/logger.service';
+import { LoggerService } from '@/lib/logging/logger.service';
 import { FirewallCommand } from '@/firewall/firewall.command';
 import { StandaloneCommand } from '@/commands/standalone-command.decorator';
 import { DESCRIPTION, NAME, FULL_NAME } from '@/app/app.command.descriptor';
@@ -11,7 +11,7 @@ import { DESCRIPTION, NAME, FULL_NAME } from '@/app/app.command.descriptor';
     subCommands: [FirewallCommand]
 })
 export class AppCommand extends CommandRunner {
-    constructor(private readonly logger: Logger) {
+    constructor(private readonly logger: LoggerService) {
         super();
     }
 

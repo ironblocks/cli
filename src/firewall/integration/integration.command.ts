@@ -3,10 +3,10 @@ import { resolve } from 'path';
 
 import { CommandRunner, Option, SubCommand } from 'nest-commander';
 
-import { Logger } from '@/lib/logging/logger.service';
+import { LoggerService } from '@/lib/logging/logger.service';
+import { FrameworkService } from '@/framework/framework.service';
 import { StandaloneCommand } from '@/commands/standalone-command.decorator';
 import { IntegrationService } from '@/firewall/integration/integration.service';
-import { DependenciesService } from '@/dependencies/dependencies.service';
 import type { FirewallModifier } from '@/firewall/integration/integration.utils';
 import { DESCRIPTION, FULL_NAME, NAME } from '@/firewall/integration/integration.command.descriptor';
 
@@ -27,15 +27,15 @@ interface CommandOptions {
 })
 export class IntegrationCommand extends CommandRunner {
     constructor(
-        private readonly logger: Logger,
+        private readonly logger: LoggerService,
         private readonly integrationService: IntegrationService,
-        private readonly dependenciesService: DependenciesService
+        private readonly frameworkService: FrameworkService
     ) {
         super();
     }
 
     private getCommandOption(optionName: string): CommandOption {
-        const option = this.command.options.find((option) => option.attributeName() === optionName);
+        const option = this.command.options.find(option => option.attributeName() === optionName);
         return option;
     }
 
@@ -49,8 +49,9 @@ export class IntegrationCommand extends CommandRunner {
         this.validateOptions(options);
 
         try {
+            await this.frameworkService.assertDependencies();
+
             this.logger.log('Starting integration');
-            await this.dependenciesService.assertDependencies();
 
             const integOptions = {
                 verbose: options?.verbose,

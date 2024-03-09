@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 
-import { Logger } from '@/lib/logging/logger.service';
+import { LoggerService } from '@/lib/logging/logger.service';
 import { FilesService } from '@/files/files.service';
 import { IntegrationError } from '@/firewall/integration/integration.errors';
 import { UnsupportedFileFormatError } from '@/firewall/integration/errors/unsupported.file.format.error';
@@ -12,7 +12,7 @@ export class IntegrationService {
     constructor(
         private readonly fwIntegUtils: IntegrationUtils,
         private readonly filesServices: FilesService,
-        private readonly logger: Logger
+        private readonly logger: LoggerService
     ) {}
 
     public async integContractFile(filepath: string, options?: IntegrateOptions): Promise<void> {
@@ -45,7 +45,7 @@ export class IntegrationService {
         const failedToCustomizeFiles = [];
 
         await this.fwIntegUtils.forEachSolidityFilesInDir(
-            async (filepath) => {
+            async filepath => {
                 if (!foundAnySolidityFiles) {
                     foundAnySolidityFiles = true;
                 }

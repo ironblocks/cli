@@ -52,7 +52,7 @@ export default async () => {
                 ...(localConfig?.fw?.integ || {}),
                 exclude: overrides.fw.integ.exclude
                     .concat(localConfig?.fw?.integ?.exclude || [])
-                    .map((pattern) => join(pattern))
+                    .map(pattern => join(pattern))
             }
         }
     };
