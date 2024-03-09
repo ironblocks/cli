@@ -6,10 +6,13 @@
         "emitDecoratorMetadata": true,
         "experimentalDecorators": true,
         "allowSyntheticDefaultImports": true,
-        "target": "es2022",
+        "target": "ESNext",
         "sourceMap": true,
         "outDir": "./build",
-        "baseUrl": "./",
+        "baseUrl": ".",
+        "paths": {
+            "@/*": ["./src/*"]
+        },
         "incremental": true,
         "skipLibCheck": true,
         "strictNullChecks": false,

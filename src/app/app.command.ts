@@ -1,33 +1,22 @@
-// 3rd party.
-import { CommandRunner, Option, RootCommand } from 'nest-commander';
-// Internal.
-import { FirewallCommand } from '../firewall/firewall.command';
+import { CommandRunner, RootCommand } from 'nest-commander';
 
-const CLI_DESCRIPTION = `\
-  🟧
-🟧   ironblocks CLI tool
-  🟧\
-`;
+import { LoggerService } from '@/lib/logging/logger.service';
+import { FirewallCommand } from '@/firewall/firewall.command';
+import { StandaloneCommand } from '@/commands/standalone-command.decorator';
+import { DESCRIPTION, NAME, FULL_NAME } from '@/app/app.command.descriptor';
 
 @RootCommand({
-    description: CLI_DESCRIPTION,
-    subCommands: [FirewallCommand],
+    name: NAME,
+    description: DESCRIPTION,
+    subCommands: [FirewallCommand]
 })
 export class AppCommand extends CommandRunner {
-    async run(passedParams: string[]): Promise<void> {
-        const [unkownCommand] = passedParams;
-        if (!!unkownCommand) {
-            return this.command.error(`error: uknown command '${unkownCommand}'`);
-        }
-        // Output information about available subcommands.
-        this.command.help();
+    constructor(private readonly logger: LoggerService) {
+        super();
     }
 
-    @Option({
-        flags: '-h, --help',
-        description: 'display help for command',
-    })
-    parseHelp(): boolean {
-        return true;
+    @StandaloneCommand(FULL_NAME)
+    async run(passedParams: string[]): Promise<void> {
+        this.command.help();
     }
 }

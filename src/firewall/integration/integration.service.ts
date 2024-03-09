@@ -1,29 +1,28 @@
-// Builtin.
-import { dirname } from 'path';
-// 3rd party.
 import { Injectable } from '@nestjs/common';
-// Internal.
-import { Logger } from '../../lib/logging/logger.service';
-import { FirewallIntegrateUtils, type IntegrateOptions } from './integrate.utils';
-import { UnsupportedFileFormatError } from './errors/unsupported.file.format.error';
-import { UnsupportedSolidityVersionError } from './errors/unsupported.solidity.version.error';
+
+import { LoggerService } from '@/lib/logging/logger.service';
+import { FilesService } from '@/files/files.service';
+import { IntegrationError } from '@/firewall/integration/integration.errors';
+import { UnsupportedFileFormatError } from '@/firewall/integration/errors/unsupported.file.format.error';
+import { UnsupportedSolidityVersionError } from '@/firewall/integration/errors/unsupported.solidity.version.error';
+import { IntegrationUtils, type IntegrateOptions } from '@/firewall/integration/integration.utils';
 
 @Injectable()
-export class FirewallIntegrateService {
+export class IntegrationService {
     constructor(
-        private readonly fwIntegUtils: FirewallIntegrateUtils,
-        private readonly logger: Logger,
+        private readonly fwIntegUtils: IntegrationUtils,
+        private readonly filesServices: FilesService,
+        private readonly logger: LoggerService
     ) {}
 
     public async integContractFile(filepath: string, options?: IntegrateOptions): Promise<void> {
-        await this.fwIntegUtils.assertFileExists(filepath);
+        await this.validateFileExists(filepath);
         this.fwIntegUtils.assertSolidityFile(filepath);
-        await this.fwIntegUtils.npmInstallFirewallConsumerIfNeeded(dirname(filepath), options);
 
         try {
             const customized = await this.fwIntegUtils.customizeSolidityFile(filepath, options);
             if (customized) {
-                this.logger.log(`Customized file '${filepath}'`);
+                this.logger.log(`Firewall added to '${filepath}'`);
             } else {
                 this.logger.log(`File was not changed '${filepath}'`);
             }
@@ -38,11 +37,7 @@ export class FirewallIntegrateService {
         }
     }
 
-    public async integContractsDir(
-        dirpath: string,
-        recursive: boolean,
-        options?: IntegrateOptions,
-    ): Promise<void> {
+    public async integContractsDir(dirpath: string, recursive: boolean, options?: IntegrateOptions): Promise<void> {
         await this.fwIntegUtils.assertDirExists(dirpath);
 
         let foundAnySolidityFiles: boolean = false;
@@ -50,17 +45,13 @@ export class FirewallIntegrateService {
         const failedToCustomizeFiles = [];
 
         await this.fwIntegUtils.forEachSolidityFilesInDir(
-            async (filepath) => {
+            async filepath => {
                 if (!foundAnySolidityFiles) {
                     foundAnySolidityFiles = true;
-                    await this.fwIntegUtils.npmInstallFirewallConsumerIfNeeded(dirpath, options);
                 }
 
                 try {
-                    const customized = await this.fwIntegUtils.customizeSolidityFile(
-                        filepath,
-                        options,
-                    );
+                    const customized = await this.fwIntegUtils.customizeSolidityFile(filepath, options);
                     if (customized && !customizedFiles.length) {
                         this.logger.log(`Customized files:`);
                     }
@@ -80,7 +71,7 @@ export class FirewallIntegrateService {
                 }
             },
             dirpath,
-            recursive,
+            recursive
         );
 
         if (failedToCustomizeFiles.length) {
@@ -93,6 +84,14 @@ export class FirewallIntegrateService {
         }
         if (!customizedFiles.length) {
             this.logger.log(`No files were changed at '${dirpath}'`);
+        }
+    }
+
+    private async validateFileExists(filepath: string) {
+        const fileExists = await this.filesServices.doesFileExist(filepath);
+
+        if (fileExists === false) {
+            throw new IntegrationError(`File does not exist '${filepath}'`);
         }
     }
 }

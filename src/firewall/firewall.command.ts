@@ -1,20 +1,22 @@
-// 3rd party.
 import { CommandRunner, Command } from 'nest-commander';
-// Internal.
-import { FirewallIntegrateCommand } from './integrate/integrate.command';
+
+import { LoggerService } from '@/lib/logging/logger.service';
+import { StandaloneCommand } from '@/commands/standalone-command.decorator';
+import { IntegrationCommand } from '@/firewall/integration/integration.command';
+import { DESCRIPTION, FULL_NAME, NAME } from '@/firewall/firewall.command.descriptor';
 
 @Command({
-    name: 'fw',
-    description: 'Firewall utilities for developers',
-    subCommands: [FirewallIntegrateCommand],
+    name: NAME,
+    description: DESCRIPTION,
+    subCommands: [IntegrationCommand]
 })
 export class FirewallCommand extends CommandRunner {
+    constructor(private readonly logger: LoggerService) {
+        super();
+    }
+
+    @StandaloneCommand(FULL_NAME)
     async run(passedParams: string[]): Promise<void> {
-        const [unkownCommand] = passedParams;
-        if (!!unkownCommand) {
-            return this.command.error(`error: uknown command '${unkownCommand}'`);
-        }
-        // Output information about available subcommands.
         this.command.help();
     }
 }

@@ -15,7 +15,7 @@ This CLI tool will help you to interact and easily integrate with our ecosystem.
 
 ## Compatibility
 
-Solidity versions `>= 0.8 < 0.8.20`.
+Solidity versions `>= 0.8`.
 
 ## Installation
 
@@ -32,21 +32,18 @@ module.exports = {
     fw: {
         integ: {
             include: [],
-            exclude: [
-                'examples',
-                'more-examples/**/*.sol'
-            ],
-            overrideDefaults: false,
-        },
-    },
+            exclude: ['examples', 'more-examples/**/*.sol'],
+            overrideDefaults: false
+        }
+    }
 };
 ```
 
-| options                          | type        | required | description                                                                                           | defaults              |
-|----------------------------------| ----------- | -------- | ------------------------------------------------------------------------------------------------------|-----------------------|
-| fw.integ.include                 | string[]    | false    | allow list of solidity contract files and directories to consider when integrating with the firewall  | -                     |
-| fw.integ.exclude                 | string[]    | false    | ignore list of solidity contract files and directories to exclude when integrating with the firewall  | ["**/node_modules/*"] |
-| fw.integ.overrideDefaults        | boolean     | false    | whether to ignore the default firewall integration exclude list                                       | false                 |
+| options                   | type     | required | description                                                                                          | defaults              |
+| ------------------------- | -------- | -------- | ---------------------------------------------------------------------------------------------------- | --------------------- |
+| fw.integ.include          | string[] | false    | allow list of solidity contract files and directories to consider when integrating with the firewall | -                     |
+| fw.integ.exclude          | string[] | false    | ignore list of solidity contract files and directories to exclude when integrating with the firewall | ["**/node_modules/*"] |
+| fw.integ.overrideDefaults | boolean  | false    | whether to ignore the default firewall integration exclude list                                      | false                 |
 
 ## Commands
 
@@ -59,17 +56,18 @@ $ ib --help
 
 ### Firewall Integration
 
-| options           | type   | required | description                                                                                |
-|-------------------| -------| ---------| -------------------------------------------------------------------------------------------|
-| -f<br> --file     | string | false    | path to a solidity file to integrate with the firewall                                     |
-| -d<br> --dir      | string | false    | path to directory containing solidity files to integrate with the firewall (non recursive) |
-| -r<br> --rec      | flag   | false    | special flag for the "-d" option, indicating whether should visit subdirectories or not    |
-| -v<br> --verbose  | flag   | false    | execute the command in "verbose" mode printing additional details along the execution      |
-| -i<br> --internal | flag   | false    | whether to add firewall protection for "internal" functions                                |
-| -m<br> --modifiers| string | false    | set advanced modifiers. [options](#advanced-modifiers)                |
+| options            | type   | required | description                                                                                |
+| ------------------ | ------ | -------- | ------------------------------------------------------------------------------------------ |
+| -f<br> --file      | string | false    | path to a solidity file to integrate with the firewall                                     |
+| -d<br> --dir       | string | false    | path to directory containing solidity files to integrate with the firewall (non recursive) |
+| -r<br> --rec       | flag   | false    | special flag for the "-d" option, indicating whether should visit subdirectories or not    |
+| -v<br> --verbose   | flag   | false    | execute the command in "verbose" mode printing additional details along the execution      |
+| -i<br> --internal  | flag   | false    | whether to add firewall protection for "internal" functions                                |
+| -m<br> --modifiers | string | false    | set advanced modifiers. [options](#advanced-modifiers)                                     |
 
 #### Advanced Modifiers
-- `invariantProtected` - For applying the subscribed invariant policy.
+
+-   `invariantProtected` - For applying the subscribed invariant policy.
 
 #### Usage Example
 

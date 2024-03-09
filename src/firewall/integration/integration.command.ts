@@ -1,10 +1,14 @@
-// Builtin.
+import * as colors from 'colors';
 import { resolve } from 'path';
-// 3rd party.
+
 import { CommandRunner, Option, SubCommand } from 'nest-commander';
-// Internal.
-import { FirewallIntegrateService } from './integrate.service';
-import type { FirewallModifier } from './integrate.utils';
+
+import { LoggerService } from '@/lib/logging/logger.service';
+import { FrameworkService } from '@/framework/framework.service';
+import { StandaloneCommand } from '@/commands/standalone-command.decorator';
+import { IntegrationService } from '@/firewall/integration/integration.service';
+import type { FirewallModifier } from '@/firewall/integration/integration.utils';
+import { DESCRIPTION, FULL_NAME, NAME } from '@/firewall/integration/integration.command.descriptor';
 
 type CommandOption = ReturnType<CommandRunner['command']['createOption']>;
 
@@ -18,16 +22,20 @@ interface CommandOptions {
 }
 
 @SubCommand({
-    name: 'integ',
-    description: "Integrate your contracts with Ironblocks' firewall",
+    name: NAME,
+    description: DESCRIPTION
 })
-export class FirewallIntegrateCommand extends CommandRunner {
-    constructor(private readonly fwIntegService: FirewallIntegrateService) {
+export class IntegrationCommand extends CommandRunner {
+    constructor(
+        private readonly logger: LoggerService,
+        private readonly integrationService: IntegrationService,
+        private readonly frameworkService: FrameworkService
+    ) {
         super();
     }
 
     private getCommandOption(optionName: string): CommandOption {
-        const option = this.command.options.find((option) => option.attributeName() === optionName);
+        const option = this.command.options.find(option => option.attributeName() === optionName);
         return option;
     }
 
@@ -36,41 +44,50 @@ export class FirewallIntegrateCommand extends CommandRunner {
         option.conflicts(conflicts);
     }
 
+    @StandaloneCommand(FULL_NAME)
     async run(passedParams: string[], options?: CommandOptions): Promise<void> {
-        const [unkownArg] = passedParams;
-        if (!!unkownArg) {
-            return this.command.error(`error: uknown argument '${unkownArg}'`);
-        }
+        this.validateOptions(options);
 
         try {
+            await this.frameworkService.assertDependencies();
+
+            this.logger.log('Starting integration');
+
             const integOptions = {
                 verbose: options?.verbose,
                 external: true,
                 internal: options?.internal,
-                modifiers: options?.modifiers,
+                modifiers: options?.modifiers
             };
 
             if (options?.file) {
-                return await this.fwIntegService.integContractFile(options.file, integOptions);
+                return await this.integrationService.integContractFile(options.file, integOptions);
             }
 
             if (options?.dir) {
-                return await this.fwIntegService.integContractsDir(
-                    options.dir,
-                    options.rec,
-                    integOptions,
-                );
+                return await this.integrationService.integContractsDir(options.dir, options.rec, integOptions);
             }
-        } catch (err) {
-            return this.command.error(`error: ${err.message}`);
-        }
 
-        this.command.help();
+            this.logger.log('All done!');
+        } catch (e) {
+            this.logger.error(e.message);
+            this.command.error('Integration failed');
+        }
+    }
+
+    private validateOptions(options?: CommandOptions): void {
+        const missingFileOption = Boolean(options.file) === false;
+        const missingDirOption = Boolean(options.dir) === false;
+
+        if (missingFileOption && missingDirOption) {
+            this.logger.error('No file or directory specified');
+            this.command.error(`Run ${colors.bold.cyan('ib fw integ --help')} for usage information`);
+        }
     }
 
     @Option({
         flags: '-f, --file <string>',
-        description: 'path to contract file to customize',
+        description: 'path to contract file to customize'
     })
     parseFilePath(val: string): string {
         this.setOptionConflicts('file', ['dir']);
@@ -79,7 +96,7 @@ export class FirewallIntegrateCommand extends CommandRunner {
 
     @Option({
         flags: '-d, --dir <string>',
-        description: 'path to contracts directory to customize',
+        description: 'path to contracts directory to customize'
     })
     parseDirPath(val: string): string {
         this.setOptionConflicts('dir', ['file']);
@@ -89,7 +106,7 @@ export class FirewallIntegrateCommand extends CommandRunner {
     @Option({
         flags: '-r, --rec',
         description: 'recurse on all the contract files in the directory',
-        defaultValue: false,
+        defaultValue: false
     })
     parseRecursive(): boolean {
         return true;
@@ -98,7 +115,7 @@ export class FirewallIntegrateCommand extends CommandRunner {
     @Option({
         flags: '-v, --verbose',
         description: 'provider additional details along the command execution',
-        defaultValue: false,
+        defaultValue: false
     })
     parseVerbose(): boolean {
         return true;
@@ -107,7 +124,7 @@ export class FirewallIntegrateCommand extends CommandRunner {
     @Option({
         flags: '-i, --internal',
         description: 'whether to add firewall protection for "internal" functions',
-        defaultValue: false,
+        defaultValue: false
     })
     parseInternal(): boolean {
         return true;
@@ -115,7 +132,7 @@ export class FirewallIntegrateCommand extends CommandRunner {
 
     @Option({
         flags: '-m, --modifiers <string...>',
-        description: 'set advanced modifiers',
+        description: 'set advanced modifiers'
     })
     parseModifiers(val: string): FirewallModifier[] {
         const ACCEPTED_MODIFIERS = ['invariantProtected'];

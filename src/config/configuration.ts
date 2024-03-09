@@ -1,4 +1,3 @@
-// Builtin.
 import { join } from 'path';
 import { cwd } from 'process';
 
@@ -23,9 +22,9 @@ const defaults = {
         integ: {
             include: [],
             exclude: ['**/node_modules/*'],
-            overrideDefaults: false,
-        },
-    },
+            overrideDefaults: false
+        }
+    }
 };
 
 export default async () => {
@@ -41,9 +40,9 @@ export default async () => {
         fw: {
             integ: {
                 ...defaults.fw.integ,
-                exclude: overrideDefaults ? [] : defaults.fw.integ.exclude,
-            },
-        },
+                exclude: overrideDefaults ? [] : defaults.fw.integ.exclude
+            }
+        }
     };
 
     const config: CLIConfig = {
@@ -53,9 +52,9 @@ export default async () => {
                 ...(localConfig?.fw?.integ || {}),
                 exclude: overrides.fw.integ.exclude
                     .concat(localConfig?.fw?.integ?.exclude || [])
-                    .map((pattern) => join(pattern)),
-            },
-        },
+                    .map(pattern => join(pattern))
+            }
+        }
     };
 
     return config;
