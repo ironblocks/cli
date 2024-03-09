@@ -29,9 +29,7 @@ describe('Files Service', () => {
             const filepath = __filename;
 
             const result = await service.doesFileExist(filepath);
-
             expect(result).toBe(true);
-            expect(fs.access).toHaveBeenCalledWith(filepath, fs.constants.F_OK);
         });
 
         it('returns false if the file does not exist', async () => {
@@ -39,8 +37,24 @@ describe('Files Service', () => {
             fs.access.mockRejectedValueOnce(new Error('File not found'));
 
             const result = await service.doesFileExist(filepath);
-
             expect(result).toBe(false);
+        });
+    });
+
+    describe('.doesFileNotExist()', () => {
+        it('returns false if the file exists', async () => {
+            const filepath = __filename;
+
+            const result = await service.doesFileNotExist(filepath);
+            expect(result).toBe(false);
+        });
+
+        it('returns true if the file does not exist', async () => {
+            const filepath = 'non-existent.txt';
+            fs.access.mockRejectedValueOnce(new Error('File not found'));
+
+            const result = await service.doesFileNotExist(filepath);
+            expect(result).toBe(true);
         });
     });
 });

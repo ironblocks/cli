@@ -43,7 +43,7 @@ export class HardhatService {
         }
     }
 
-    private async getMissingDependencies(): Promise<Dependency[]> {
+    public async getMissingDependencies(): Promise<Dependency[]> {
         const missingDependencies = [];
 
         for (const dependency of DEPENDENCIES) {
@@ -57,7 +57,7 @@ export class HardhatService {
         return missingDependencies;
     }
 
-    private async isDependencyInstalled(dependency: Dependency): Promise<boolean> {
+    public async isDependencyInstalled(dependency: Dependency): Promise<boolean> {
         try {
             await execAsync(`npm ls "${dependency.installName}"`, { encoding: 'utf-8' });
             return true;
@@ -73,19 +73,19 @@ export class HardhatService {
         }
     }
 
-    private async promptToInstallDependencies(): Promise<boolean> {
+    public async promptToInstallDependencies(): Promise<boolean> {
         // prettier-ignore
         const { installDependencies } = await this.inquirer.ask<InstallDependenciesAnswers>(QUESTION_SET_NAME, {});
         return installDependencies;
     }
 
-    private async installDependencies(dependencies: Dependency[]): Promise<void> {
+    public async installDependencies(dependencies: Dependency[]): Promise<void> {
         for (const dependency of dependencies) {
             await this.installDependency(dependency);
         }
     }
 
-    private async installDependency(dependency: Dependency): Promise<void> {
+    public async installDependency(dependency: Dependency): Promise<void> {
         const spinner = this.logger.spinner(`Installing "${dependency.name}"`);
 
         try {

@@ -35,7 +35,7 @@ export class FrameworkService {
         }
     }
 
-    private async getFrameworkType(): Promise<SupportedFrameworks> {
+    public async getFrameworkType(): Promise<SupportedFrameworks> {
         if (await this.foundryService.isFoundryProject()) {
             return SupportedFrameworks.Foundry;
         } else if (await this.hardhatService.isHardhatProject()) {
