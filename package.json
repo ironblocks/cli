@@ -20,7 +20,7 @@
         "url": "https://github.com/ironblocks/cli/issues"
     },
     "bin": {
-        "ib": "build/src/main.js"
+        "ib": "dist/main.js"
     },
     "scripts": {
         "build": "nest build && cp package.json build",
@@ -28,8 +28,8 @@
         "start": "nest start",
         "start:dev": "nest start --watch",
         "start:debug": "nest start --debug --watch",
-        "start:prod": "node build/src/main.js",
-        "lint": "eslint \"{src,libs,tests}/**/*.ts\" --fix",
+        "start:prod": "node dist/main.js",
+        "lint": "eslint \"{src,tests}/**/*.ts\" --fix",
         "test": "jest",
         "test:watch": "jest --watch",
         "test:cov": "jest --coverage",

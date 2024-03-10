@@ -5,6 +5,8 @@ const CONFIG_FILE_NAME = '.ib.cli.js';
 const LOCAL_CONFIG_PATH = join(cwd(), CONFIG_FILE_NAME);
 
 type CLIConfig = {
+    logLevel?: number;
+
     fw?: {
         integ?: {
             // Allow list of solidity contract files and directories to consider when integrating with the firewall.
@@ -18,6 +20,8 @@ type CLIConfig = {
 };
 
 const defaults = {
+    logLevel: 3,
+
     fw: {
         integ: {
             include: [],
@@ -37,6 +41,8 @@ export default async () => {
 
     const overrideDefaults = !!localConfig?.fw?.integ?.overrideDefaults;
     const overrides = {
+        logLevel: defaults.logLevel,
+
         fw: {
             integ: {
                 ...defaults.fw.integ,
@@ -46,6 +52,8 @@ export default async () => {
     };
 
     const config: CLIConfig = {
+        logLevel: localConfig?.logLevel || overrides.logLevel,
+
         fw: {
             integ: {
                 ...overrides.fw.integ,

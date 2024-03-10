@@ -1,28 +1,37 @@
 import * as ora from 'ora';
 
-import { consola } from 'consola';
 import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { ConsolaInstance, createConsola } from 'consola';
 
 @Injectable()
 export class LoggerService {
+    private readonly logger: ConsolaInstance;
+
+    constructor(private readonly config: ConfigService) {
+        this.logger = createConsola({
+            level: this.config.get<number>('logLevel')
+        });
+    }
+
     log(message: string) {
-        consola.info(message);
+        this.logger.info(message);
     }
 
     error(message: string) {
-        consola.error(message);
+        this.logger.error(message);
     }
 
     warn(message: string) {
-        consola.warn(message);
+        this.logger.warn(message);
     }
 
     debug(message: string) {
-        consola.debug(message);
+        this.logger.debug(message);
     }
 
     verbose(message: string) {
-        consola.trace(message);
+        this.logger.trace(message);
     }
 
     spinner(message: string) {

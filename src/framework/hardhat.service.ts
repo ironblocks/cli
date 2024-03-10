@@ -67,7 +67,6 @@ export class HardhatService {
             if (dependencyNotInstalled) {
                 return false;
             } else {
-                console.log(e);
                 throw new FrameworkError(`Could not check if dependency "${dependency.name}" is installed`);
             }
         }
