@@ -11,13 +11,21 @@ jest.mock('fs/promises', () => ({
     }
 }));
 
+jest.mock('path', () => ({
+    normalize: jest.fn(),
+    resolve: jest.fn()
+}));
+
 describe('Files Service', () => {
     let service: FilesService;
+
     let fs: jest.Mocked<typeof import('fs/promises')>;
+    let path: jest.Mocked<typeof import('path')>;
 
     beforeEach(() => {
         service = new FilesService();
         fs = require('fs/promises'); // Re-import fs to get the mocked version
+        path = require('path'); // Re-import path to get the mocked version
     });
 
     afterEach(() => {
@@ -38,6 +46,20 @@ describe('Files Service', () => {
 
             const result = await service.doesFileExist(filepath);
             expect(result).toBe(false);
+        });
+
+        it('normalizes the filepath', async () => {
+            const filepath = 'some/file.txt';
+            await service.doesFileExist(filepath);
+
+            expect(path.normalize).toHaveBeenCalledWith(filepath);
+        });
+
+        it('resolves the normalized filepath', async () => {
+            const filepath = 'some/file.txt';
+            await service.doesFileExist(filepath);
+
+            expect(path.resolve).toHaveBeenCalledWith(path.normalize(filepath));
         });
     });
 

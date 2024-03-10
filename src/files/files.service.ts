@@ -1,3 +1,4 @@
+import * as path from 'path';
 import * as fs from 'fs/promises';
 import { Injectable } from '@nestjs/common';
 
@@ -5,7 +6,10 @@ import { Injectable } from '@nestjs/common';
 export class FilesService {
     public async doesFileExist(filepath: string): Promise<boolean> {
         try {
-            await fs.access(filepath, fs.constants.F_OK);
+            const normalizedPath = path.normalize(filepath);
+            const resolvedPath = path.resolve(normalizedPath);
+
+            await fs.access(resolvedPath, fs.constants.F_OK);
             return true;
         } catch (e) {
             return false;
