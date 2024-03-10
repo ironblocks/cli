@@ -15,5 +15,9 @@ describe('Hardhat Dependencies', () => {
         it('has the correct install name', () => {
             expect(firewallConsumer?.installName).toBe('@ironblocks/firewall-consumer');
         });
+        
+        it('has a lowercased install name', () => {
+            expect(firewallConsumer.installName).toBe(firewallConsumer.installName.toLowerCase());
+        });
     });
 });

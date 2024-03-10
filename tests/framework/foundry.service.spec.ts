@@ -157,6 +157,18 @@ describe('Foundry Service', () => {
             const result = await foundryService.isDependencyInstalled(mockDependency);
             expect(result).toBe(false);
         });
+        
+        it('is case insensitive', async () => {
+            filesServiceMock.doesFileNotExist.mockResolvedValue(false);
+
+            (exec as unknown as jest.Mock).mockImplementation((cmd, options, callback) => {
+                callback({ code: 1, stdout: '', stderr: '' }, null);
+            });
+
+            await foundryService.isDependencyInstalled(mockDependency);
+            const executedCommand = (exec as unknown as jest.Mock).mock.calls[0][0];
+            expect(executedCommand).toContain('-i');
+        });
 
         it('throws an error if an unexpected error occurs', async () => {
             filesServiceMock.doesFileNotExist.mockResolvedValue(false);

@@ -60,7 +60,10 @@ export class FoundryService {
             return false;
         } else {
             try {
-                await execAsync(`grep -F -- "${dependency.installName}" .gitmodules`, { encoding: 'utf-8' });
+                //
+                // -i means case insensitive
+                // -F means the string is a fixed string, not a regex
+                await execAsync(`grep -i -F -- "${dependency.installName}" .gitmodules`, { encoding: 'utf-8' });
                 return true;
             } catch (e) {
                 // grep error codes
