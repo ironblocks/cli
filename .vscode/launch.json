@@ -7,37 +7,21 @@
         {
             "type": "node",
             "request": "launch",
-            "name": "Run CLI",
-            "cwd": "${workspaceRoot}",
-            "skipFiles": [
-                "<node_internals>/**"
-            ],
-            "runtimeArgs": [
-                // Tell V8 to compile ahead of time so breakpoints work correctly.
-                "--nolazy",
-                // Ensure ts-node is loaded before trying to execute.
-                "--require",
-                "ts-node/register",
-            ],
-            "args": [
-                // Add command and args here. E.g.:
-                // "fw",
-                // "integ",
-                // "-f",
-                // "/path/to/contract.sol"
-            ],
-            "sourceMaps": true,
-            "outputCapture": "std",
-            "program": "./src/main.ts",
+            "name": "Debug App",
+            "skipFiles": ["<node_internals>/**"],
+            "preLaunchTask": "pre-debug",
+            "program": "${workspaceFolder}/src/main.ts",
+            "console": "integratedTerminal",
+            "runtimeArgs": ["-r", "${workspaceFolder}/.vscode/load-debug-args.js"]
         },
 
         {
             "type": "node",
             "request": "launch",
-            "name": "Test CLI (current file)",
+            "name": "Debug Tests (current file)",
             "program": "${workspaceFolder}/node_modules/.bin/jest",
             "args": ["${fileBasenameNoExtension}", "--config", "jest.config.js"],
-            "console": "integratedTerminal",
-        },
+            "console": "integratedTerminal"
+        }
     ]
 }

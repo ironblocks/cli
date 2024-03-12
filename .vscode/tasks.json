@@ -1,0 +1,60 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "npm: build",
+            "type": "npm",
+            "script": "build"
+        },
+
+        {
+            "label": "prepare-debug-command",
+            "type": "shell",
+            "command": "echo \"${input:DebugApp.pickString}\" | tr ' ' '\\n' > .vscode/debug-args.txt",
+            "problemMatcher": []
+        },
+
+        {
+            "label": "pre-debug",
+            "dependsOn": ["npm: build", "prepare-debug-command"],
+            "dependsOrder": "sequence"
+        }
+    ],
+    "inputs": [
+        {
+            "id": "DebugApp.pickString",
+            "type": "pickString",
+            "description": "Enter arguments separated by spaces",
+            "options": [
+                "--help",
+                "--version",
+                "INVALID_COMMAND",
+
+                "fw",
+                "fw --help",
+                "fw INVALID_COMMAND",
+
+                "fw integ",
+                "fw integ --help",
+                "fw integ --verbose",
+                "fw integ INVALID_COMMAND",
+
+                "fw integ --file",
+                "fw integ --file INVALID_FILE",
+                "fw integ --file ${workspaceFolder}/fixtures/contracts/test-1.sol",
+                "fw integ --file ${workspaceFolder}/fixtures/contracts/test-1.sol --verbose",
+                "fw integ --file ${workspaceFolder}/fixtures/contracts/test-1.sol --internal",
+                "fw integ --file ${workspaceFolder}/fixtures/contracts/test-1.sol --modifiers",
+                "fw integ --file ${workspaceFolder}/fixtures/contracts/test-1.sol --modifiers invariantProtected",
+                "fw integ --file ${workspaceFolder}/fixtures/contracts/test-1.sol --modifiers INVALID_MODIFIER",
+
+                "fw integ --dir",
+                "fw integ --dir INVALID_DIR",
+                "fw integ --dir ${workspaceFolder}/fixtures/contracts",
+                "fw integ --dir ${workspaceFolder}/fixtures/contracts --verbose",
+                "fw integ --dir ${workspaceFolder}/fixtures/contracts --internal",
+                "fw integ --dir ${workspaceFolder}/fixtures/contracts --rec"
+            ]
+        }
+    ]
+}
