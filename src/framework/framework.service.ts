@@ -28,7 +28,7 @@ export class FrameworkService {
         if (frameworkType === FrameworkTypes.Unknown) {
             spinner.warn('Unknown development framework (expected Foundry or Hardhat)');
         } else {
-            spinner.info(`Detected ${colors.bold(frameworkType)} development framework`);
+            spinner.info(`Detected ${colors.cyan(frameworkType)} development framework`);
         }
     }
 

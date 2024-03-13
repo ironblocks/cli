@@ -61,7 +61,7 @@ describe('Framework Service', () => {
             await frameworkService.assertDependencies();
 
             expect(mockSpinner.info).toHaveBeenCalledWith(
-                `Detected ${colors.bold('some framework')} development framework`
+                `Detected ${colors.cyan('some framework')} development framework`
             );
         });
 
