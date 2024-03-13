@@ -1,6 +1,6 @@
 {
     "name": "@ironblocks/cli",
-    "version": "1.0.9",
+    "version": "1.0.10",
     "description": "",
     "author": "Ironblocks LTD",
     "license": "MIT",
@@ -75,6 +75,7 @@
         "ts-jest": "^29.1.2",
         "ts-loader": "^9.4.3",
         "ts-node": "^10.9.1",
+        "ts-prune": "^0.10.3",
         "tsconfig-paths": "^4.2.0",
         "typescript": "^5.1.3"
     }

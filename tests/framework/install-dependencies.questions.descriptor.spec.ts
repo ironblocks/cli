@@ -1,24 +1,24 @@
 import {
-    QUESTION_MESSAGE,
-    QUESTION_NAME,
-    QUESTION_SET_NAME,
-    QUESTION_TYPE
+    INSTALL_DEPENDENCIES_QUESTION_MESSAGE,
+    INSTALL_DEPENDENCIES_QUESTION_NAME,
+    INSTALL_DEPENDENCIES_QUESTION_SET_NAME,
+    INSTALL_DEPENDENCIES_QUESTION_TYPE
 } from '@/framework/install-dependencies.questions.descriptor';
 
 describe('Install Dependencies Questions Descriptor', () => {
     it('defines the correct question type', () => {
-        expect(QUESTION_TYPE).toBe('confirm');
+        expect(INSTALL_DEPENDENCIES_QUESTION_TYPE).toBe('confirm');
     });
 
     it('defines the correct question name', () => {
-        expect(QUESTION_NAME).toBe('installDependencies');
+        expect(INSTALL_DEPENDENCIES_QUESTION_NAME).toBe('installDependencies');
     });
 
     it('defines the correct question set name', () => {
-        expect(QUESTION_SET_NAME).toBe('dependencies');
+        expect(INSTALL_DEPENDENCIES_QUESTION_SET_NAME).toBe('dependencies');
     });
 
     it('defines the correct question message', () => {
-        expect(QUESTION_MESSAGE).toBe('Do you want to install missing dependencies?');
+        expect(INSTALL_DEPENDENCIES_QUESTION_MESSAGE).toBe('Do you want to install missing dependencies?');
     });
 });

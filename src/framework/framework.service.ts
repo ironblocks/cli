@@ -4,42 +4,41 @@ import { Injectable } from '@nestjs/common';
 import { LoggerService } from '@/lib/logging/logger.service';
 import { FoundryService } from '@/framework/foundry.service';
 import { HardhatService } from '@/framework/hardhat.service';
-import { FrameworkError } from '@/framework/framework.errors';
-import { SupportedFrameworks } from '@/framework/supported-frameworks.enum';
+import { FrameworkTypes } from '@/framework/supported-frameworks.enum';
+import { DependenciesService } from '@/framework/dependencies.services';
 
 @Injectable()
 export class FrameworkService {
     constructor(
+        private readonly logger: LoggerService,
         private readonly foundryService: FoundryService,
         private readonly hardhatService: HardhatService,
-        private readonly logger: LoggerService
+        private readonly dependenciesService: DependenciesService
     ) {}
 
     public async assertDependencies(): Promise<void> {
-        const frameworkType = (await this.getFrameworkType()) || 'Unknown Framework';
-        this.logger.log(`Development Framework: ${colors.cyan(frameworkType)}`);
+        await this.assertFrameworkType();
+        await this.dependenciesService.assertDependencies();
+    }
 
-        switch (frameworkType) {
-            case SupportedFrameworks.Foundry:
-                await this.foundryService.assertDependencies();
-                break;
-            case SupportedFrameworks.Hardhat:
-                await this.hardhatService.assertDependencies();
-                break;
-            default:
-                throw new FrameworkError(
-                    `Unknown development framework (are you missing a ${colors.cyan(
-                        'hardhat.config.js/ts'
-                    )} or ${colors.cyan('foundry.toml')} file?)`
-                );
+    public async assertFrameworkType(): Promise<void> {
+        const spinner = this.logger.spinner('Detecting development framework');
+        const frameworkType = await this.getFrameworkType();
+
+        if (frameworkType === FrameworkTypes.Unknown) {
+            spinner.warn('Unknown development framework (expected Foundry or Hardhat)');
+        } else {
+            spinner.info(`Detected ${colors.bold(frameworkType)} development framework`);
         }
     }
 
-    public async getFrameworkType(): Promise<SupportedFrameworks> {
+    public async getFrameworkType(): Promise<FrameworkTypes> {
         if (await this.foundryService.isFoundryProject()) {
-            return SupportedFrameworks.Foundry;
+            return FrameworkTypes.Foundry;
         } else if (await this.hardhatService.isHardhatProject()) {
-            return SupportedFrameworks.Hardhat;
+            return FrameworkTypes.Hardhat;
+        } else {
+            return FrameworkTypes.Unknown;
         }
     }
 }

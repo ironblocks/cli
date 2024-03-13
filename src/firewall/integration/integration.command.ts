@@ -49,9 +49,8 @@ export class IntegrationCommand extends CommandRunner {
         this.validateOptions(options);
 
         try {
-            await this.frameworkService.assertDependencies();
-
             this.logger.log('Starting integration');
+            await this.frameworkService.assertDependencies();
 
             const integOptions = {
                 verbose: options?.verbose,

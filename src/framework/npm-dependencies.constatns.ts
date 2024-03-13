@@ -1,5 +1,5 @@
 // prettier-ignore
-export const DEPENDENCIES = [
+export const NPM_DEPENDENCIES = [
     {
         name: '@ironblocks/firewall-consumer',
         installName: '@ironblocks/firewall-consumer',

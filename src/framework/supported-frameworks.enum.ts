@@ -1,4 +1,5 @@
-export enum SupportedFrameworks {
+export enum FrameworkTypes {
     Foundry = 'foundry',
-    Hardhat = 'hardhat'
+    Hardhat = 'hardhat',
+    Unknown = 'unknown'
 }

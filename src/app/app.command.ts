@@ -1,11 +1,11 @@
 import * as colors from 'colors';
 import { CommandRunner, Option, RootCommand } from 'nest-commander';
 
+import { OPTIONS } from '@/app/app.command.options.descriptors';
 import { LoggerService } from '@/lib/logging/logger.service';
 import { FirewallCommand } from '@/firewall/firewall.command';
 import { StandaloneCommand } from '@/commands/standalone-command.decorator';
 import { DESCRIPTION, NAME, FULL_NAME } from '@/app/app.command.descriptor';
-import { OPTIONS } from './app.command.options.descriptors';
 
 @RootCommand({
     name: NAME,
