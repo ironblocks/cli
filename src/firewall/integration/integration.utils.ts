@@ -70,7 +70,7 @@ const RE_CONTRACT_DEFINITION = new RegExp(`^${RE_CONTRACT_DECLARATION.source}${R
  * (function)? <signature>(<name>(...params)) <visibility>? <modifiers>? (returns (...params)?)?
  */
 const RE_FUNCTION = new RegExp(`(?<func>function)`, 'g');
-const RE_PARAMS = new RegExp(`(?<params>${RE_BLANK_SPACE.source}*[\\w,\\[\\]]+(?:${RE_BLANK_SPACE.source}*))*`, 'g');
+const RE_PARAMS = new RegExp(`(?<params>${RE_BLANK_SPACE.source}*[\\w,\\.\\[\\]]+(?:${RE_BLANK_SPACE.source}*))*`, 'g');
 const RE_ARGS = new RegExp(`(?:${RE_BLANK_SPACE.source}*[\\w,\\.\\(\\)\\[\\]]+(?:${RE_BLANK_SPACE.source}*))*`, 'g');
 const RE_SIGNATURE = new RegExp(
     `(?<signature>${RE_BLANK_SPACE.source}+(?<name>${RE_NAME.source})${RE_BLANK_SPACE.source}*\\(${RE_PARAMS.source}\\))`,
