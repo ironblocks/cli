@@ -7,9 +7,10 @@ import { FrameworkModule } from '@/framework/framework.module';
 import { IntegrationService } from '@/firewall/integration/integration.service';
 import { IntegrationUtils } from '@/firewall/integration/integration.utils';
 import { IntegrationCommand } from '@/firewall/integration/integration.command';
+import { MultisigModule } from '@/multisig/multisig.module';
 
 @Module({
-    imports: [LoggerModule, FilesModules, FrameworkModule],
+    imports: [LoggerModule, FilesModules, FrameworkModule, MultisigModule],
     providers: [LoggerService, IntegrationCommand, IntegrationService, IntegrationUtils]
 })
 export class IntegrationModule {}

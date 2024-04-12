@@ -16,7 +16,13 @@ import { UnsupportedSolidityVersionError } from '@/firewall/integration/errors/u
 
 const FW_IMPORT_PATH = '@ironblocks/firewall-consumer/contracts/FirewallConsumer.sol';
 const FW_IMPORT = `import "${FW_IMPORT_PATH}";`;
-const FW_BASE_CONTRACT = 'FirewallConsumer';
+const FW_CONTRACT = 'FirewallConsumer';
+
+const FW_BASE_CONTRACT_MSG_SENDER = 'msg.sender';
+const FW_BASE_CONTRACT_CONTROLLER = `(address(0), ${FW_BASE_CONTRACT_MSG_SENDER})`;
+const FW_BASE_CONTRACT = `FirewallConsumerBase`;
+const FW_BASE_CONTRACT_FULL_NAME = FW_BASE_CONTRACT + FW_BASE_CONTRACT_CONTROLLER;
+
 const FW_PROTECTED_MODIFIER = 'firewallProtected';
 const FW_PROTECTED_CUSTOM_MODIFIER = 'firewallProtectedCustom';
 const FW_PROTECTED_SIG_MODIFIER = 'firewallProtectedSig';
@@ -36,6 +42,7 @@ export interface IntegrateOptions {
     external?: boolean;
     internal?: boolean;
     modifiers?: FirewallModifier[];
+    multisigAddress?: string;
 }
 
 export const SUPPORTED_SOLIDITY_VERSIONS = '>= 0.8';
@@ -57,7 +64,10 @@ const RE_CONTRACT_DECLARATION = new RegExp(
     `(?<declaration>(?:abstract${RE_BLANK_SPACE.source}+)?contract${RE_BLANK_SPACE.source}+(?<name>${RE_NAME.source}))`,
     'g'
 );
-const RE_BASE_CONTRACTS = new RegExp(`(?<baseContracts>(?:${RE_BLANK_SPACE.source}*[\\w,]+)+)`, 'g');
+
+const RE_FW_CONTRACT = new RegExp(`(?<fwContract>(?:${FW_CONTRACT}(?:Base${RE_BLANK_SPACE.source}*\\(.*\\))?))`, 'gs');
+
+const RE_BASE_CONTRACTS = new RegExp(`(?<baseContracts>(?:${RE_BLANK_SPACE.source}*[\\w,()]+)+)`, 'g');
 const RE_INHERITANCE = new RegExp(
     `(?<inheritance>${RE_BLANK_SPACE.source}+is${RE_BLANK_SPACE.source}+${RE_BASE_CONTRACTS.source})`,
     'g'
@@ -239,7 +249,12 @@ export class IntegrationUtils {
                 return this.customizeContractInPlace(customized, child, contractNamesToCustomize, options);
             }, originalCode);
 
-            if (customizedCode === originalCode && !parsed.children.some(this.alreadyCustomizedContractHeader)) {
+            if (
+                customizedCode === originalCode &&
+                !parsed.children.some(contract =>
+                    this.alreadyCustomizedContractHeader(contract, options?.multisigAddress)
+                )
+            ) {
                 // No need to add firewall imports since the file is not using the firewall.
                 return false;
             }
@@ -308,9 +323,12 @@ export class IntegrationUtils {
         const [startIndex, endIndex] = range;
         const contractCode = code.substring(startIndex, endIndex + 1);
         const customizedContractCode = this.customizeContractCode(contract, contractCode, options);
-        if (customizedContractCode !== contractCode || this.alreadyCustomizedContractHeader(contract)) {
+        if (
+            customizedContractCode !== contractCode ||
+            this.alreadyCustomizedContractHeader(contract, options?.multisigAddress)
+        ) {
             (contract.baseContracts || []).forEach(({ baseName }) => {
-                if (baseName?.namePath && baseName?.namePath !== FW_BASE_CONTRACT) {
+                if (baseName?.namePath && baseName.namePath !== FW_CONTRACT && baseName.namePath !== FW_BASE_CONTRACT) {
                     contractNamesToCustomize.add(baseName.namePath);
                 }
             });
@@ -325,7 +343,7 @@ export class IntegrationUtils {
         contractCode: string,
         options?: IntegrateOptions
     ): string {
-        const alreadyCustomizedHeader = this.alreadyCustomizedContractHeader(contract);
+        const alreadyCustomizedHeader = this.alreadyCustomizedContractHeader(contract, options?.multisigAddress);
         const methods = contract.subNodes.filter(({ type }) => type === 'FunctionDefinition');
         const alreadyCustomizedSomeMethods = methods.some(this.alreadyCustomizedContractMethod.bind(this));
         // Add custom modifiers to contract methods.
@@ -345,6 +363,10 @@ export class IntegrationUtils {
             return contractCodeWithCustomizedMethods;
         }
 
+        const fwInheritedContract = options?.multisigAddress?.trim()
+            ? FW_BASE_CONTRACT_FULL_NAME.replace(FW_BASE_CONTRACT_MSG_SENDER, options.multisigAddress)
+            : FW_CONTRACT;
+
         // Add base contract inheritance to contract declaration.
         const customizedContractCode = contractCodeWithCustomizedMethods.replace(
             RE_CONTRACT_DEFINITION,
@@ -358,12 +380,25 @@ export class IntegrationUtils {
                 if (baseContracts) {
                     const is = inheritance.substring(0, inheritance.length - baseContracts.length);
                     const [indentation] = baseContracts.match(RE_INDENTATION) || [' '];
+
+                    // In case the contract already inherits from the firewall contract,
+                    // it has to be overrided by FirevallConsumerBase or vice versa.
+                    // This case is possible when user runs integration multiple times.
+                    // I.E. first time - run integration with multisig address - FirewallConsumerBase is inherited,
+                    // second time - run integration without multisig address - FirewallConsumer is inherited.
+                    const fwIsAlreadyInherited = baseContracts.match(RE_FW_CONTRACT);
+
                     // Inheritance is placed leftmost to prevent inheritance linearization error.
-                    const customizedInheritance = `${is}${FW_BASE_CONTRACT},${indentation}${baseContracts}`;
+                    // In overriding case, firewall contract is just replaced with the new one and the order is omitted.
+
+                    const customizedInheritance = fwIsAlreadyInherited
+                        ? inheritance.replace(RE_FW_CONTRACT, fwInheritedContract)
+                        : `${is}${fwInheritedContract},${indentation}${baseContracts}`;
+
                     return `${declaration}${customizedInheritance}`;
                 }
 
-                return `${declaration} is ${FW_BASE_CONTRACT}`;
+                return `${declaration} is ${fwInheritedContract}`;
             }
         );
         return customizedContractCode;
@@ -489,8 +524,16 @@ export class IntegrationUtils {
         return !!fwImport;
     }
 
-    private alreadyCustomizedContractHeader(contract: SolidityConstruct): boolean {
-        return (contract.baseContracts || []).some(base => base.baseName?.namePath === FW_BASE_CONTRACT);
+    private alreadyCustomizedContractHeader(contract: SolidityConstruct, multisigAddress: string): boolean {
+        // if header already contains FirewallConsumer or FirewallConsumeBase
+        // it is conisdered customized in 2 cases:
+        // 1. multisig address IS provided && the contract inherits from the FirewallConsumeBase.
+        // 2. multisig address IS NOT provided && the contract inherits from the FirewallConsumer.
+        return (contract.baseContracts || []).some(
+            base =>
+                (!multisigAddress && base.baseName?.namePath === FW_CONTRACT) ||
+                (multisigAddress && base.baseName?.namePath === FW_BASE_CONTRACT)
+        );
     }
 
     private alreadyCustomizedContractMethod(method: SolidityConstruct): boolean {
