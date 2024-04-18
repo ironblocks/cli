@@ -5,8 +5,8 @@ import {
     NETWORK_QUESTION_NAME,
     NETWORK_QUESTION_SET_NAME,
     NETWORK_QUESTION_TYPE
-} from '@/multisig/network.questions.descriptor';
-import { Network } from './multisig.safe.constants';
+} from '@/multiSig/network.questions.descriptor';
+import { Network, NETWORK_QUESTION_CHOICES } from '@/multiSig/networks.enum';
 
 export type NetworkAnswers = {
     [NETWORK_QUESTION_NAME]: number;
@@ -18,7 +18,7 @@ export class NetworkQuestions {
         type: NETWORK_QUESTION_TYPE,
         name: NETWORK_QUESTION_NAME,
         message: NETWORK_QUESTION_MESSAGE,
-        choices: Object.keys(Network).filter(key => isNaN(Number(key)))
+        choices: NETWORK_QUESTION_CHOICES
     })
     parseNetwork(networkName: string): number {
         return Network[networkName];

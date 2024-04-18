@@ -1,51 +1,46 @@
 import { LoggerService } from '@/lib/logging/logger.service';
+import { MultiSigAnswers } from '@/multiSig/multiSig.questions';
+import { MULTISIG_QUESTION_SET_NAME } from '@/multiSig/multiSig.questions.descriptor';
+import { Network } from '@/multiSig/networks.enum';
+import { SafeService } from '@/multiSig/safe.service';
 import { Injectable } from '@nestjs/common';
 import * as colors from 'colors';
 import { InquirerService } from 'nest-commander';
-import { MultisigAnswers } from './multisig.questions';
-import { MULTISIG_QUESTION_SET_NAME } from './multisig.questions.descriptor';
-import { Network } from './multisig.safe.constants';
-import { NetworkService } from './network.service';
-import { SafeService } from './safe.service';
+import { NetworkAnswers } from '@/multiSig/network.questions';
+import { NETWORK_QUESTION_SET_NAME } from '@/multiSig/network.questions.descriptor';
 
 @Injectable()
-export class MultisigService {
+export class MultiSigService {
     constructor(
         private readonly logger: LoggerService,
         private readonly inquirer: InquirerService,
-        private readonly networkService: NetworkService,
         private readonly safeService: SafeService
     ) {}
 
-    async runMultisigFlow(): Promise<string> {
-        const chainId = await this.networkService.askToChooseNetwork();
+    async getMultiSigAddress(): Promise<string | undefined> {
+        const chainId = await this.promptToChooseNetwork();
 
-        let multisigAddress = '';
+        if (chainId === Network.Skip) {
+            this.logger.warn(`Skipping Multi-Sig integration`);
+        } else {
+            const multisigAddress = await this.promptForMultiSigAddress();
+            this.logger.log(`Using Multi-Sig Address: ${colors.cyan(multisigAddress)}`);
 
-        if (chainId != Network.Skip) {
-            multisigAddress = await this.askForMultisigAddress();
+            if (chainId !== Network.Other) {
+                this.logger.log(`Validating Multi-Sig Address on ${colors.cyan(Network[chainId])} network`);
 
-            if (multisigAddress) {
-                if (chainId != Network.Other) {
-                    await this.safeService.validateMultisigAddress(chainId, multisigAddress);
-                } else {
-                    this.logger.warn(
-                        `Network is set to "Other". Skipping multisig address validation using ${colors.cyan(
-                            'SAFE'
-                        )} service`
-                    );
-                }
+                await this.safeService.validateMultiSigAddress(chainId, multisigAddress);
             }
+
+            return multisigAddress;
         }
-
-        multisigAddress
-            ? this.logger.log(`Multisig address provided: ${colors.cyan(multisigAddress)}`)
-            : this.logger.warn('Multisig address is not provided or invalid. Skipping multisig support.');
-
-        return multisigAddress;
     }
 
-    private async askForMultisigAddress(): Promise<string> {
-        return (await this.inquirer.ask<MultisigAnswers>(MULTISIG_QUESTION_SET_NAME, {})).provideMultisigAddress;
+    private async promptToChooseNetwork(): Promise<number> {
+        return (await this.inquirer.ask<NetworkAnswers>(NETWORK_QUESTION_SET_NAME, {})).chooseNetwork;
+    }
+
+    private async promptForMultiSigAddress(): Promise<string> {
+        return (await this.inquirer.ask<MultiSigAnswers>(MULTISIG_QUESTION_SET_NAME, {})).provideMultiSigAddress;
     }
 }

@@ -19,9 +19,9 @@ const FW_IMPORT = `import "${FW_IMPORT_PATH}";`;
 const FW_CONTRACT = 'FirewallConsumer';
 
 const FW_BASE_CONTRACT_MSG_SENDER = 'msg.sender';
-const FW_BASE_CONTRACT_CONTROLLER = `(address(0), ${FW_BASE_CONTRACT_MSG_SENDER})`;
+const FW_BASE_CONTRACT_CONSTRUCTOR = `(address(0), ${FW_BASE_CONTRACT_MSG_SENDER})`;
 const FW_BASE_CONTRACT = `FirewallConsumerBase`;
-const FW_BASE_CONTRACT_FULL_NAME = FW_BASE_CONTRACT + FW_BASE_CONTRACT_CONTROLLER;
+const FW_BASE_CONTRACT_FULL_NAME = FW_BASE_CONTRACT + FW_BASE_CONTRACT_CONSTRUCTOR;
 
 const FW_PROTECTED_MODIFIER = 'firewallProtected';
 const FW_PROTECTED_CUSTOM_MODIFIER = 'firewallProtectedCustom';
@@ -42,7 +42,7 @@ export interface IntegrateOptions {
     external?: boolean;
     internal?: boolean;
     modifiers?: FirewallModifier[];
-    multisigAddress?: string;
+    multiSigAddress?: string;
 }
 
 export const SUPPORTED_SOLIDITY_VERSIONS = '>= 0.8';
@@ -252,7 +252,7 @@ export class IntegrationUtils {
             if (
                 customizedCode === originalCode &&
                 !parsed.children.some(contract =>
-                    this.alreadyCustomizedContractHeader(contract, options?.multisigAddress)
+                    this.alreadyCustomizedContractHeader(contract, options?.multiSigAddress)
                 )
             ) {
                 // No need to add firewall imports since the file is not using the firewall.
@@ -325,7 +325,7 @@ export class IntegrationUtils {
         const customizedContractCode = this.customizeContractCode(contract, contractCode, options);
         if (
             customizedContractCode !== contractCode ||
-            this.alreadyCustomizedContractHeader(contract, options?.multisigAddress)
+            this.alreadyCustomizedContractHeader(contract, options?.multiSigAddress)
         ) {
             (contract.baseContracts || []).forEach(({ baseName }) => {
                 if (baseName?.namePath && baseName.namePath !== FW_CONTRACT && baseName.namePath !== FW_BASE_CONTRACT) {
@@ -343,7 +343,7 @@ export class IntegrationUtils {
         contractCode: string,
         options?: IntegrateOptions
     ): string {
-        const alreadyCustomizedHeader = this.alreadyCustomizedContractHeader(contract, options?.multisigAddress);
+        const alreadyCustomizedHeader = this.alreadyCustomizedContractHeader(contract, options?.multiSigAddress);
         const methods = contract.subNodes.filter(({ type }) => type === 'FunctionDefinition');
         const alreadyCustomizedSomeMethods = methods.some(this.alreadyCustomizedContractMethod.bind(this));
         // Add custom modifiers to contract methods.
@@ -363,8 +363,8 @@ export class IntegrationUtils {
             return contractCodeWithCustomizedMethods;
         }
 
-        const fwInheritedContract = options?.multisigAddress?.trim()
-            ? FW_BASE_CONTRACT_FULL_NAME.replace(FW_BASE_CONTRACT_MSG_SENDER, options.multisigAddress)
+        const fwInheritedContract = options?.multiSigAddress?.trim()
+            ? FW_BASE_CONTRACT_FULL_NAME.replace(FW_BASE_CONTRACT_MSG_SENDER, options.multiSigAddress)
             : FW_CONTRACT;
 
         // Add base contract inheritance to contract declaration.
@@ -524,15 +524,15 @@ export class IntegrationUtils {
         return !!fwImport;
     }
 
-    private alreadyCustomizedContractHeader(contract: SolidityConstruct, multisigAddress: string): boolean {
+    private alreadyCustomizedContractHeader(contract: SolidityConstruct, multiSigAddress: string): boolean {
         // if header already contains FirewallConsumer or FirewallConsumeBase
         // it is conisdered customized in 2 cases:
         // 1. multisig address IS provided && the contract inherits from the FirewallConsumeBase.
         // 2. multisig address IS NOT provided && the contract inherits from the FirewallConsumer.
         return (contract.baseContracts || []).some(
             base =>
-                (!multisigAddress && base.baseName?.namePath === FW_CONTRACT) ||
-                (multisigAddress && base.baseName?.namePath === FW_BASE_CONTRACT)
+                (!multiSigAddress && base.baseName?.namePath === FW_CONTRACT) ||
+                (multiSigAddress && base.baseName?.namePath === FW_BASE_CONTRACT)
         );
     }
 
