@@ -3,7 +3,7 @@ import { Network, SupportedNetworks } from '@/multiSig/networks.enum';
 import { Injectable } from '@nestjs/common';
 import SafeApiKit from '@safe-global/api-kit';
 import * as colors from 'colors';
-import { InvalidMultiSigAddressError } from './errors/invalid.multiSig.address.error';
+import { InvalidMultiSigAddressError } from '@/multisig/errors/invalid.multiSig.address.error';
 
 @Injectable()
 export class SafeService {
