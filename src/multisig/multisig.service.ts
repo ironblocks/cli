@@ -37,7 +37,7 @@ export class MultiSigService {
     }
 
     private async promptToChooseNetwork(): Promise<number> {
-        return (await this.inquirer.ask<NetworkAnswers>(NETWORK_QUESTION_SET_NAME, {})).chooseNetwork;
+        return (await this.inquirer.ask<NetworkAnswers>(NETWORK_QUESTION_SET_NAME, {})).chooseNetwork ?? Network.Skip;
     }
 
     private async promptForMultiSigAddress(): Promise<string> {

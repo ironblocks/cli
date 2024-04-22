@@ -20,7 +20,6 @@ export class MultiSigQuestions {
         name: MULTISIG_QUESTION_NAME,
         message: MULTISIG_QUESTION_MESSAGE,
         validate: multiSigAddress => {
-            ethers.Wallet.createRandom();
             return ethers.isAddress(multiSigAddress) || MULTISIG_INVALID_ADDRESS_MESSAGE;
         }
     })

@@ -1,3 +1,5 @@
+import { skip } from 'node:test';
+
 export enum Network {
     Mainnet = 1,
     Sepolia = 11155111,
@@ -7,6 +9,8 @@ export enum Network {
     Skip = -1
 }
 
-export type AvailableNetwork = Omit<Network, 'Other' | 'Skip'>;
+type ExcludeOtherAndSkip<T> = T extends Network.Other | Network.Skip ? never : T;
+
+export type SupportedNetworks = ExcludeOtherAndSkip<Network>;
 
 export const NETWORK_QUESTION_CHOICES = Object.keys(Network).filter(key => isNaN(Number(key)));

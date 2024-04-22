@@ -1,5 +1,5 @@
 import { LoggerService } from '@/lib/logging/logger.service';
-import { Network, AvailableNetwork } from '@/multiSig/networks.enum';
+import { Network, SupportedNetworks } from '@/multiSig/networks.enum';
 import { Injectable } from '@nestjs/common';
 import SafeApiKit from '@safe-global/api-kit';
 import * as colors from 'colors';
@@ -12,7 +12,7 @@ export class SafeService {
     // function to validate multisig address
     // if the address is valid the same address is returned
     // if the address is invalid, the exception is thrown and cli execution is halted
-    async validateMultiSigAddress(chainId: AvailableNetwork, multiSigAddress: string): Promise<void> {
+    async validateMultiSigAddress(chainId: SupportedNetworks, multiSigAddress: string): Promise<void> {
         const spinner = this.logger.spinner(`Address validation using ${colors.cyan('SAFE')} service`);
 
         const safeService = new SafeApiKit({
