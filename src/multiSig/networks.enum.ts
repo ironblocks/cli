@@ -1,5 +1,3 @@
-import { skip } from 'node:test';
-
 export enum Network {
     Mainnet = 1,
     Sepolia = 11155111,
