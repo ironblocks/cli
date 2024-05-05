@@ -4,9 +4,10 @@ import {
     NETWORK_QUESTION_MESSAGE,
     NETWORK_QUESTION_NAME,
     NETWORK_QUESTION_SET_NAME,
-    NETWORK_QUESTION_TYPE
+    NETWORK_QUESTION_TYPE,
+    NETWORK_QUESTION_CHOICES
 } from '@/multiSig/network.questions.descriptor';
-import { Network, NETWORK_QUESTION_CHOICES } from '@/multiSig/networks.enum';
+import { Network } from '@/multiSig/networks.enum';
 
 export type NetworkAnswers = {
     [NETWORK_QUESTION_NAME]: number;
