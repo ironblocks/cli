@@ -3,7 +3,7 @@ import { Network, SupportedNetworks } from '@/multiSig/networks.enum';
 import { Injectable } from '@nestjs/common';
 import SafeApiKit from '@safe-global/api-kit';
 import * as colors from 'colors';
-import { InvalidMultiSigAddressError } from '@/multiSig/errors/invalid.multiSig.address.error';
+import { MultiSigError } from '@/multiSig/multiSig.errors';
 
 @Injectable()
 export class SafeService {
@@ -31,7 +31,7 @@ export class SafeService {
                 )} chain.`
             );
 
-            throw new InvalidMultiSigAddressError('MultiSig address validation is failed.');
+            throw new MultiSigError('MultiSig address validation is failed.');
         }
     }
 }

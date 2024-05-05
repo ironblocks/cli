@@ -7,6 +7,4 @@ export enum Network {
     Skip = -1
 }
 
-type ExcludeOtherAndSkip<T> = T extends Network.Other | Network.Skip ? never : T;
-
-export type SupportedNetworks = ExcludeOtherAndSkip<Network>;
+export type SupportedNetworks = Exclude<Network, Network.Other | Network.Skip>;
