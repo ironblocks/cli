@@ -7,8 +7,4 @@ export enum Network {
     Skip = -1
 }
 
-type ExcludeOtherAndSkip<T> = T extends Network.Other | Network.Skip ? never : T;
-
-export type SupportedNetworks = ExcludeOtherAndSkip<Network>;
-
-export const NETWORK_QUESTION_CHOICES = Object.keys(Network).filter(key => isNaN(Number(key)));
+export type SupportedNetworks = Exclude<Network, Network.Other | Network.Skip>;
