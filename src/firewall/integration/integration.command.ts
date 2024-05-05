@@ -3,12 +3,13 @@ import { resolve } from 'path';
 
 import { CommandRunner, Option, SubCommand } from 'nest-commander';
 
-import { LoggerService } from '@/lib/logging/logger.service';
-import { FrameworkService } from '@/framework/framework.service';
 import { StandaloneCommand } from '@/commands/standalone-command.decorator';
+import { DESCRIPTION, FULL_NAME, NAME } from '@/firewall/integration/integration.command.descriptor';
 import { IntegrationService } from '@/firewall/integration/integration.service';
 import type { FirewallModifier } from '@/firewall/integration/integration.utils';
-import { DESCRIPTION, FULL_NAME, NAME } from '@/firewall/integration/integration.command.descriptor';
+import { FrameworkService } from '@/framework/framework.service';
+import { LoggerService } from '@/lib/logging/logger.service';
+import { MultiSigService } from '@/multiSig/multiSig.service';
 
 type CommandOption = ReturnType<CommandRunner['command']['createOption']>;
 
@@ -29,7 +30,8 @@ export class IntegrationCommand extends CommandRunner {
     constructor(
         private readonly logger: LoggerService,
         private readonly integrationService: IntegrationService,
-        private readonly frameworkService: FrameworkService
+        private readonly frameworkService: FrameworkService,
+        private readonly multiSigService: MultiSigService
     ) {
         super();
     }
@@ -52,11 +54,14 @@ export class IntegrationCommand extends CommandRunner {
             this.logger.log('Starting integration');
             await this.frameworkService.assertDependencies();
 
+            const multiSigAddress = await this.multiSigService.getMultiSigAddress();
+
             const integOptions = {
                 verbose: options?.verbose,
                 external: true,
                 internal: options?.internal,
-                modifiers: options?.modifiers
+                modifiers: options?.modifiers,
+                multiSigAddress: multiSigAddress
             };
 
             if (options?.file) {

@@ -38,7 +38,7 @@ describe('Sub-Command Option: integ --file', () => {
         const badFilePath = './bad/path/to/file.sol';
         await CommandTestFactory.run(commandInstance, ['fw', 'integ', '-f', badFilePath]);
 
-        const commandOutput = stderrSpy.mock.calls[0][0];
+        const commandOutput = stderrSpy.mock.calls[1][0];
         expect(commandOutput).toContain(`File does not exist`);
     });
 });
