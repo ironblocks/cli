@@ -14,14 +14,19 @@ import { UnsupportedParamTypeError } from '@/firewall/integration/errors/unsuppo
 import { UnsupportedFileFormatError } from '@/firewall/integration/errors/unsupported.file.format.error';
 import { UnsupportedSolidityVersionError } from '@/firewall/integration/errors/unsupported.solidity.version.error';
 
+const MSG_SENDER = 'msg.sender';
+const ADDRESS_ZERO = 'address(0)';
+
 const FW_IMPORT_PATH = '@ironblocks/firewall-consumer/contracts/FirewallConsumer.sol';
 const FW_IMPORT = `import "${FW_IMPORT_PATH}";`;
-const FW_CONTRACT = 'FirewallConsumer';
 
-const FW_BASE_CONTRACT_MSG_SENDER = 'msg.sender';
-const FW_BASE_CONTRACT_CONSTRUCTOR = `(address(0), ${FW_BASE_CONTRACT_MSG_SENDER})`;
-const FW_BASE_CONTRACT = `FirewallConsumerBase`;
-const FW_BASE_CONTRACT_FULL_NAME = FW_BASE_CONTRACT + FW_BASE_CONTRACT_CONSTRUCTOR;
+const FW_CONTRACT = 'FirewallConsumer';
+const FW_BASE_CONTRACT = 'FirewallConsumerBase';
+
+const FW_BASE_CONTRACT_CONSTRUCTOR = (options?: IntegrateOptions) =>
+    `(${ADDRESS_ZERO}, ${options?.multiSigAddress ?? MSG_SENDER})`;
+const FW_BASE_CONTRACT_FULL_NAME = (options?: IntegrateOptions) =>
+    FW_BASE_CONTRACT + FW_BASE_CONTRACT_CONSTRUCTOR(options);
 
 const FW_PROTECTED_MODIFIER = 'firewallProtected';
 const FW_PROTECTED_CUSTOM_MODIFIER = 'firewallProtectedCustom';
@@ -34,6 +39,18 @@ const FIREWALL_MODIFIERS = [
     FW_PROTECTED_SIG_MODIFIER,
     FW_INVARIANT_PROTECTED_MODIFIER
 ] as const;
+
+const FW_STORAGE_SLOT = 'bytes32(uint256(keccak256("eip1967.firewall")) - 1)';
+const FW_ADMIN_STORAGE_SLOT = 'bytes32(uint256(keccak256("eip1967.firewall.admin")) - 1)';
+
+const FW_PROXY_INITIALIZER_MODIFIER = 'initializer';
+const FW_PROXY_REINITIALIZER_MODIFIER = 'reinitializer';
+
+const FW_PROXY_SETUP = `_setAddressBySlot(${FW_STORAGE_SLOT}, address(0));`;
+const FW_PROXY_ADMIN_SETUP = (options?: IntegrateOptions) =>
+    `_setAddressBySlot(${FW_ADMIN_STORAGE_SLOT}, ${options?.multiSigAddress ?? MSG_SENDER});`;
+const FW_PROXY_FULL_SETUP = (options?: IntegrateOptions) =>
+    `\n\t\t${FW_PROXY_SETUP}\n\t\t${FW_PROXY_ADMIN_SETUP(options)}`;
 
 export type FirewallModifier = (typeof FIREWALL_MODIFIERS)[number];
 
@@ -132,7 +149,7 @@ type SolidityConstruct = {
     isConstructor?: boolean;
     body?: SolidityConstruct;
     modifiers?: SolidityConstruct[];
-    parameters?: SolidityConstruct[];
+    arguments?: SolidityConstruct[];
     typeName?: SolidityConstruct;
     baseTypeName?: SolidityConstruct;
     length?: {
@@ -364,7 +381,7 @@ export class IntegrationUtils {
         }
 
         const fwInheritedContract = options?.multiSigAddress?.trim()
-            ? FW_BASE_CONTRACT_FULL_NAME.replace(FW_BASE_CONTRACT_MSG_SENDER, options.multiSigAddress)
+            ? FW_BASE_CONTRACT_FULL_NAME(options)
             : FW_CONTRACT;
 
         // Add base contract inheritance to contract declaration.
@@ -445,7 +462,7 @@ export class IntegrationUtils {
         }
 
         try {
-            const customizedMethodCode = methodCode.replace(
+            let customizedMethodCode = methodCode.replace(
                 RE_METHOD_DEFINITION,
                 (
                     match: string,
@@ -476,6 +493,10 @@ export class IntegrationUtils {
                     return `${func}${signature}${visibility} ${modifiersToAdd}${returns}`;
                 }
             );
+
+            if (this.proxyModifiersAreDetected(method?.modifiers)) {
+                customizedMethodCode = this.customizeProxyInitializer(customizedMethodCode, options);
+            }
 
             return customizedMethodCode;
         } catch (err) {
@@ -519,6 +540,11 @@ export class IntegrationUtils {
         return `${FW_IMPORT}\r\n\r\n${code}`;
     }
 
+    private customizeProxyInitializer(methodCode: string, options?: IntegrateOptions): string {
+        const lastBracketIndex = methodCode.lastIndexOf('}');
+        return methodCode.slice(0, lastBracketIndex) + `${FW_PROXY_FULL_SETUP(options)}` + '\n\t}';
+    }
+
     private alreadyCustomizedImports(imports: SolidityConstruct[]): boolean {
         const fwImport = imports.find(({ path }) => path === FW_IMPORT_PATH);
         return !!fwImport;
@@ -540,6 +566,19 @@ export class IntegrationUtils {
         return (method.modifiers || []).some(modifier => !!this.serializerByModifier[modifier.name]);
     }
 
+    private proxyModifiersAreDetected(modifiers: SolidityConstruct[]): boolean {
+        // Modifiers supposed to be used from openzeppelin library.
+        // Only two modifiers are available in openzeppelin that indicates proxy.
+        // 1. initializer 2. reinitializer(uint8 version)
+        return modifiers.some(
+            modifier =>
+                (modifier.name === FW_PROXY_INITIALIZER_MODIFIER && !modifier.arguments) ||
+                (modifier.name === FW_PROXY_REINITIALIZER_MODIFIER &&
+                    modifier.arguments?.length == 1 &&
+                    modifier.arguments[0].type == 'NumberLiteral')
+        );
+    }
+
     private getModifiersToAdd(method: SolidityConstruct, options?: IntegrateOptions): FirewallModifier[] {
         switch (method.visibility) {
             case 'external':
@@ -557,7 +596,7 @@ export class IntegrationUtils {
     private calcSighash(contract: SolidityConstruct, method: SolidityConstruct): string {
         const contractName = contract.name;
         const methodName = method.name!;
-        const paramTypes = (method.parameters || []).map(param => {
+        const paramTypes = (method.arguments || []).map(param => {
             try {
                 return this.getParamTypeName(param.typeName);
             } catch (err) {
