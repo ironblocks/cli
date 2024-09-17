@@ -2,7 +2,7 @@ import { CommandRunner, Option, SubCommand } from 'nest-commander';
 
 import { FilesService } from '@/files/files.service';
 import { LoggerService } from '@/lib/logging/logger.service';
-import { EnableService } from '@/venn/enable/enable.service';
+import { EnableProtectionOptions, EnableService } from '@/venn/enable/enable.service';
 import { StandaloneCommand } from '@/commands/standalone-command.decorator';
 import { SupportedVennNetworks } from '@/venn/supported-networks.enum';
 import { DESCRIPTION, FULL_NAME, NAME } from '@/venn/enable/enable.command.descriptor';
@@ -22,9 +22,14 @@ export class EnableCommand extends CommandRunner {
     }
 
     @StandaloneCommand(FULL_NAME)
-    async run(passedParams: string[]): Promise<void> {
-        const result = await this.enableService.enable();
-        this.logger.log(`Enable command executed with result: ${result}`);
+    async run(passedParams: string[], options: EnableProtectionOptions): Promise<void> {
+        const result = await this.enableService.enable({
+            contractsFile: options.contractsFile,
+            network: options.network,
+            policy: options.policy
+        });
+
+        this.logger.log(`Protection result: ${result}`);
     }
 
     @Option({
