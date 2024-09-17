@@ -6,6 +6,7 @@ import { EnableService } from '@/venn/enable/enable.service';
 import { StandaloneCommand } from '@/commands/standalone-command.decorator';
 import { SupportedVennNetworks } from '@/venn/supported-networks.enum';
 import { DESCRIPTION, FULL_NAME, NAME } from '@/venn/enable/enable.command.descriptor';
+import { SupportedVennPolicies } from '../supported-policies.enum';
 
 @SubCommand({
     name: NAME,
@@ -51,6 +52,21 @@ export class EnableCommand extends CommandRunner {
             return value;
         } else {
             this.command.error(`Network ${value} is not supported`);
+        }
+    }
+
+    @Option({
+        flags: '-p, --policy <policy>',
+        description: 'the security policy that will be used for onchain protection (default: approved-calls)',
+        defaultValue: 'approved-calls'
+    })
+    parseAndValidatePolicy(value: string): string {
+        const policyIsSupported = Object.values(SupportedVennPolicies).includes(value as SupportedVennPolicies);
+
+        if (policyIsSupported) {
+            return value;
+        } else {
+            this.command.error(`Policy ${value} is not supported`);
         }
     }
 }
