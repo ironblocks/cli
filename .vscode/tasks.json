@@ -53,7 +53,9 @@
                 "fw integ --dir ${workspaceFolder}/fixtures/contracts",
                 "fw integ --dir ${workspaceFolder}/fixtures/contracts --verbose",
                 "fw integ --dir ${workspaceFolder}/fixtures/contracts --internal",
-                "fw integ --dir ${workspaceFolder}/fixtures/contracts --rec"
+                "fw integ --dir ${workspaceFolder}/fixtures/contracts --rec",
+
+                "venn",
             ]
         }
     ]

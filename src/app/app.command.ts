@@ -2,6 +2,7 @@ import * as colors from 'colors';
 import { CommandRunner, Option, RootCommand } from 'nest-commander';
 
 import { OPTIONS } from '@/app/app.command.options.descriptors';
+import { VennCommand } from '@/venn/venn.command';
 import { LoggerService } from '@/lib/logging/logger.service';
 import { FirewallCommand } from '@/firewall/firewall.command';
 import { StandaloneCommand } from '@/commands/standalone-command.decorator';
@@ -10,7 +11,7 @@ import { DESCRIPTION, NAME, FULL_NAME } from '@/app/app.command.descriptor';
 @RootCommand({
     name: NAME,
     description: DESCRIPTION,
-    subCommands: [FirewallCommand]
+    subCommands: [FirewallCommand, VennCommand]
 })
 export class AppCommand extends CommandRunner {
     constructor(private readonly logger: LoggerService) {
