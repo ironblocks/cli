@@ -1,4 +1,4 @@
-export const NAME = 'ib';
+export const NAME = 'venn';
 export const FULL_NAME = NAME;
 
 export const DESCRIPTION = `\

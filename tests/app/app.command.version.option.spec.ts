@@ -6,7 +6,7 @@ import { AppModule } from '@/app/app.module';
 
 const pkg = require('../../package.json');
 
-describe('App Command Option: ib --version', () => {
+describe('App Command Option: venn --version', () => {
     let commandInstance: TestingModule;
     let exitSpy: jest.SpyInstance;
     let stdoutSpy: jest.SpyInstance;

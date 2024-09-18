@@ -10,6 +10,6 @@ describe('Command Descriptor: integ', () => {
     });
 
     it('has the correct full name', () => {
-        expect(FULL_NAME).toBe('ib fw integ');
+        expect(FULL_NAME).toBe('venn fw integ');
     });
 });

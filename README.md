@@ -25,7 +25,7 @@ $ npm install @ironblocks/cli -g
 
 ## Config
 
-Customize default config by adding a `.ib.cli.js` file at the working directory from which you use the tool.
+Customize default config by adding a `.venn.cli.js` file at the working directory from which you use the tool.
 
 ```js
 module.exports = {
@@ -51,7 +51,7 @@ module.exports = {
 
 ```bash
 # List available commands
-$ ib --help
+$ venn --help
 ```
 
 ### Firewall Integration
@@ -73,19 +73,19 @@ $ ib --help
 
 ```bash
 # Integrating a specific file with the firewall
-$ ib fw integ -f /path/to/file.sol
+$ venn fw integ -f /path/to/file.sol
 
 # Integrating all files in a directory
-$ ib fw integ -d /path/to/contracts
+$ venn fw integ -d /path/to/contracts
 
 # Integrating all files in a directory and its subdirectories
-$ ib fw integ -d /path/to/contracts -r
+$ venn fw integ -d /path/to/contracts -r
 
 # Integrate internal functions as well
-$ ib fw integ -d /path/to/contracts -i
+$ venn fw integ -d /path/to/contracts -i
 
 # Integrate internal functions and use the "invariantProtected" modifier where possible
-$ ib fw integ -d /path/to/contracts -i -m invariantProtected
+$ venn fw integ -d /path/to/contracts -i -m invariantProtected
 ```
 
 ## License

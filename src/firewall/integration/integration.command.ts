@@ -80,7 +80,7 @@ export class IntegrationCommand extends CommandRunner {
 
         if (missingFileOption && missingDirOption) {
             this.logger.error('No file or directory specified');
-            this.command.error(`Run ${colors.bold.cyan('ib fw integ --help')} for usage information`);
+            this.command.error(`Run ${colors.bold.cyan('venn fw integ --help')} for usage information`);
         }
     }
 

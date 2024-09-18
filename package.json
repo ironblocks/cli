@@ -2,7 +2,7 @@
     "name": "@ironblocks/cli",
     "version": "1.0.16",
     "description": "",
-    "author": "Ironblocks LTD",
+    "author": "Venn Network",
     "license": "MIT",
     "keywords": [
         "web3",
@@ -12,7 +12,8 @@
         "firewall",
         "blockchain",
         "ethereum",
-        "solidity"
+        "solidity",
+        "venn"
     ],
     "repository": "https://github.com/ironblocks/cli",
     "homepage": "https://github.com/ironblocks/cli#readme",
@@ -20,7 +21,7 @@
         "url": "https://github.com/ironblocks/cli/issues"
     },
     "bin": {
-        "ib": "dist/main.js"
+        "venn": "dist/main.js"
     },
     "scripts": {
         "build": "nest build",

@@ -1,8 +1,8 @@
 import { DESCRIPTION, FULL_NAME, NAME } from '@/app/app.command.descriptor';
 
-describe('Command Descriptor: ib', () => {
-    it('is named "ib"', () => {
-        expect(NAME).toBe('ib');
+describe('Command Descriptor: venn', () => {
+    it('is named "venn"', () => {
+        expect(NAME).toBe('venn');
     });
 
     it('is desribed with our company name and logo', () => {

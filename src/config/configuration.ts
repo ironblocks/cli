@@ -1,7 +1,7 @@
 import { join } from 'path';
 import { cwd } from 'process';
 
-const CONFIG_FILE_NAME = '.ib.cli.js';
+const CONFIG_FILE_NAME = '.venn.cli.js';
 const LOCAL_CONFIG_PATH = join(cwd(), CONFIG_FILE_NAME);
 
 type CLIConfig = {
