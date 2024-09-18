@@ -15,18 +15,12 @@ import { UnsupportedFileFormatError } from '@/firewall/integration/errors/unsupp
 import { UnsupportedSolidityVersionError } from '@/firewall/integration/errors/unsupported.solidity.version.error';
 
 const MSG_SENDER = 'msg.sender';
-const ADDRESS_ZERO = 'address(0)';
 
 const FW_IMPORT_PATH = '@ironblocks/firewall-consumer/contracts/FirewallConsumer.sol';
 const FW_IMPORT = `import "${FW_IMPORT_PATH}";`;
 
 const FW_CONTRACT = 'FirewallConsumer';
 const FW_BASE_CONTRACT = 'FirewallConsumerBase';
-
-const FW_BASE_CONTRACT_CONSTRUCTOR = (options?: IntegrateOptions) =>
-    `(${ADDRESS_ZERO}, ${options?.multiSigAddress ?? MSG_SENDER})`;
-const FW_BASE_CONTRACT_FULL_NAME = (options?: IntegrateOptions) =>
-    FW_BASE_CONTRACT + FW_BASE_CONTRACT_CONSTRUCTOR(options);
 
 const FW_PROTECTED_MODIFIER = 'firewallProtected';
 const FW_PROTECTED_CUSTOM_MODIFIER = 'firewallProtectedCustom';
@@ -47,10 +41,8 @@ const FW_PROXY_INITIALIZER_MODIFIER = 'initializer';
 const FW_PROXY_REINITIALIZER_MODIFIER = 'reinitializer';
 
 const FW_PROXY_SETUP = `_setAddressBySlot(${FW_STORAGE_SLOT}, address(0));`;
-const FW_PROXY_ADMIN_SETUP = (options?: IntegrateOptions) =>
-    `_setAddressBySlot(${FW_ADMIN_STORAGE_SLOT}, ${options?.multiSigAddress ?? MSG_SENDER});`;
-const FW_PROXY_FULL_SETUP = (options?: IntegrateOptions) =>
-    `\n\t\t${FW_PROXY_SETUP}\n\t\t${FW_PROXY_ADMIN_SETUP(options)}`;
+const FW_PROXY_ADMIN_SETUP = () => `_setAddressBySlot(${FW_ADMIN_STORAGE_SLOT}, ${MSG_SENDER});`;
+const FW_PROXY_FULL_SETUP = () => `\n\t\t${FW_PROXY_SETUP}\n\t\t${FW_PROXY_ADMIN_SETUP()}`;
 
 export type FirewallModifier = (typeof FIREWALL_MODIFIERS)[number];
 
@@ -59,7 +51,6 @@ export interface IntegrateOptions {
     external?: boolean;
     internal?: boolean;
     modifiers?: FirewallModifier[];
-    multiSigAddress?: string;
 }
 
 export const SUPPORTED_SOLIDITY_VERSIONS = '>= 0.8';
@@ -268,9 +259,7 @@ export class IntegrationUtils {
 
             if (
                 customizedCode === originalCode &&
-                !parsed.children.some(contract =>
-                    this.alreadyCustomizedContractHeader(contract, options?.multiSigAddress)
-                )
+                !parsed.children.some(contract => this.alreadyCustomizedContractHeader(contract))
             ) {
                 // No need to add firewall imports since the file is not using the firewall.
                 return false;
@@ -340,10 +329,7 @@ export class IntegrationUtils {
         const [startIndex, endIndex] = range;
         const contractCode = code.substring(startIndex, endIndex + 1);
         const customizedContractCode = this.customizeContractCode(contract, contractCode, options);
-        if (
-            customizedContractCode !== contractCode ||
-            this.alreadyCustomizedContractHeader(contract, options?.multiSigAddress)
-        ) {
+        if (customizedContractCode !== contractCode || this.alreadyCustomizedContractHeader(contract)) {
             (contract.baseContracts || []).forEach(({ baseName }) => {
                 if (baseName?.namePath && baseName.namePath !== FW_CONTRACT && baseName.namePath !== FW_BASE_CONTRACT) {
                     contractNamesToCustomize.add(baseName.namePath);
@@ -360,7 +346,7 @@ export class IntegrationUtils {
         contractCode: string,
         options?: IntegrateOptions
     ): string {
-        const alreadyCustomizedHeader = this.alreadyCustomizedContractHeader(contract, options?.multiSigAddress);
+        const alreadyCustomizedHeader = this.alreadyCustomizedContractHeader(contract);
         const methods = contract.subNodes.filter(({ type }) => type === 'FunctionDefinition');
         const alreadyCustomizedSomeMethods = methods.some(this.alreadyCustomizedContractMethod.bind(this));
         // Add custom modifiers to contract methods.
@@ -380,9 +366,7 @@ export class IntegrationUtils {
             return contractCodeWithCustomizedMethods;
         }
 
-        const fwInheritedContract = options?.multiSigAddress?.trim()
-            ? FW_BASE_CONTRACT_FULL_NAME(options)
-            : FW_CONTRACT;
+        const fwInheritedContract = FW_CONTRACT;
 
         // Add base contract inheritance to contract declaration.
         const customizedContractCode = contractCodeWithCustomizedMethods.replace(
@@ -427,7 +411,7 @@ export class IntegrationUtils {
         methods: SolidityConstruct[],
         options?: IntegrateOptions
     ): string {
-        const [contractStartIndex, _] = contract.range;
+        const [contractStartIndex] = contract.range;
         // Customizing methods from the bottom up not to affect other methods' start and end indexes.
         const customizedMethods = methods.reduceRight((customized, method) => {
             const [methodStartIndex, methodEndIndex] = method.range;
@@ -469,6 +453,7 @@ export class IntegrationUtils {
                     func: string = '',
                     signature: string,
                     name: string,
+                    // eslint-disable-next-line @typescript-eslint/no-unused-vars
                     params: string = '',
                     visibility: string = '',
                     modifiers: string = '',
@@ -495,7 +480,7 @@ export class IntegrationUtils {
             );
 
             if (this.proxyModifiersAreDetected(method?.modifiers)) {
-                customizedMethodCode = this.customizeProxyInitializer(customizedMethodCode, options);
+                customizedMethodCode = this.customizeProxyInitializer(customizedMethodCode);
             }
 
             return customizedMethodCode;
@@ -518,7 +503,7 @@ export class IntegrationUtils {
         // In case there are existing importing.
         if (imports.length) {
             const [firstImport] = imports;
-            const [firstImportStartIndex, _firstImportEndIndex] = firstImport.range;
+            const [firstImportStartIndex] = firstImport.range;
             const customizedImports = `${FW_IMPORT}\r\n`;
             // Editing imports section whithin the file.
             const customizedCode =
@@ -529,6 +514,7 @@ export class IntegrationUtils {
         const [firstDirective] = parsed.children;
         // In case there is a pragma (and no existing imports).
         if (firstDirective.type === 'PragmaDirective') {
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
             const [_pragmaStartIndex, pragmaEndIndex] = firstDirective.range;
             const customizedImports = `\r\n\r\n${FW_IMPORT}`;
             // Editing imports section whithin the file.
@@ -540,9 +526,9 @@ export class IntegrationUtils {
         return `${FW_IMPORT}\r\n\r\n${code}`;
     }
 
-    private customizeProxyInitializer(methodCode: string, options?: IntegrateOptions): string {
+    private customizeProxyInitializer(methodCode: string): string {
         const lastBracketIndex = methodCode.lastIndexOf('}');
-        return methodCode.slice(0, lastBracketIndex) + `${FW_PROXY_FULL_SETUP(options)}` + '\n\t}';
+        return methodCode.slice(0, lastBracketIndex) + `${FW_PROXY_FULL_SETUP()}` + '\n\t}';
     }
 
     private alreadyCustomizedImports(imports: SolidityConstruct[]): boolean {
@@ -550,15 +536,13 @@ export class IntegrationUtils {
         return !!fwImport;
     }
 
-    private alreadyCustomizedContractHeader(contract: SolidityConstruct, multiSigAddress: string): boolean {
+    private alreadyCustomizedContractHeader(contract: SolidityConstruct): boolean {
         // if header already contains FirewallConsumer or FirewallConsumeBase
         // it is conisdered customized in 2 cases:
         // 1. multisig address IS provided && the contract inherits from the FirewallConsumeBase.
         // 2. multisig address IS NOT provided && the contract inherits from the FirewallConsumer.
         return (contract.baseContracts || []).some(
-            base =>
-                (!multiSigAddress && base.baseName?.namePath === FW_CONTRACT) ||
-                (multiSigAddress && base.baseName?.namePath === FW_BASE_CONTRACT)
+            base => base.baseName?.namePath === FW_CONTRACT || base.baseName?.namePath === FW_BASE_CONTRACT
         );
     }
 

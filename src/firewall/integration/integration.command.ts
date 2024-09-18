@@ -9,7 +9,6 @@ import { IntegrationService } from '@/firewall/integration/integration.service';
 import type { FirewallModifier } from '@/firewall/integration/integration.utils';
 import { FrameworkService } from '@/framework/framework.service';
 import { LoggerService } from '@/lib/logging/logger.service';
-import { MultiSigService } from '@/multiSig/multiSig.service';
 
 type CommandOption = ReturnType<CommandRunner['command']['createOption']>;
 
@@ -30,8 +29,7 @@ export class IntegrationCommand extends CommandRunner {
     constructor(
         private readonly logger: LoggerService,
         private readonly integrationService: IntegrationService,
-        private readonly frameworkService: FrameworkService,
-        private readonly multiSigService: MultiSigService
+        private readonly frameworkService: FrameworkService
     ) {
         super();
     }
@@ -54,14 +52,11 @@ export class IntegrationCommand extends CommandRunner {
             this.logger.log('Starting integration');
             await this.frameworkService.assertDependencies();
 
-            const multiSigAddress = await this.multiSigService.getMultiSigAddress();
-
             const integOptions = {
                 verbose: options?.verbose,
                 external: true,
                 internal: options?.internal,
-                modifiers: options?.modifiers,
-                multiSigAddress: multiSigAddress
+                modifiers: options?.modifiers
             };
 
             if (options?.file) {
@@ -75,7 +70,7 @@ export class IntegrationCommand extends CommandRunner {
             this.logger.log('All done!');
         } catch (e) {
             this.logger.error(e.message);
-            this.command.error('Integration failed');
+            this.command.error(e.message || 'Integration failed');
         }
     }
 
@@ -144,7 +139,7 @@ export class IntegrationCommand extends CommandRunner {
         // This is a hotfix.
         // NestJS commander overriding "parseArg" immediately after setting it via the decorator.
         thisOption.choices(ACCEPTED_MODIFIERS);
-        // @ts-ignore
+        // @ts-expect-error because of the hotfix above
         const previous = this.command._optionValues['modifiers'];
         return thisOption.parseArg(val, previous);
     }
