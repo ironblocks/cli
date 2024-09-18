@@ -21,6 +21,7 @@ export class AppCommand extends CommandRunner {
     @StandaloneCommand(FULL_NAME)
     async run(passedParams: string[], options?: any): Promise<void> {
         if (options.version) {
+            // eslint-disable-next-line @typescript-eslint/no-var-requires
             const pkg = require('../../package.json');
             this.logger.log(`Venn CLI ${colors.cyan('v' + pkg.version)}`);
         } else {
