@@ -32,6 +32,6 @@ describe('App Command Option: venn --version', () => {
         await CommandTestFactory.run(commandInstance, ['--version']);
 
         const commandOutput = stdoutSpy.mock.calls[0][0];
-        expect(commandOutput).toContain(`Ironblocks CLI ${colors.cyan('v' + pkg.version)}`);
+        expect(commandOutput).toContain(`Venn CLI ${colors.cyan('v' + pkg.version)}`);
     });
 });

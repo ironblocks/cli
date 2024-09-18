@@ -22,7 +22,7 @@ export class AppCommand extends CommandRunner {
     async run(passedParams: string[], options?: any): Promise<void> {
         if (options.version) {
             const pkg = require('../../package.json');
-            this.logger.log(`Ironblocks CLI ${colors.cyan('v' + pkg.version)}`);
+            this.logger.log(`Venn CLI ${colors.cyan('v' + pkg.version)}`);
         } else {
             this.command.help();
         }

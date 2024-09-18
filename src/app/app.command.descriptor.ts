@@ -3,6 +3,6 @@ export const FULL_NAME = NAME;
 
 export const DESCRIPTION = `\
     🟧
-  🟧      Ironblocks CLI
+  🟧      Venn CLI
     🟧\
 `;

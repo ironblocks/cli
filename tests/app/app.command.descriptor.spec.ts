@@ -8,7 +8,7 @@ describe('Command Descriptor: venn', () => {
     it('is desribed with our company name and logo', () => {
         expect(DESCRIPTION).toBe(`\
     🟧
-  🟧      Ironblocks CLI
+  🟧      Venn CLI
     🟧\
 `);
     });
