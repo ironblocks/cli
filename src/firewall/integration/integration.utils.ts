@@ -16,11 +16,9 @@ import { UnsupportedSolidityVersionError } from '@/firewall/integration/errors/u
 
 const MSG_SENDER = 'msg.sender';
 
-const FW_IMPORT_PATH = '@ironblocks/firewall-consumer/contracts/FirewallConsumer.sol';
-const FW_IMPORT = `import "${FW_IMPORT_PATH}";`;
-
-const FW_CONTRACT = 'FirewallConsumer';
-const FW_BASE_CONTRACT = 'FirewallConsumerBase';
+const FW_IMPORT_PATH = '@ironblocks/firewall-consumer/contracts/consumers/VennFirewallConsumer.sol';
+const FW_CONTRACT = 'VennFirewallConsumer';
+const FW_IMPORT = `import {${FW_CONTRACT}} from "${FW_IMPORT_PATH}";`;
 
 const FW_PROTECTED_MODIFIER = 'firewallProtected';
 const FW_PROTECTED_CUSTOM_MODIFIER = 'firewallProtectedCustom';
@@ -331,7 +329,7 @@ export class IntegrationUtils {
         const customizedContractCode = this.customizeContractCode(contract, contractCode, options);
         if (customizedContractCode !== contractCode || this.alreadyCustomizedContractHeader(contract)) {
             (contract.baseContracts || []).forEach(({ baseName }) => {
-                if (baseName?.namePath && baseName.namePath !== FW_CONTRACT && baseName.namePath !== FW_BASE_CONTRACT) {
+                if (baseName?.namePath && baseName.namePath !== FW_CONTRACT) {
                     contractNamesToCustomize.add(baseName.namePath);
                 }
             });
@@ -541,9 +539,7 @@ export class IntegrationUtils {
         // it is conisdered customized in 2 cases:
         // 1. multisig address IS provided && the contract inherits from the FirewallConsumeBase.
         // 2. multisig address IS NOT provided && the contract inherits from the FirewallConsumer.
-        return (contract.baseContracts || []).some(
-            base => base.baseName?.namePath === FW_CONTRACT || base.baseName?.namePath === FW_BASE_CONTRACT
-        );
+        return (contract.baseContracts || []).some(base => base.baseName?.namePath === FW_CONTRACT);
     }
 
     private alreadyCustomizedContractMethod(method: SolidityConstruct): boolean {
