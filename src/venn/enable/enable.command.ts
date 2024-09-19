@@ -1,9 +1,9 @@
+import * as colors from 'colors';
 import { CommandRunner, Option, Command } from 'nest-commander';
 
 import { FilesService } from '@/files/files.service';
 import { LoggerService } from '@/lib/logging/logger.service';
 import { StandaloneCommand } from '@/commands/standalone-command.decorator';
-import { SupportedVennNetworks } from '@/venn/supported-networks.enum';
 import { DESCRIPTION, FULL_NAME, NAME } from '@/venn/enable/enable.command.descriptor';
 import { EnableVennOptions, EnableVennService } from '@/venn/enable/enable.service';
 
@@ -27,10 +27,12 @@ export class EnableVennCommand extends CommandRunner {
 
             await this.enableService.enable(options);
 
-            this.logger.success('Venn integration completed successfully');
+            this.logger.success(colors.green('Venn integration completed successfully!\n\n'));
+            this.logger.hint(`next, make sure to setup the ${colors.cyan('venn-dapp-sdk')} in your DApp`);
+            this.logger.hint(` -> https://docs.venn.build/sdk/dapps`);
         } catch (error) {
             this.logger.error(`An error occurred: ${error.message}`);
-            this.logger.log('[hint] need help?   get support at ...\n');
+            this.logger.hint('get support at: https://discord.gg/97cg6Qhg \n');
             this.command.error('');
         }
     }
@@ -38,7 +40,7 @@ export class EnableVennCommand extends CommandRunner {
     @Option({
         flags: '-n, --network <network>',
         description: 'the network where the contracts are deployed (default: amoy)',
-        defaultValue: 'amoy'
+        defaultValue: 'holesky'
     })
     parseNetwork(network: string): string {
         return network;
