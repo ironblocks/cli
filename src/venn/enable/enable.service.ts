@@ -4,7 +4,7 @@ import { Inject, Injectable } from '@nestjs/common';
 
 import { LoggerService } from '@/lib/logging/logger.service';
 import { SupportedVennNetworks } from '@/venn/supported-networks.enum';
-import { VENN_ADDRESSES } from '../venn-addresses.contants';
+import { VENN_ADDRESSES } from '../venn-addresses.constants';
 import { DEFAULT_PROVIDERS } from '../default-providers.constants';
 
 const MEMORY_SLOT_NAMES = {
@@ -41,10 +41,9 @@ export class EnableVennService {
         const contracts = await this.getContractsInformation(options.network);
 
         const newPolicyAddress = await this.deployNewVennPolicy(contracts, wallet, options.network);
-
-        // set the firewall on all consumers (if not already set)
-        // set the attestation center proxy on all consumers (if not already set)
-        // globally subscribe consumers to the policy on the firewall (if not already subscribed)
+        await this.setFirewallOnConsumers(contracts, wallet, options.network);
+        await this.setAttestationCenterProxyOnConsumers(contracts, wallet, options.network);
+        await this.subscribeConsumersToNewPolicy(contracts, newPolicyAddress, wallet, options.network);
     }
 
     async deployNewVennPolicy(contracts: ContractInformation[], wallet: import('ethers').Wallet, network: SupportedVennNetworks): Promise<string> {
@@ -54,11 +53,13 @@ export class EnableVennService {
         //
         const NETWORK_KEY = network.toUpperCase();
         const FIREWALL_ADDRESS = VENN_ADDRESSES[NETWORK_KEY].FIREWALL;
+        const VENN_AVS_LOGIC_ADDRESS = VENN_ADDRESSES[NETWORK_KEY].VENN_AVS_LOGIC;
         const POLICY_DEPLOYER_ADDRESS = VENN_ADDRESSES[NETWORK_KEY].POLICY_DEPLOYER;
         const APPROVED_CALLS_FACTORY_ADDRESS = VENN_ADDRESSES[NETWORK_KEY].APPROVED_CALLS_FACTORY;
         const ATTESTATION_CENTER_PROXY_ADDRESS = VENN_ADDRESSES[NETWORK_KEY].ATTESTATION_CENTER_PROXY;
 
         this.logger.debug(` -> Firewall address: ${FIREWALL_ADDRESS}`);
+        this.logger.debug(` -> Venn AVS logic address: ${VENN_AVS_LOGIC_ADDRESS}`);
         this.logger.debug(` -> Policy deployer address: ${POLICY_DEPLOYER_ADDRESS}`);
         this.logger.debug(` -> Approved calls factory address: ${APPROVED_CALLS_FACTORY_ADDRESS}`);
         this.logger.debug(` -> Attestation center proxy address: ${ATTESTATION_CENTER_PROXY_ADDRESS}`);
@@ -83,9 +84,9 @@ export class EnableVennService {
                 FIREWALL_ADDRESS, // firewall
                 wallet.address, // defaultAdmin
                 wallet.address, // policyAdmin
-                [ATTESTATION_CENTER_PROXY_ADDRESS], // signers
+                [VENN_AVS_LOGIC_ADDRESS], // signers
                 contracts.map(c => c.address), // consumers
-                contracts.map(c => true) // consumerStatuses
+                contracts.map(() => true) // consumerStatuses
             ]
         );
 
@@ -93,7 +94,7 @@ export class EnableVennService {
         // is to make a static call which returns an array of addresses from the deployer
         //
         const [policyAddress] = await policyDeployer.deployPolicies.staticCall(FIREWALL_ADDRESS, [APPROVED_CALLS_FACTORY_ADDRESS], [callData]);
-        this.logger.log(` -> Policy address: ${policyAddress}`);
+        this.logger.log(` -> Policy address: ${colors.cyan(policyAddress)}`);
 
         // Finally, we can actually deploy the policy
         //
@@ -104,7 +105,7 @@ export class EnableVennService {
         const spinner = this.logger.spinner(' -> Waiting for transaction to be mined');
         const receipt = await tx.wait();
         spinner.stop();
-        this.logger.log(` -> Mined at block: ${receipt.blockNumber}`);
+        this.logger.log(` -> Mined at block: ${receipt.blockNumber} \n`);
 
         // Extra logging because, why not?
         //
@@ -112,27 +113,130 @@ export class EnableVennService {
         return policyAddress;
     }
 
-    async addGlobalPolicyToFirewall(policyAddress: string) {
-        // logger.info('Adding global policy to firewall');
-        // const firewall = new ethers.Contract(FIREWALL_ADDRESS, firewallJson.abi, owner);
-        // const tx = await firewall.addGlobalPolicy(CONSUMER_ADDRESS, policyAddress, { gasLimit: 1000000 });
-        // logger.warn(` -> Transaction hash: ${tx.hash}`);
-        // const receipt = await tx.wait();
-        // logger.warn(` -> Mined at block: ${receipt.blockNumber}`);
-        // logger.ok();
+    async setFirewallOnConsumers(contracts: ContractInformation[], wallet: import('ethers').Wallet, network: SupportedVennNetworks) {
+        this.logger.step('Setting firewall for all contracts');
+
+        // First, we prepare all the addresses we need
+        //
+        const NETWORK_KEY = network.toUpperCase();
+        const FIREWALL_ADDRESS = VENN_ADDRESSES[NETWORK_KEY].FIREWALL;
+        this.logger.debug(` -> Firewall address: ${FIREWALL_ADDRESS}`);
+
+        // We need a provider and a signer
+        //
+        const provider = this.ethers.getDefaultProvider(DEFAULT_PROVIDERS[NETWORK_KEY]);
+        const signer = wallet.connect(provider);
+
+        // We only use this one function, so the ABI is hardcoded for now
+        //
+        const firewallConsumerMinimalABI = ['function setFirewall(address)'];
+
+        // We don't want to mess with the nonces, so we do this one by one
+        //
+        for (const contract of contracts) {
+            if (contract.hasFirewall) {
+                this.logger.log(` -> Firewall already set for contract ${colors.cyan(contract.name)} ${colors.grey('(skipping)')} \n`);
+                continue;
+            } else {
+                this.logger.log(` -> Setting firewall for contract ${colors.cyan(contract.name)}`);
+
+                const firewallConsumer = new this.ethers.Contract(contract.address, firewallConsumerMinimalABI, signer);
+                const tx = await firewallConsumer.setFirewall(FIREWALL_ADDRESS);
+                this.logger.log(` -> Transaction hash: ${tx.hash}`);
+
+                // Wait for the transaction to be mined
+                const spinner = this.logger.spinner(' -> Waiting for transaction to be mined');
+                const receipt = await tx.wait();
+                spinner.stop();
+                this.logger.log(` -> Mined at block: ${receipt.blockNumber} \n`);
+            }
+        }
+
+        // Extra logging because, why not?
+        //
+        this.logger.success(` -> Firewall successfully set for all contracts!`);
     }
 
-    async setAttestationCenterProxyOnConsumer() {
-        // logger.info("Setting the Attestation Center Proxy address");
-        // logger.warn(` -> Consumer address: ${FIREWALL_CONSUMER}`);
-        // logger.warn(` -> Attestation Center Proxy address: ${ATTESTATION_CENTER_PROXY}`);
-        // const factory = await hre.ethers.getContractFactory("SafeVault");
-        // const tx = await (factory.attach(FIREWALL_CONSUMER) as any).setAttestationCenterProxy(ATTESTATION_CENTER_PROXY);
-        // logger.warn(` -> Transaction hash: ${tx.hash}`);
-        // const receipt = await tx.wait();
-        // logger.warn(` -> Mined in block: ${receipt.blockNumber}`);
-        // logger.ok();
-        // logger.done("All done!");
+    async setAttestationCenterProxyOnConsumers(contracts: ContractInformation[], wallet: import('ethers').Wallet, network: SupportedVennNetworks) {
+        this.logger.step('Configuring firewall for all contracts');
+
+        // First, we prepare all the addresses we need
+        //
+        const NETWORK_KEY = network.toUpperCase();
+        const ATTESTATION_CENTER_PROXY_ADDRESS = VENN_ADDRESSES[NETWORK_KEY].ATTESTATION_CENTER_PROXY;
+        this.logger.debug(` -> Attestation Center Proxy address: ${ATTESTATION_CENTER_PROXY_ADDRESS}`);
+
+        // We need a provider and a signer
+        //
+        const provider = this.ethers.getDefaultProvider(DEFAULT_PROVIDERS[NETWORK_KEY]);
+        const signer = wallet.connect(provider);
+
+        // We only use this one function, so the ABI is hardcoded for now
+        // ACP: Attestation Center Proxy
+        //
+        const ACPConsumerMinimalABI = ['function setAttestationCenterProxy(address)'];
+
+        // We don't want to mess with the nonces, so we do this one by one
+        //
+        for (const contract of contracts) {
+            if (contract.hasAttestationCenterProxy) {
+                this.logger.log(` -> Firewall already configured for contract ${colors.cyan(contract.name)} ${colors.grey('(skipping)')} \n`);
+                continue;
+            } else {
+                this.logger.log(` -> Setting firewall for contract ${colors.cyan(contract.name)}`);
+
+                const firewallConsumer = new this.ethers.Contract(contract.address, ACPConsumerMinimalABI, signer);
+                const tx = await firewallConsumer.setAttestationCenterProxy(ATTESTATION_CENTER_PROXY_ADDRESS);
+                this.logger.log(` -> Transaction hash: ${tx.hash}`);
+
+                // Wait for the transaction to be mined
+                const spinner = this.logger.spinner(' -> Waiting for transaction to be mined');
+                const receipt = await tx.wait();
+                spinner.stop();
+                this.logger.log(` -> Mined at block: ${receipt.blockNumber} \n`);
+            }
+        }
+
+        // Extra logging because, why not?
+        //
+        this.logger.success(` -> Firewall successfully configured for all contracts!`);
+    }
+
+    async subscribeConsumersToNewPolicy(contracts: ContractInformation[], policyAddress: string, wallet: import('ethers').Wallet, network: SupportedVennNetworks) {
+        this.logger.step('Registering new policy');
+
+        // First, we prepare all the addresses we need
+        //
+        const NETWORK_KEY = network.toUpperCase();
+        const FIREWALL_ADDRESS = VENN_ADDRESSES[NETWORK_KEY].FIREWALL;
+        this.logger.debug(` -> Firewall address: ${FIREWALL_ADDRESS}`);
+
+        // We need a provider and a signer
+        //
+        const provider = this.ethers.getDefaultProvider(DEFAULT_PROVIDERS[NETWORK_KEY]);
+        const signer = wallet.connect(provider);
+
+        // We only use this one function, so the ABI is hardcoded for now
+        //
+        const firewallMinimalABI = ['function addGlobalPolicyForConsumers(address[], address)'];
+        const consumerAddresses = contracts.map(c => c.address);
+        const firewall = new this.ethers.Contract(FIREWALL_ADDRESS, firewallMinimalABI, signer);
+
+        // Send the transaction
+        //
+        const tx = await firewall.addGlobalPolicyForConsumers(consumerAddresses, policyAddress);
+        this.logger.log(` -> Transaction hash: ${tx.hash}`);
+
+        // Wait for the transaction to be mined
+        //
+        const spinner = this.logger.spinner(' -> Waiting for transaction to be mined');
+        const receipt = await tx.wait();
+        spinner.stop();
+        this.logger.log(` -> Mined at block: ${receipt.blockNumber} \n`);
+
+        // Extra logging because, why not?
+        //
+        this.logger.success(` -> Firewall successfully configured for all contracts!`);
     }
 
     async validateNetworkConfigs(network: string) {

@@ -27,7 +27,7 @@ export class EnableVennCommand extends CommandRunner {
 
             await this.enableService.enable(options);
 
-            this.logger.success(colors.green('Venn integration completed successfully!\n\n'));
+            this.logger.win('Venn integration completed successfully!\n\n');
             this.logger.hint(`next, make sure to setup the ${colors.cyan('venn-dapp-sdk')} in your DApp`);
             this.logger.hint(` -> https://docs.venn.build/sdk/dapps`);
         } catch (error) {
@@ -39,7 +39,7 @@ export class EnableVennCommand extends CommandRunner {
 
     @Option({
         flags: '-n, --network <network>',
-        description: 'the network where the contracts are deployed (default: amoy)',
+        description: 'the network where the contracts are deployed (default: holesky)',
         defaultValue: 'holesky'
     })
     parseNetwork(network: string): string {

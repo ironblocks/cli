@@ -20,7 +20,7 @@ export class LoggerService {
     }
 
     error(message: string) {
-        this.logger.error(message);
+        this.logger.error(`❗ ${message}`);
     }
 
     warn(message: string) {
@@ -37,6 +37,11 @@ export class LoggerService {
 
     success(message: string) {
         this.logger.success(message);
+    }
+
+    win(message: string) {
+        console.log();
+        this.logger.success(`🎉 ${colors.green(message.toUpperCase())}`);
     }
 
     hint(message: string) {
