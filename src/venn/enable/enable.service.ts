@@ -3,9 +3,9 @@ import { ConfigService } from '@nestjs/config';
 import { Inject, Injectable } from '@nestjs/common';
 
 import { LoggerService } from '@/lib/logging/logger.service';
+import { VENN_ADDRESSES } from '@/venn/venn-addresses.constants';
+import { DEFAULT_PROVIDERS } from '@/venn/default-providers.constants';
 import { SupportedVennNetworks } from '@/venn/supported-networks.enum';
-import { VENN_ADDRESSES } from '../venn-addresses.constants';
-import { DEFAULT_PROVIDERS } from '../default-providers.constants';
 
 const MEMORY_SLOT_NAMES = {
     FIREWALL_ADDRESS: 'eip1967.firewall',
@@ -114,7 +114,7 @@ export class EnableVennService {
     }
 
     async setFirewallOnConsumers(contracts: ContractInformation[], wallet: import('ethers').Wallet, network: SupportedVennNetworks) {
-        this.logger.step('Setting firewall for all contracts');
+        this.logger.step('Setting Firewall for all contracts');
 
         // First, we prepare all the addresses we need
         //
@@ -138,7 +138,7 @@ export class EnableVennService {
                 this.logger.log(` -> Firewall already set for contract ${colors.cyan(contract.name)} ${colors.grey('(skipping)')} \n`);
                 continue;
             } else {
-                this.logger.log(` -> Setting firewall for contract ${colors.cyan(contract.name)}`);
+                this.logger.log(` -> Setting Firewall for contract ${colors.cyan(contract.name)}`);
 
                 const firewallConsumer = new this.ethers.Contract(contract.address, firewallConsumerMinimalABI, signer);
                 const tx = await firewallConsumer.setFirewall(FIREWALL_ADDRESS);
