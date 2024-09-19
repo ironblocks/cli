@@ -34,6 +34,10 @@ export class LoggerService {
         this.logger.trace(message);
     }
 
+    success(message: string) {
+        this.logger.success(message);
+    }
+
     spinner(message: string) {
         return ora(message).start();
     }
