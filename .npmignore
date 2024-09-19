@@ -4,5 +4,6 @@
 !package-json.json
 
 !README.md
+!LICENSE
 
 !dist/**/*.js
