@@ -1,47 +1,37 @@
-import { CommandRunner, Option, SubCommand } from 'nest-commander';
+import { CommandRunner, Option, Command } from 'nest-commander';
 
 import { FilesService } from '@/files/files.service';
 import { LoggerService } from '@/lib/logging/logger.service';
-import { EnableProtectionOptions, EnableService } from '@/venn/enable/enable.service';
 import { StandaloneCommand } from '@/commands/standalone-command.decorator';
 import { SupportedVennNetworks } from '@/venn/supported-networks.enum';
 import { DESCRIPTION, FULL_NAME, NAME } from '@/venn/enable/enable.command.descriptor';
-import { SupportedVennPolicies } from '../supported-policies.enum';
+import { EnableVennOptions, EnableVennService } from '@/venn/enable/enable.service';
 
-@SubCommand({
+@Command({
     name: NAME,
     description: DESCRIPTION
 })
-export class EnableCommand extends CommandRunner {
+export class EnableVennCommand extends CommandRunner {
     constructor(
         private readonly logger: LoggerService,
-        private readonly enableService: EnableService,
+        private readonly enableService: EnableVennService,
         private readonly filesService: FilesService
     ) {
         super();
     }
 
     @StandaloneCommand(FULL_NAME)
-    async run(passedParams: string[], options: EnableProtectionOptions): Promise<void> {
-        const result = await this.enableService.enable({
-            contractsFile: options.contractsFile,
-            network: options.network,
-            policy: options.policy
-        });
+    async run(passedParams: string[], options: EnableVennOptions): Promise<void> {
+        try {
+            this.logger.log(`Starting Venn Network integration`);
 
-        this.logger.log(`Protection result: ${result}`);
-    }
+            await this.enableService.enable(options);
 
-    @Option({
-        flags: '-c, --contracts-file <contracts-file>',
-        description: 'a JSON file containing a list of contracts addresses to enable protection for',
-        required: true
-    })
-    parseAndValidateContractsFile(value: string): string | void {
-        if (this.filesService.doesFileExistSync(value)) {
-            return value;
-        } else {
-            this.command.error(`Contracts file ${value} does not exist`);
+            this.logger.success('Venn integration completed successfully');
+        } catch (error) {
+            this.logger.error(`An error occurred: ${error.message}`);
+            this.logger.log('[hint] need help?   get support at ...\n');
+            this.command.error('');
         }
     }
 
@@ -50,28 +40,7 @@ export class EnableCommand extends CommandRunner {
         description: 'the network where the contracts are deployed (default: amoy)',
         defaultValue: 'amoy'
     })
-    parseAndValidateNetwork(value: string): string {
-        const networkIsSupported = Object.values(SupportedVennNetworks).includes(value as SupportedVennNetworks);
-
-        if (networkIsSupported) {
-            return value;
-        } else {
-            this.command.error(`Network ${value} is not supported`);
-        }
-    }
-
-    @Option({
-        flags: '-p, --policy <policy>',
-        description: 'the security policy that will be used for onchain protection (default: approved-calls)',
-        defaultValue: 'approved-calls'
-    })
-    parseAndValidatePolicy(value: string): string {
-        const policyIsSupported = Object.values(SupportedVennPolicies).includes(value as SupportedVennPolicies);
-
-        if (policyIsSupported) {
-            return value;
-        } else {
-            this.command.error(`Policy ${value} is not supported`);
-        }
+    parseNetwork(network: string): string {
+        return network;
     }
 }

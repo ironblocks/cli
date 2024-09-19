@@ -1,8 +1,16 @@
 import { join } from 'path';
 import { cwd } from 'process';
 
-const CONFIG_FILE_NAME = '.venn.cli.js';
+const CONFIG_FILE_NAME = 'venn.config.json';
 const LOCAL_CONFIG_PATH = join(cwd(), CONFIG_FILE_NAME);
+
+type NetworksConfiguration = {
+    [network: string]: {
+        provider?: string;
+        chainId?: number;
+        contracts: Array<string>;
+    };
+};
 
 type CLIConfig = {
     logLevel?: number;
@@ -17,6 +25,8 @@ type CLIConfig = {
             overrideDefaults?: boolean;
         };
     };
+
+    networks?: NetworksConfiguration;
 };
 
 const defaults = {
@@ -62,7 +72,9 @@ export default async () => {
                     .concat(localConfig?.fw?.integ?.exclude || [])
                     .map(pattern => join(pattern))
             }
-        }
+        },
+
+        networks: localConfig?.networks || undefined
     };
 
     return config;

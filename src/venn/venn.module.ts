@@ -1,11 +1,11 @@
 import { Module } from '@nestjs/common';
 
-import { VennCommand } from '@/venn/venn.command';
 import { LoggerModule } from '@/lib/logging/logger.module';
-import { EnableModule } from '@/venn/enable/enable.module';
+import { EnableVennModule } from '@/venn/enable/enable.module';
+// import { EnableVennCommand } from '@/venn/enable/enable.command';
 
 @Module({
-    imports: [LoggerModule, EnableModule],
-    providers: [VennCommand]
+    imports: [EnableVennModule, LoggerModule]
+    // providers: [EnableVennCommand]
 })
 export class VennModule {}
