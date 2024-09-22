@@ -1,10 +1,17 @@
 <!-- omit from toc -->
 # Venn CLI
 
-[![NPM Version](https://img.shields.io/npm/v/@vennbuild/cli?style=flat-square)](https://www.npmjs.com/~vennbuild)
-[![License](https://img.shields.io/badge/License-MIT-green.svg?style=flat-square)](https://opensource.org/licenses/MIT)
-[![Discord](https://img.shields.io/badge/Discord-blue?logo=discord&logoColor=white&style=flat-square)](https://discord.com/channels/1065679814289268929)
-[![X](https://img.shields.io/twitter/follow/VennBuild?style=social&label=Follow)](https://twitter.com/VennBuild)
+[![NPM Version](https://img.shields.io/npm/v/@vennbuild/cli?style=for-the-badge)](https://www.npmjs.com/~vennbuild)
+![TypeScript](https://img.shields.io/badge/typescript-%23007ACC.svg?style=for-the-badge&logo=typescript&logoColor=white)
+![Jest](https://img.shields.io/badge/-jest-%23C21325?style=for-the-badge&logo=jest&logoColor=white)
+![ESLint](https://img.shields.io/badge/ESLint-4B3263?style=for-the-badge&logo=eslint&logoColor=white)  
+[![Discord](https://img.shields.io/badge/Discrd-blue?logo=discord&logoColor=white&style=for-the-badge)](https://discord.com/channels/1065679814289268929)
+[![X](https://img.shields.io/badge/@VennBuild-gray?style=for-the-badge&logo=x)](https://twitter.com/VennBuild)
+[![License](https://img.shields.io/badge/License-MIT-green.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
+
+Venn's command line interface for quick and easy setup of Venn Security Network
+
+👉 [**What is Venn?**](https://docs.venn.build/)
 
 ![venn enable](https://storage.googleapis.com/venn-engineering/venn-cli/venn.gif)
 
@@ -165,7 +172,28 @@ Run the following command to connect your Firewall protected smart contracts to 
 venn enable --holesky
 ```
 
-> **NOTE:** After successfully connecting to Venn, the address of your newly deployed Venn Security Policy will be stored in `venn.config.json`.
+#### Your Venn Policy
+
+After successfully connecting to Venn, a new Venn Security Policy will have been created for you.  
+The address of the policy will be saved in **`venn.config.json`**:
+
+```json
+{
+    "networks": {
+        "holesky": {
+            "contracts": {
+                "MyContract1": "0x1234abcd1234abcd1234abcd1234abcd1234abcd",
+                "MyContract2": "0x1234abcd1234abcd1234abcd1234abcd1234abcd",
+            },
+
+            // YOUR VENN POLICY ADDRESS
+            "policyAddress": "0x123..."
+        }
+    }
+}
+```
+
+**You will need this address when integrating the [Venn DApp SDK](https://www.npmjs.com/package/@vennbuild/venn-dapp-sdk)**
 
 ## ⚙️ Configuration File
 
