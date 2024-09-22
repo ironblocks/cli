@@ -10,6 +10,6 @@ describe('Command Descriptor: fw', () => {
     });
 
     it('has the correct full name', () => {
-        expect(FULL_NAME).toBe('ib fw');
+        expect(FULL_NAME).toBe('venn fw');
     });
 });

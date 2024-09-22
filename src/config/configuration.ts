@@ -1,8 +1,14 @@
 import { join } from 'path';
 import { cwd } from 'process';
 
-const CONFIG_FILE_NAME = '.ib.cli.js';
+const CONFIG_FILE_NAME = 'venn.config.json';
 const LOCAL_CONFIG_PATH = join(cwd(), CONFIG_FILE_NAME);
+
+type NetworksConfiguration = {
+    [network: string]: {
+        contracts: Array<string>;
+    };
+};
 
 type CLIConfig = {
     logLevel?: number;
@@ -17,6 +23,9 @@ type CLIConfig = {
             overrideDefaults?: boolean;
         };
     };
+
+    networks?: NetworksConfiguration;
+    privateKey?: string;
 };
 
 const defaults = {
@@ -58,11 +67,12 @@ export default async () => {
             integ: {
                 ...overrides.fw.integ,
                 ...(localConfig?.fw?.integ || {}),
-                exclude: overrides.fw.integ.exclude
-                    .concat(localConfig?.fw?.integ?.exclude || [])
-                    .map(pattern => join(pattern))
+                exclude: overrides.fw.integ.exclude.concat(localConfig?.fw?.integ?.exclude || []).map(pattern => join(pattern))
             }
-        }
+        },
+
+        networks: localConfig?.networks || undefined,
+        privateKey: process.env.VENN_PRIVATE_KEY
     };
 
     return config;

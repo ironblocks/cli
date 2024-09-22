@@ -1,3 +1,4 @@
+import * as colors from 'colors';
 import { Injectable } from '@nestjs/common';
 
 import { LoggerService } from '@/lib/logging/logger.service';
@@ -18,20 +19,24 @@ export class IntegrationService {
     public async integContractFile(filepath: string, options?: IntegrateOptions): Promise<void> {
         await this.validateFileExists(filepath);
         this.fwIntegUtils.assertSolidityFile(filepath);
+        const relativeFilePath = filepath.replace(process.cwd(), '');
 
         try {
             const customized = await this.fwIntegUtils.customizeSolidityFile(filepath, options);
+
             if (customized) {
-                this.logger.log(`Firewall added to '${filepath}'`);
+                this.logger.log(`Firewall added to: ${colors.cyan(relativeFilePath)}`);
             } else {
-                this.logger.log(`File was not changed '${filepath}'`);
+                this.logger.log(`File was not changed: ${colors.cyan(relativeFilePath)}`);
             }
         } catch (err) {
             if (err instanceof UnsupportedSolidityVersionError) {
-                throw new Error(`unsupported solidity version '${err.version}' '${filepath}'`);
+                throw new Error(
+                    `Unsupported Solidity version: ${colors.red(err.version)} in ${colors.red(relativeFilePath)}`
+                );
             }
             if (err instanceof UnsupportedFileFormatError) {
-                throw new Error(`unsupported file format '${filepath}'`);
+                throw new Error(`Unsupported file format: ${colors.red(relativeFilePath)}`);
             }
             throw err;
         }

@@ -4,7 +4,7 @@ import { CommandTestFactory } from 'nest-commander-testing';
 import { AppModule } from '@/app/app.module';
 import { DESCRIPTION, NAME } from '@/app/app.command.descriptor';
 
-describe('Command: ib', () => {
+describe('Command: venn', () => {
     let commandInstance: TestingModule;
     let exitSpy: jest.SpyInstance;
     let stdoutSpy: jest.SpyInstance;
@@ -30,7 +30,7 @@ describe('Command: ib', () => {
         await CommandTestFactory.run(commandInstance);
 
         const commandOutput = stdoutSpy.mock.calls[0][0];
-        expect(commandOutput).toContain('Usage: ib [options] [command]');
+        expect(commandOutput).toContain('Usage: venn [options] [command]');
     });
 
     it('displays the logo in the usage information', async () => {

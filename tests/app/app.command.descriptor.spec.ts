@@ -1,16 +1,15 @@
+import * as colors from 'colors';
 import { DESCRIPTION, FULL_NAME, NAME } from '@/app/app.command.descriptor';
 
-describe('Command Descriptor: ib', () => {
-    it('is named "ib"', () => {
-        expect(NAME).toBe('ib');
+describe('Command Descriptor: venn', () => {
+    it('is named "venn"', () => {
+        expect(NAME).toBe('venn');
     });
 
     it('is desribed with our company name and logo', () => {
-        expect(DESCRIPTION).toBe(`\
-    🟧
-  🟧      Ironblocks CLI
-    🟧\
-`);
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
+        const pkg = require('../../package.json');
+        expect(DESCRIPTION).toBe(`Venn CLI ${colors.cyan('v' + pkg.version)}`);
     });
 
     it('does not have parent (i.e. it is the root command)', () => {

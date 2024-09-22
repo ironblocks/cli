@@ -31,7 +31,7 @@ describe('Sub-Command: fw', () => {
         await CommandTestFactory.run(commandInstance, ['fw']);
 
         const commandOutput = stdoutSpy.mock.calls[0][0];
-        expect(commandOutput).toContain('Usage: ib fw [options] [command]');
+        expect(commandOutput).toContain('Usage: venn fw [options] [command]');
     });
 
     it('displays the description in the usage information', async () => {

@@ -1,4 +1,5 @@
 import * as ora from 'ora';
+import * as colors from 'colors';
 
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -19,7 +20,7 @@ export class LoggerService {
     }
 
     error(message: string) {
-        this.logger.error(message);
+        this.logger.error(`❗ ${message}`);
     }
 
     warn(message: string) {
@@ -32,6 +33,26 @@ export class LoggerService {
 
     verbose(message: string) {
         this.logger.trace(message);
+    }
+
+    success(message: string) {
+        this.logger.success(message);
+    }
+
+    win(message: string) {
+        console.log();
+        this.logger.success(`🎉 ${colors.green(message.toUpperCase())}`);
+    }
+
+    hint(message: string) {
+        this.logger.info('[hint] ' + message);
+    }
+
+    step(message: string) {
+        // steps are always logged with an empty line before and after
+        // for better readability
+        console.log();
+        this.logger.info(colors.cyan('[step] ') + message);
     }
 
     spinner(message: string) {
