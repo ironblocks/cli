@@ -1,10 +1,10 @@
 <!-- omit from toc -->
 # Venn CLI
 
-[![NPM Version](https://img.shields.io/npm/v/@ironblocks/cli?style=flat-square)](https://www.npmjs.com/~ironblocks)
+[![NPM Version](https://img.shields.io/npm/v/@vennbuild/cli?style=flat-square)](https://www.npmjs.com/~vennbuild)
 [![License](https://img.shields.io/badge/License-MIT-green.svg?style=flat-square)](https://opensource.org/licenses/MIT)
 [![Discord](https://img.shields.io/badge/Discord-blue?logo=discord&logoColor=white&style=flat-square)](https://discord.com/channels/1065679814289268929)
-[![X](https://img.shields.io/twitter/follow/VennBuild?style=social&label=Follow)](https://twitter.com/Ironblocks_)
+[![X](https://img.shields.io/twitter/follow/VennBuild?style=social&label=Follow)](https://twitter.com/VennBuild)
 
 ![venn enable](https://storage.googleapis.com/venn-engineering/venn-cli/venn.gif)
 
