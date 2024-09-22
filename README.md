@@ -48,7 +48,7 @@ Follow these steps to secure your contracts with Venn:
   - [`venn fw integ`](#venn-fw-integ)
   - [`venn enable`](#venn-enable)
   - [`venn disable`](#venn-disable)
-- [💬 Support](#-support)
+- [💬 Support \& Documentation](#-support--documentation)
 - [📜 License](#-license)
 
 ## 📦 Installation
