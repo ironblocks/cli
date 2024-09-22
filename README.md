@@ -67,6 +67,9 @@ There are two steps to the integration.
 
 2. Next, connect your deployed smart contracts to Venn.
 
+3. Now that your project is secure, only approved transactions will go through.  
+    To approve transactions, make sure to add the [**Venn DApp SDK**](https://www.npmjs.com/package/@vennbuild/venn-dapp-sdk) to your DApp's frontend.
+
 ### Firewall Integration
 
 This integration will add the Firewall SDK to your smart contracts, making sure that they import the relevant modifiers, and apply the modifiers on external functions.
@@ -172,8 +175,8 @@ Overall, the configuration file has the following structure:
 
 ```json
 {
-    "fw": { ... },
-    "network": { ... }
+    "fw": { /* ... */ },
+    "network": { /* ... */ }
 }
 ```
 
