@@ -1,7 +1,7 @@
 {
     "name": "@vennbuild/cli",
-    "version": "1.0.0",
-    "description": "",
+    "version": "1.0.1",
+    "description": "Venn Network CLI",
     "author": "Venn Network",
     "license": "MIT",
     "keywords": [
