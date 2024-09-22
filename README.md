@@ -61,7 +61,7 @@ npm install -g @vennbuild/cli
 
 ## 📚 Usage
 
-There are two steps to the integration.  
+There are 3 steps to the integration.  
 
 1. First, add the Firewall SDK to your smart contracts, and deploy them as your would normally deploy to any network.
 
