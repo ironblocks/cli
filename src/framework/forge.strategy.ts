@@ -13,6 +13,8 @@ import { FORGE_DEPENDENCIES } from '@/framework/forge-dependencies.constants';
 
 const execAsync = promisify(exec);
 
+const REMAPPINGS_FILE = 'remappings.txt';
+
 @Injectable()
 export class ForgeStrategy implements IStrategy {
     public dependencies: Dependency[] = FORGE_DEPENDENCIES;
@@ -23,6 +25,13 @@ export class ForgeStrategy implements IStrategy {
     ) {}
 
     public async isDependencyInstalled(dependency: Dependency): Promise<boolean> {
+        const dependencyIsRemapped = await this.isDependencyRemapped(dependency);
+        const dependencySubModuleExists = await this.doesDependencySubModuleExist(dependency);
+
+        return dependencyIsRemapped && dependencySubModuleExists;
+    }
+
+    public async doesDependencySubModuleExist(dependency: Dependency): Promise<boolean> {
         const missingGitModulesFile = await this.filesService.doesFileNotExist('.gitmodules');
         if (missingGitModulesFile) {
             return false;
@@ -41,10 +50,21 @@ export class ForgeStrategy implements IStrategy {
                     case 1:
                         return false;
                     default:
-                        throw new DependenciesError(
-                            `Could not search for dependency "${dependency.name}" in .gitmodules file`
-                        );
+                        throw new DependenciesError(`Could not search for dependency "${dependency.name}" in .gitmodules file`);
                 }
+            }
+        }
+    }
+
+    public async isDependencyRemapped(dependency: Dependency): Promise<boolean> {
+        try {
+            const remappingsFile = await this.filesService.getFile(REMAPPINGS_FILE);
+            return dependency.remappings.every(remapping => remappingsFile.includes(remapping));
+        } catch (e) {
+            if (e.code !== 'ENOENT') {
+                throw new DependenciesError(`Could not read remappings file: ${e.message}`);
+            } else {
+                return false;
             }
         }
     }
@@ -54,11 +74,12 @@ export class ForgeStrategy implements IStrategy {
 
         try {
             await execAsync(`forge install "${dependency.installName}"`, { encoding: 'utf-8' });
+            await this.filesService.appendToFile(REMAPPINGS_FILE, dependency.remappings.join('\n'));
+            await execAsync('git add remappings.txt && git commit -m "chore(venn): add remappings"', { encoding: 'utf-8' });
+
             spinner.succeed(`Installed "${colors.cyan(dependency.name)}"`);
         } catch (e) {
             spinner.fail(`Failed to install "${colors.cyan(dependency.name)}"`);
-
-            // TODO: Handle "unclean repo error" from "forge install"
             throw new DependenciesError(`Could not install dependency: ${dependency.name}.\n${e.message}`);
         }
     }

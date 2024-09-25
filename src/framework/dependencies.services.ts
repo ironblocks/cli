@@ -109,7 +109,6 @@ export class DependenciesService {
     }
 
     public async promptToInstallDependencies(): Promise<boolean> {
-        // prettier-ignore
         const { installDependencies } = await this.inquirer.ask<InstallDependenciesAnswers>(INSTALL_DEPENDENCIES_QUESTION_SET_NAME, {});
         return installDependencies;
     }

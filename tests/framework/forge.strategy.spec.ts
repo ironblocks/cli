@@ -39,7 +39,8 @@ describe('Forge Strategy', () => {
 
         mockDependency = {
             name: 'mock-dependency',
-            installName: '@mock-company/mock-dependency'
+            installName: '@mock-company/mock-dependency',
+            remappings: ['mock-remappings']
         };
 
         mockSpinner = {
@@ -54,6 +55,7 @@ describe('Forge Strategy', () => {
     describe('.isDependencyInstalled()', () => {
         it('returns false if .gitmodules is not found', async () => {
             filesServiceMock.doesFileNotExist.mockResolvedValue(true);
+            filesServiceMock.getFile.mockRejectedValueOnce({ code: 'ENOENT' });
 
             const result = await forgeStrategy.isDependencyInstalled(mockDependency);
 
@@ -63,6 +65,7 @@ describe('Forge Strategy', () => {
 
         it('returns true if the dependency is found in .gitmodules', async () => {
             filesServiceMock.doesFileNotExist.mockResolvedValue(false);
+            filesServiceMock.getFile.mockResolvedValueOnce(mockDependency.remappings[0]);
 
             (exec as unknown as jest.Mock).mockImplementation((cmd, options, callback) => {
                 callback(null, { stdout: 'some output indicating success', stderr: '' });
@@ -74,6 +77,7 @@ describe('Forge Strategy', () => {
 
         it('returns false if the dependency is not found in .gitmodules', async () => {
             filesServiceMock.doesFileNotExist.mockResolvedValue(false);
+            filesServiceMock.getFile.mockResolvedValueOnce(mockDependency.remappings[0]);
 
             (exec as unknown as jest.Mock).mockImplementation((cmd, options, callback) => {
                 callback({ code: 1, stdout: '', stderr: '' }, null);
@@ -85,6 +89,7 @@ describe('Forge Strategy', () => {
 
         it('is case insensitive', async () => {
             filesServiceMock.doesFileNotExist.mockResolvedValue(false);
+            filesServiceMock.getFile.mockResolvedValueOnce(mockDependency.remappings[0]);
 
             (exec as unknown as jest.Mock).mockImplementation((cmd, options, callback) => {
                 callback({ code: 1, stdout: '', stderr: '' }, null);
@@ -99,6 +104,7 @@ describe('Forge Strategy', () => {
             let thrownError: DependenciesError;
 
             filesServiceMock.doesFileNotExist.mockResolvedValue(false);
+            filesServiceMock.getFile.mockResolvedValueOnce(mockDependency.remappings[0]);
 
             (exec as unknown as jest.Mock).mockImplementation((cmd, options, callback) => {
                 callback({ code: 2, stdout: '', stderr: '' }, null);
@@ -111,9 +117,7 @@ describe('Forge Strategy', () => {
             }
 
             expect(thrownError).toBeInstanceOf(DependenciesError);
-            expect(thrownError.message).toBe(
-                `Could not search for dependency "${mockDependency.name}" in .gitmodules file`
-            );
+            expect(thrownError.message).toBe(`Could not search for dependency "${mockDependency.name}" in .gitmodules file`);
         });
     });
 
@@ -186,9 +190,7 @@ describe('Forge Strategy', () => {
             }
 
             expect(thrownError).toBeInstanceOf(DependenciesError);
-            expect(thrownError.message).toBe(
-                `Could not install dependency: ${mockDependency.name}.\nsome error message`
-            );
+            expect(thrownError.message).toBe(`Could not install dependency: ${mockDependency.name}.\nsome error message`);
         });
     });
 });
