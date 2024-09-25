@@ -36,7 +36,7 @@
         "test:cov": "jest --coverage",
         "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
         "test:e2e": "jest --config ./tests/jest-e2e.json",
-        "publish:npm": "npm build && npm pack && npm publish --access public && rm -rf *.tgz"
+        "publish:npm": "npm run build && npm pack && npm publish --access public && rm -rf *.tgz"
     },
     "dependencies": {
         "@nestjs/common": "^10.0.0",
