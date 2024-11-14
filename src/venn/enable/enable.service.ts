@@ -56,13 +56,13 @@ export class EnableVennService {
         const APPROVED_CALLS_SIGNER_ADDRESS = VENN_ADDRESSES[NETWORK_KEY].APPROVED_CALLS_SIGNER;
         const POLICY_DEPLOYER_ADDRESS = VENN_ADDRESSES[NETWORK_KEY].POLICY_DEPLOYER;
         const APPROVED_CALLS_FACTORY_ADDRESS = VENN_ADDRESSES[NETWORK_KEY].APPROVED_CALLS_FACTORY;
-        const ATTESTATION_CENTER_PROXY_ADDRESS = VENN_ADDRESSES[NETWORK_KEY].ATTESTATION_CENTER_PROXY;
+        const SAFE_CALL_TARGET_ADDRESS = VENN_ADDRESSES[NETWORK_KEY].SAFE_CALL_TARGET;
 
         this.logger.debug(` -> Firewall address: ${FIREWALL_ADDRESS}`);
         this.logger.debug(` -> Approved calls signer address: ${APPROVED_CALLS_SIGNER_ADDRESS}`);
         this.logger.debug(` -> Policy deployer address: ${POLICY_DEPLOYER_ADDRESS}`);
         this.logger.debug(` -> Approved calls factory address: ${APPROVED_CALLS_FACTORY_ADDRESS}`);
-        this.logger.debug(` -> Attestation center proxy address: ${ATTESTATION_CENTER_PROXY_ADDRESS}`);
+        this.logger.debug(` -> Safe function call target address: ${SAFE_CALL_TARGET_ADDRESS}`);
 
         // We also need a provider and a signer
         //
@@ -163,8 +163,8 @@ export class EnableVennService {
         // First, we prepare all the addresses we need
         //
         const NETWORK_KEY = network.toUpperCase();
-        const ATTESTATION_CENTER_PROXY_ADDRESS = VENN_ADDRESSES[NETWORK_KEY].ATTESTATION_CENTER_PROXY;
-        this.logger.debug(` -> Attestation Center Proxy address: ${ATTESTATION_CENTER_PROXY_ADDRESS}`);
+        const SAFE_CALL_TARGET_ADDRESS = VENN_ADDRESSES[NETWORK_KEY].SAFE_CALL_TARGET;
+        this.logger.debug(` -> Safe function call target address: ${SAFE_CALL_TARGET_ADDRESS}`);
 
         // We need a provider and a signer
         //
@@ -186,7 +186,7 @@ export class EnableVennService {
                 this.logger.log(` -> Setting firewall for contract ${colors.cyan(contract.name)}`);
 
                 const firewallConsumer = new this.ethers.Contract(contract.address, ACPConsumerMinimalABI, signer);
-                const tx = await firewallConsumer.setAttestationCenterProxy(ATTESTATION_CENTER_PROXY_ADDRESS);
+                const tx = await firewallConsumer.setAttestationCenterProxy(SAFE_CALL_TARGET_ADDRESS);
                 this.logger.log(` -> Transaction hash: ${tx.hash}`);
 
                 // Wait for the transaction to be mined
@@ -325,7 +325,7 @@ export class EnableVennService {
         const attestationCenterProxyAddressSlotValue = await provider.getStorage(consumerAddress, attestationCenterProxyAddressSlot);
 
         const setAddress = this.ethers.getAddress('0x' + attestationCenterProxyAddressSlotValue.slice(-40));
-        const networkAddress = VENN_ADDRESSES[network.toUpperCase()].ATTESTATION_CENTER_PROXY;
+        const networkAddress = VENN_ADDRESSES[network.toUpperCase()].SAFE_CALL_TARGET;
 
         this.logger.debug(` -> Memory  Attestation Center Proxy address: ${setAddress}`);
         this.logger.debug(` -> Network Attestation Center Proxy address: ${networkAddress}`);

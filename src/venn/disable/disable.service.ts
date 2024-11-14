@@ -175,7 +175,7 @@ export class DisableVennService {
         const attestationCenterProxyAddressSlotValue = await provider.getStorage(consumerAddress, attestationCenterProxyAddressSlot);
 
         const setAddress = this.ethers.getAddress('0x' + attestationCenterProxyAddressSlotValue.slice(-40));
-        const networkAddress = VENN_ADDRESSES[network.toUpperCase()].ATTESTATION_CENTER_PROXY;
+        const networkAddress = VENN_ADDRESSES[network.toUpperCase()].SAFE_CALL_TARGET;
 
         this.logger.debug(` -> Memory  Attestation Center Proxy address: ${setAddress}`);
         this.logger.debug(` -> Network Attestation Center Proxy address: ${networkAddress}`);
