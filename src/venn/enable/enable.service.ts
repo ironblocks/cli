@@ -53,13 +53,13 @@ export class EnableVennService {
         //
         const NETWORK_KEY = network.toUpperCase();
         const FIREWALL_ADDRESS = VENN_ADDRESSES[NETWORK_KEY].FIREWALL;
-        const VENN_AVS_LOGIC_ADDRESS = VENN_ADDRESSES[NETWORK_KEY].VENN_AVS_LOGIC;
+        const APPROVED_CALLS_SIGNER_ADDRESS = VENN_ADDRESSES[NETWORK_KEY].APPROVED_CALLS_SIGNER;
         const POLICY_DEPLOYER_ADDRESS = VENN_ADDRESSES[NETWORK_KEY].POLICY_DEPLOYER;
         const APPROVED_CALLS_FACTORY_ADDRESS = VENN_ADDRESSES[NETWORK_KEY].APPROVED_CALLS_FACTORY;
         const ATTESTATION_CENTER_PROXY_ADDRESS = VENN_ADDRESSES[NETWORK_KEY].ATTESTATION_CENTER_PROXY;
 
         this.logger.debug(` -> Firewall address: ${FIREWALL_ADDRESS}`);
-        this.logger.debug(` -> Venn AVS logic address: ${VENN_AVS_LOGIC_ADDRESS}`);
+        this.logger.debug(` -> Approved calls signer address: ${APPROVED_CALLS_SIGNER_ADDRESS}`);
         this.logger.debug(` -> Policy deployer address: ${POLICY_DEPLOYER_ADDRESS}`);
         this.logger.debug(` -> Approved calls factory address: ${APPROVED_CALLS_FACTORY_ADDRESS}`);
         this.logger.debug(` -> Attestation center proxy address: ${ATTESTATION_CENTER_PROXY_ADDRESS}`);
@@ -84,7 +84,7 @@ export class EnableVennService {
                 FIREWALL_ADDRESS, // firewall
                 wallet.address, // defaultAdmin
                 wallet.address, // policyAdmin
-                [VENN_AVS_LOGIC_ADDRESS], // signers
+                [APPROVED_CALLS_SIGNER_ADDRESS], // signers
                 contracts.map(c => c.address), // consumers
                 contracts.map(() => true) // consumerStatuses
             ]
