@@ -32,8 +32,6 @@ export class DisableVennService {
     ) {}
 
     async disable(options: DisableVennOptions) {
-        this.logger.log(` -> Network: ${colors.cyan(options.network)}`);
-
         await this.validateNetworkConfigs(options.network);
         await this.validatePrivateKey();
 
@@ -48,15 +46,15 @@ export class DisableVennService {
 
         // First, we prepare all the addresses we need
         //
-        const NETWORK_KEY = network.toUpperCase();
+        const networkConfig = this.config.get('networks')[network];
         const ZERO_ADDRESS = this.ethers.ZeroAddress;
-        const FIREWALL_ADDRESS = VENN_ADDRESSES[NETWORK_KEY].FIREWALL;
+        const FIREWALL_ADDRESS = networkConfig.firewall;
         this.logger.debug(` -> Current Firewall address: ${FIREWALL_ADDRESS}`);
         this.logger.debug(` -> New     Firewall address: ${ZERO_ADDRESS}`);
 
         // We need a provider and a signer
         //
-        const provider = this.ethers.getDefaultProvider(DEFAULT_PROVIDERS[NETWORK_KEY]);
+        const provider = this.ethers.getDefaultProvider(networkConfig.provider);
         const signer = wallet.connect(provider);
 
         // We only use this one function, so the ABI is hardcoded for now
@@ -90,19 +88,21 @@ export class DisableVennService {
     }
 
     async validateNetworkConfigs(network: string) {
-        const networkIsSupported = Object.values(SupportedVennNetworks).includes(network as SupportedVennNetworks);
-        if (!networkIsSupported) {
-            throw new Error(`Network ${colors.red(network)} is not supported`);
-        }
+        this.logger.log(` -> Network: ${colors.cyan(network)}`);
+
+        // const networkIsSupported = Object.values(SupportedVennNetworks).includes(network as SupportedVennNetworks);
+        // if (!networkIsSupported) {
+        //     throw new Error(`Unsupported network: ${colors.cyan(network)}`);
+        // }
 
         const networkConfig = this.config.get('networks')[network];
         if (!networkConfig) {
             throw new Error(`Missing configuration for network ${colors.cyan(network)}`);
         }
 
-        const contractsAreConfigured = networkConfig.contracts && Object.keys(networkConfig.contracts).length > 0;
-        if (!contractsAreConfigured) {
-            throw new Error(`No contracts configured for network ${colors.cyan(network)}`);
+        const userContractsAreConfigured = networkConfig.contracts && Object.keys(networkConfig.contracts).length > 0;
+        if (!userContractsAreConfigured) {
+            throw new Error(`No user contracts configured for network ${colors.cyan(network)}`);
         }
 
         // Check that all contracts are valid ethereum addresses
@@ -111,6 +111,48 @@ export class DisableVennService {
                 throw new Error(`Invalid address for contract ${colors.red(name)}: ${colors.red(address)}`);
             }
         });
+
+        // Check that all Venn contracts are available either from pre-deployed addresses
+        // or from custom user configuration
+        networkConfig.firewall = networkConfig.firewall || VENN_ADDRESSES[network.toUpperCase()].FIREWALL;
+        const firewallAddressIsInvalid = !this.ethers.isAddress(networkConfig.firewall);
+        if (firewallAddressIsInvalid) {
+            throw new Error(`Invalid address for contract ${colors.red('Firewall Address')}: ${colors.red(networkConfig.firewall)}`);
+        }
+
+        networkConfig.approvedCallsSigner = networkConfig.approvedCallsSigner || VENN_ADDRESSES[network.toUpperCase()]?.APPROVED_CALLS_SIGNER;
+        const approvedCallsSignerIsAddressInvalid = !this.ethers.isAddress(networkConfig.approvedCallsSigner);
+        if (approvedCallsSignerIsAddressInvalid) {
+            throw new Error(`Invalid address for ${colors.red('Approved Calls Signer')}: ${colors.red(networkConfig.approvedCallsSigner)}`);
+        }
+
+        networkConfig.policyDeployer = networkConfig.policyDeployer || VENN_ADDRESSES[network.toUpperCase()]?.POLICY_DEPLOYER;
+        const policyDeployerAddressIsInvalid = !this.ethers.isAddress(networkConfig.policyDeployer);
+        if (policyDeployerAddressIsInvalid) {
+            throw new Error(`Invalid address for contract ${colors.red('Policy Deployer')}: ${colors.red(networkConfig.policyDeployer)}`);
+        }
+
+        networkConfig.approvedCallsFactory = networkConfig.approvedCallsFactory || VENN_ADDRESSES[network.toUpperCase()]?.APPROVED_CALLS_FACTORY;
+        const approvedCallsFactoryIsInvalid = !this.ethers.isAddress(networkConfig.approvedCallsFactory);
+        if (approvedCallsFactoryIsInvalid) {
+            throw new Error(`Invalid address for contract ${colors.red('Approved Calls Factory')}: ${colors.red(networkConfig.approvedCallsFactory)}`);
+        }
+
+        networkConfig.safeCallTarget = networkConfig.safeCallTarget || VENN_ADDRESSES[network.toUpperCase()]?.SAFE_CALL_TARGET;
+        const safeCallTargetAddressIsInvalid = networkConfig.safeCallTarget && !this.ethers.isAddress(networkConfig.safeCallTarget);
+        if (safeCallTargetAddressIsInvalid) {
+            throw new Error(`Invalid address for ${colors.red('Safe Call Target')}: ${colors.red(networkConfig.safeCallTarget)}`);
+        }
+
+        // Validate that we have an RPC provider for the selected network
+        networkConfig.provider = networkConfig.provider || DEFAULT_PROVIDERS[network.toUpperCase()];
+        try {
+            // If we can get the latest block, we can assume good connection to the network
+            const provider = new this.ethers.JsonRpcProvider(networkConfig.provider);
+            await provider.getBlockNumber();
+        } catch (error) {
+            throw new Error(`Could not connect to network ${colors.cyan(network)} using provider ${colors.cyan(networkConfig.provider)}`);
+        }
 
         this.logger.debug(` -> Network configuration are ok`);
     }
@@ -144,7 +186,7 @@ export class DisableVennService {
                 name,
                 address,
                 hasFirewall: await this.isFirewallSetOnConsumer(network, address),
-                hasAttestationCenterProxy: await this.isAttestationCenterProxySetOnConsumer(network, address)
+                hasAttestationCenterProxy: await this.isSafeCallTargetSetOnConsumer(network, address)
             }))
         );
 
@@ -153,32 +195,32 @@ export class DisableVennService {
     }
 
     async isFirewallSetOnConsumer(network: SupportedVennNetworks, consumerAddress: string) {
-        const NETWORK_KEY = network.toUpperCase();
-        const provider = this.ethers.getDefaultProvider(DEFAULT_PROVIDERS[NETWORK_KEY]);
+        const networkConfig = this.config.get('networks')[network];
+        const provider = this.ethers.getDefaultProvider(networkConfig.provider);
 
         const firewallAddressSlot = this.computeSlotAddress(MEMORY_SLOT_NAMES.FIREWALL_ADDRESS);
         const firewallAddressSlotValue = await provider.getStorage(consumerAddress, firewallAddressSlot);
 
         const setAddress = this.ethers.getAddress('0x' + firewallAddressSlotValue.slice(-40));
-        const networkAddress = VENN_ADDRESSES[NETWORK_KEY].FIREWALL;
+        const networkAddress = networkConfig.firewall;
 
         this.logger.debug(` -> Memory  Firewall address: ${setAddress}`);
         this.logger.debug(` -> Network Firewall address: ${networkAddress}`);
         return setAddress === networkAddress;
     }
 
-    async isAttestationCenterProxySetOnConsumer(network: SupportedVennNetworks, consumerAddress: string) {
-        const NETWORK_KEY = network.toUpperCase();
-        const provider = this.ethers.getDefaultProvider(DEFAULT_PROVIDERS[NETWORK_KEY]);
+    async isSafeCallTargetSetOnConsumer(network: SupportedVennNetworks, consumerAddress: string) {
+        const networkConfig = this.config.get('networks')[network];
+        const provider = this.ethers.getDefaultProvider(networkConfig.provider);
 
-        const attestationCenterProxyAddressSlot = this.computeSlotAddress(MEMORY_SLOT_NAMES.ATTESTATION_CENTER_PROXY_ADDRESS);
-        const attestationCenterProxyAddressSlotValue = await provider.getStorage(consumerAddress, attestationCenterProxyAddressSlot);
+        const safeCallTargetAddressSlot = this.computeSlotAddress(MEMORY_SLOT_NAMES.ATTESTATION_CENTER_PROXY_ADDRESS);
+        const safeCallTargetAddressSlotValue = await provider.getStorage(consumerAddress, safeCallTargetAddressSlot);
 
-        const setAddress = this.ethers.getAddress('0x' + attestationCenterProxyAddressSlotValue.slice(-40));
-        const networkAddress = VENN_ADDRESSES[network.toUpperCase()].SAFE_CALL_TARGET;
+        const setAddress = this.ethers.getAddress('0x' + safeCallTargetAddressSlotValue.slice(-40));
+        const networkAddress = networkConfig.safeCallTarget;
 
-        this.logger.debug(` -> Memory  Attestation Center Proxy address: ${setAddress}`);
-        this.logger.debug(` -> Network Attestation Center Proxy address: ${networkAddress}`);
+        this.logger.debug(` -> Memory  Safe Call Target address: ${setAddress}`);
+        this.logger.debug(` -> Network Safe Call Target address: ${networkAddress}`);
         return setAddress === networkAddress;
     }
 }
