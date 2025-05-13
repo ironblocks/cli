@@ -1,14 +1,13 @@
-import * as colors from 'colors';
+import { Injectable } from '@nestjs/common';
 import { exec } from 'child_process';
+import * as colors from 'colors';
 import { promisify } from 'util';
 
-import { Injectable } from '@nestjs/common';
-
-import { IStrategy } from '@/framework/strategy.interface';
-import { Dependency } from '@/framework/dependency.type';
-import { LoggerService } from '@/lib/logging/logger.service';
-import { NPM_DEPENDENCIES } from '@/framework/npm-dependencies.constatns';
 import { DependenciesError } from '@/framework/dependencies.errors';
+import { Dependency } from '@/framework/dependency.type';
+import { NPM_DEPENDENCIES } from '@/framework/npm-dependencies.constatns';
+import { IStrategy } from '@/framework/strategy.interface';
+import { LoggerService } from '@/lib/logging/logger.service';
 
 const execAsync = promisify(exec);
 
@@ -24,7 +23,7 @@ export class YarnStrategy implements IStrategy {
             // -i means case insensitive
             // -F means the string is a fixed string, not a regex
             await execAsync(`yarn why "${dependency.installName}" | grep -i -F "${dependency.installName}@"`, {
-                encoding: 'utf-8'
+                encoding: 'utf-8',
             });
             return true;
         } catch (e) {

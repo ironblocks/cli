@@ -1,18 +1,17 @@
-import { join, parse } from 'path';
-import { stat, readdir, readFile, writeFile } from 'fs/promises';
-
-import { ethers } from 'ethers';
-import { intersects } from 'semver';
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { InquirerService } from 'nest-commander';
-import { any as pathMatch } from 'micromatch';
 import { parse as parseSolidity } from '@solidity-parser/parser';
+import { ethers } from 'ethers';
+import { readdir, readFile, stat, writeFile } from 'fs/promises';
+import { any as pathMatch } from 'micromatch';
+import { InquirerService } from 'nest-commander';
+import { join, parse } from 'path';
+import { intersects } from 'semver';
 
-import { LoggerService } from '@/lib/logging/logger.service';
-import { UnsupportedParamTypeError } from '@/firewall/integration/errors/unsupported.param.type.error';
 import { UnsupportedFileFormatError } from '@/firewall/integration/errors/unsupported.file.format.error';
+import { UnsupportedParamTypeError } from '@/firewall/integration/errors/unsupported.param.type.error';
 import { UnsupportedSolidityVersionError } from '@/firewall/integration/errors/unsupported.solidity.version.error';
+import { LoggerService } from '@/lib/logging/logger.service';
 
 const MSG_SENDER = 'msg.sender';
 
@@ -29,7 +28,7 @@ const FIREWALL_MODIFIERS = [
     FW_PROTECTED_MODIFIER,
     FW_PROTECTED_CUSTOM_MODIFIER,
     FW_PROTECTED_SIG_MODIFIER,
-    FW_INVARIANT_PROTECTED_MODIFIER
+    FW_INVARIANT_PROTECTED_MODIFIER,
 ] as const;
 
 const FW_STORAGE_SLOT = 'bytes32(uint256(keccak256("eip1967.firewall")) - 1)';
@@ -68,7 +67,7 @@ const RE_INDENTATION = new RegExp(`(?<indentation>[\\r\\s\\n]+)`, 'g');
 const RE_NAME = new RegExp(`\\w+`, 'g');
 const RE_CONTRACT_DECLARATION = new RegExp(
     `(?<declaration>(?:abstract${RE_BLANK_SPACE.source}+)?contract${RE_BLANK_SPACE.source}+(?<name>${RE_NAME.source}))`,
-    'g'
+    'g',
 );
 
 const RE_FW_CONTRACT = new RegExp(`(?<fwContract>(?:${FW_CONTRACT}(?:Base${RE_BLANK_SPACE.source}*\\(.*\\))?))`, 'gs');
@@ -76,7 +75,7 @@ const RE_FW_CONTRACT = new RegExp(`(?<fwContract>(?:${FW_CONTRACT}(?:Base${RE_BL
 const RE_BASE_CONTRACTS = new RegExp(`(?<baseContracts>(?:${RE_BLANK_SPACE.source}*[\\w,()]+)+)`, 'g');
 const RE_INHERITANCE = new RegExp(
     `(?<inheritance>${RE_BLANK_SPACE.source}+is${RE_BLANK_SPACE.source}+${RE_BASE_CONTRACTS.source})`,
-    'g'
+    'g',
 );
 const RE_CONTRACT_DEFINITION = new RegExp(`^${RE_CONTRACT_DECLARATION.source}${RE_INHERITANCE.source}?`, 'g');
 
@@ -90,7 +89,7 @@ const RE_PARAMS = new RegExp(`(?<params>${RE_BLANK_SPACE.source}*[\\w,\\.\\[\\]]
 const RE_ARGS = new RegExp(`(?:${RE_BLANK_SPACE.source}*[\\w,\\.\\(\\)\\[\\]]+(?:${RE_BLANK_SPACE.source}*))*`, 'g');
 const RE_SIGNATURE = new RegExp(
     `(?<signature>${RE_BLANK_SPACE.source}+(?<name>${RE_NAME.source})${RE_BLANK_SPACE.source}*\\(${RE_PARAMS.source}\\))`,
-    'g'
+    'g',
 );
 const RE_VISIBILITY = new RegExp(`(?<visibility>${RE_BLANK_SPACE.source}*(?:public|external|internal|private))`, 'g');
 const RE_MODIFIERS = new RegExp(`(?<modifiers>(?:${RE_BLANK_SPACE.source}*(?!returns)[\\w,\\.\\(\\)\\[\\]]+)*)`, 'g');
@@ -98,7 +97,7 @@ const RE_IMMUTABLE_STATE = new RegExp(`\\pure|view\\b`, 'i');
 const RE_RETURNS = new RegExp(`(?<returns>${RE_BLANK_SPACE.source}*returns[^{]+)`, 'g');
 const RE_METHOD_DEFINITION = new RegExp(
     `^${RE_FUNCTION.source}?${RE_SIGNATURE.source}${RE_VISIBILITY.source}?${RE_MODIFIERS.source}?${RE_RETURNS.source}?`,
-    'g'
+    'g',
 );
 
 /**
@@ -109,11 +108,11 @@ const RE_METHOD_DEFINITION = new RegExp(
 const RE_FW_MODIFIER_NO_ARGS = new RegExp(`(?:${FIREWALL_MODIFIERS.map(mod => `\\b${mod}\\b`).join('|')})`, 'g');
 const RE_FW_MODIFIER_WITH_ARGS = new RegExp(
     `${RE_FW_MODIFIER_NO_ARGS.source}(?:${RE_BLANK_SPACE.source}*\\(${RE_ARGS.source}\\))?`,
-    'g'
+    'g',
 );
 const RE_FW_MODIFIER = new RegExp(
     `${RE_BLANK_SPACE.source}*${RE_FW_MODIFIER_WITH_ARGS.source}(?:${RE_BLANK_SPACE.source}*)?`,
-    'g'
+    'g',
 );
 
 type ParsedSolidityConstructs = {
@@ -156,7 +155,7 @@ export class IntegrationUtils {
     constructor(
         private readonly inquirer: InquirerService,
         private readonly config: ConfigService,
-        private readonly logger: LoggerService
+        private readonly logger: LoggerService,
     ) {
         this.serializerByModifier = {
             [FW_PROTECTED_MODIFIER]: () => FW_PROTECTED_MODIFIER,
@@ -164,7 +163,7 @@ export class IntegrationUtils {
                 const sigHash = this.calcSighash(contract, method);
                 return `${FW_PROTECTED_SIG_MODIFIER}(bytes4(${sigHash}))`;
             },
-            [FW_INVARIANT_PROTECTED_MODIFIER]: () => FW_INVARIANT_PROTECTED_MODIFIER
+            [FW_INVARIANT_PROTECTED_MODIFIER]: () => FW_INVARIANT_PROTECTED_MODIFIER,
         };
     }
 
@@ -174,7 +173,7 @@ export class IntegrationUtils {
             if (!stats.isFile()) {
                 throw new Error();
             }
-        } catch (err) {
+        } catch (_err) {
             throw new Error(`file does not exist '${path}'`);
         }
     }
@@ -185,7 +184,7 @@ export class IntegrationUtils {
             if (!stats.isDirectory()) {
                 throw new Error();
             }
-        } catch (err) {
+        } catch (_err) {
             throw new Error(`directory does not exist '${path}'`);
         }
     }
@@ -203,7 +202,7 @@ export class IntegrationUtils {
     async forEachSolidityFilesInDir(
         cb: (filepath: string) => unknown | Promise<unknown>,
         dirpath: string,
-        recursive: boolean
+        recursive: boolean,
     ): Promise<void> {
         const directoriesQueue: string[] = [dirpath];
         while (directoriesQueue.length) {
@@ -272,7 +271,7 @@ export class IntegrationUtils {
             // Overriding original file.
             await writeFile(path, customizedCode);
             return true;
-        } catch (err) {
+        } catch (_err) {
             throw new UnsupportedFileFormatError();
         }
     }
@@ -281,10 +280,10 @@ export class IntegrationUtils {
         try {
             const parsed = parseSolidity(code, {
                 tolerant: true,
-                range: true
+                range: true,
             }) as ParsedSolidityConstructs;
             return parsed;
-        } catch (err) {
+        } catch (_err) {
             throw new UnsupportedFileFormatError();
         }
     }
@@ -307,13 +306,13 @@ export class IntegrationUtils {
      * @param code
      * @param contract
      * @param contractNamesToCustomize
-     * @returns
+     * @returns the customized code
      */
     private customizeContractInPlace(
         code: string,
         contract: SolidityConstruct,
         contractNamesToCustomize: Set<string>,
-        options?: IntegrateOptions
+        options?: IntegrateOptions,
     ): string | null {
         const { type, kind, name, range } = contract;
         const isContractDefinition = type === 'ContractDefinition';
@@ -342,7 +341,7 @@ export class IntegrationUtils {
     private customizeContractCode(
         contract: SolidityConstruct,
         contractCode: string,
-        options?: IntegrateOptions
+        options?: IntegrateOptions,
     ): string {
         const alreadyCustomizedHeader = this.alreadyCustomizedContractHeader(contract);
         const methods = contract.subNodes.filter(({ type }) => type === 'FunctionDefinition');
@@ -352,7 +351,7 @@ export class IntegrationUtils {
             contractCode,
             contract,
             methods,
-            options
+            options,
         );
 
         if (
@@ -374,7 +373,7 @@ export class IntegrationUtils {
                 declaration: string,
                 name: string,
                 inheritance: string = '',
-                baseContracts: string = ''
+                baseContracts: string = '',
             ) => {
                 if (baseContracts) {
                     const is = inheritance.substring(0, inheritance.length - baseContracts.length);
@@ -398,7 +397,7 @@ export class IntegrationUtils {
                 }
 
                 return `${declaration} is ${fwInheritedContract}`;
-            }
+            },
         );
         return customizedContractCode;
     }
@@ -407,7 +406,7 @@ export class IntegrationUtils {
         contractCode: string,
         contract: SolidityConstruct,
         methods: SolidityConstruct[],
-        options?: IntegrateOptions
+        options?: IntegrateOptions,
     ): string {
         const [contractStartIndex] = contract.range;
         // Customizing methods from the bottom up not to affect other methods' start and end indexes.
@@ -415,7 +414,7 @@ export class IntegrationUtils {
             const [methodStartIndex, methodEndIndex] = method.range;
             const [relativeStartIndex, relativeEndIndex] = [
                 methodStartIndex - contractStartIndex,
-                methodEndIndex - contractStartIndex
+                methodEndIndex - contractStartIndex,
             ];
             const methodCode = contractCode.substring(relativeStartIndex, relativeEndIndex + 1);
             const customizedMethodCode = this.customizeMethodCode(contract, method, methodCode, options);
@@ -430,11 +429,11 @@ export class IntegrationUtils {
         contract: SolidityConstruct,
         method: SolidityConstruct,
         methodCode: string,
-        options?: IntegrateOptions
+        options?: IntegrateOptions,
     ): string {
         const isAbstract = !method.body;
         const firewallModifiers = (method.modifiers || []).filter(modifier =>
-            FIREWALL_MODIFIERS.includes(modifier?.name as FirewallModifier)
+            FIREWALL_MODIFIERS.includes(modifier?.name as FirewallModifier),
         );
         const requiredModifiers = this.getModifiersToAdd(method, options);
         const hasMismatchingModifiers = firewallModifiers.length !== requiredModifiers.length;
@@ -455,7 +454,7 @@ export class IntegrationUtils {
                     params: string = '',
                     visibility: string = '',
                     modifiers: string = '',
-                    returns: string = ''
+                    returns: string = '',
                 ) => {
                     const isImmutableState = !!modifiers.match(RE_IMMUTABLE_STATE);
                     if (isImmutableState) {
@@ -474,7 +473,7 @@ export class IntegrationUtils {
                     }
 
                     return `${func}${signature}${visibility} ${modifiersToAdd}${returns}`;
-                }
+                },
             );
 
             if (this.proxyModifiersAreDetected(method?.modifiers)) {
@@ -555,7 +554,7 @@ export class IntegrationUtils {
                 (modifier.name === FW_PROXY_INITIALIZER_MODIFIER && !modifier.arguments) ||
                 (modifier.name === FW_PROXY_REINITIALIZER_MODIFIER &&
                     modifier.arguments?.length == 1 &&
-                    modifier.arguments[0].type == 'NumberLiteral')
+                    modifier.arguments[0].type == 'NumberLiteral'),
         );
     }
 
@@ -579,7 +578,7 @@ export class IntegrationUtils {
         const paramTypes = (method.arguments || []).map(param => {
             try {
                 return this.getParamTypeName(param.typeName);
-            } catch (err) {
+            } catch (_err) {
                 throw new UnsupportedParamTypeError(`unsupported type of param "${param.name}"`);
             }
         });
@@ -592,6 +591,7 @@ export class IntegrationUtils {
         const rawTypeName = paramtType?.name || paramtType?.namePath;
         switch (paramtType?.type) {
             case 'ArrayTypeName':
+                // eslint-disable-next-line no-case-declarations
                 const baseTypeName = this.getParamTypeName(paramtType?.baseTypeName);
                 return `${baseTypeName}[${paramtType?.length?.number || ''}]`;
             case 'UserDefinedTypeName':

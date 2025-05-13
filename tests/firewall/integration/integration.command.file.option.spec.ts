@@ -13,11 +13,11 @@ describe('Sub-Command Option: integ --file', () => {
 
     beforeEach(async () => {
         FrameworkDependenciesService = {
-            assertDependencies: jest.fn()
+            assertDependencies: jest.fn(),
         };
 
         commandInstance = await CommandTestFactory.createTestingCommand({
-            imports: [AppModule]
+            imports: [AppModule],
         })
             .overrideProvider(FrameworkService)
             .useValue(FrameworkDependenciesService)

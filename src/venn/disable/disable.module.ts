@@ -1,10 +1,10 @@
-import { ethers } from 'ethers';
 import { Module } from '@nestjs/common';
+import { ethers } from 'ethers';
 
 import { FilesModules } from '@/files/files.module';
 import { LoggerModule } from '@/lib/logging/logger.module';
-import { DisableVennService } from '@/venn/disable/disable.service';
 import { DisableVennCommand } from '@/venn/disable/disable.command';
+import { DisableVennService } from '@/venn/disable/disable.service';
 
 @Module({
     imports: [LoggerModule, FilesModules],
@@ -14,8 +14,8 @@ import { DisableVennCommand } from '@/venn/disable/disable.command';
 
         {
             provide: 'ETHERS',
-            useValue: ethers
-        }
-    ]
+            useValue: ethers,
+        },
+    ],
 })
 export class DisableVennModule {}

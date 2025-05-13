@@ -18,7 +18,9 @@ describe('Forge Dependencies', () => {
     });
 
     describe('OpenZeppelin/openzeppelin-contracts', () => {
-        const openZeppelinContracts = FORGE_DEPENDENCIES.find(dep => dep.name === 'OpenZeppelin/openzeppelin-contracts');
+        const openZeppelinContracts = FORGE_DEPENDENCIES.find(
+            dep => dep.name === 'OpenZeppelin/openzeppelin-contracts',
+        );
 
         it('is defined as a dependency', () => {
             expect(openZeppelinContracts).toBeDefined();

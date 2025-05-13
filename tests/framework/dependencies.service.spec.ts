@@ -1,19 +1,21 @@
-import * as colors from 'colors';
-import { Ora } from 'ora';
+/* eslint-disable no-empty */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { TestBed } from '@automock/jest';
-
-import { IStrategy } from '@/framework/strategy.interface';
-import { Dependency } from '@/framework/dependency.type';
-import { NPMStrategy } from '@/framework/npm.strategy';
-import { LoggerService } from '@/lib/logging/logger.service';
-import { YarnStrategy } from '@/framework/yarn.strategy';
-import { FilesService } from '@/files/files.service';
-import { ForgeStrategy } from '@/framework/forge.strategy';
+import * as colors from 'colors';
 import { InquirerService } from 'nest-commander';
+import { Ora } from 'ora';
+
+import { FilesService } from '@/files/files.service';
 import { DependenciesService } from '@/framework/dependencies.services';
 import { DependenciesStrategy } from '@/framework/dependencies-strategies.enum';
-import { SELECT_STRATEGY_QUESTION_SET_NAME } from '@/framework/select-dependencies-strategy.questions.descriptor';
+import { Dependency } from '@/framework/dependency.type';
+import { ForgeStrategy } from '@/framework/forge.strategy';
 import { INSTALL_DEPENDENCIES_QUESTION_SET_NAME } from '@/framework/install-dependencies.questions.descriptor';
+import { NPMStrategy } from '@/framework/npm.strategy';
+import { SELECT_STRATEGY_QUESTION_SET_NAME } from '@/framework/select-dependencies-strategy.questions.descriptor';
+import { IStrategy } from '@/framework/strategy.interface';
+import { YarnStrategy } from '@/framework/yarn.strategy';
+import { LoggerService } from '@/lib/logging/logger.service';
 
 describe('Dependencies Service', () => {
     let dependeciesService: DependenciesService;
@@ -43,18 +45,18 @@ describe('Dependencies Service', () => {
 
         mockDependency = {
             name: 'mock-dependency',
-            installName: '@mock-company/mock-dependency'
+            installName: '@mock-company/mock-dependency',
         };
 
         mockStrategy = {
             dependencies: [mockDependency],
             isDependencyInstalled: jest.fn(),
-            installDependency: jest.fn()
+            installDependency: jest.fn(),
         };
 
         mockSpinner = {
             warn: jest.fn(),
-            succeed: jest.fn()
+            succeed: jest.fn(),
         };
 
         dependeciesService.strategy = mockStrategy;
@@ -109,7 +111,7 @@ describe('Dependencies Service', () => {
             dependeciesService.promptToInstallDependencies = jest.fn().mockResolvedValue(false);
 
             await expect(dependeciesService.assertDependencies()).rejects.toThrow(
-                'Cannot continue without dependencies'
+                'Cannot continue without dependencies',
             );
         });
     });
@@ -127,7 +129,7 @@ describe('Dependencies Service', () => {
             dependeciesService.detectDependenciesStrategy = jest.fn().mockResolvedValue(DependenciesStrategy.Other);
 
             await expect(dependeciesService.autoSetDependenciesStrategy()).rejects.toThrow(
-                'Cannot install dependencies, unknown dependencies tool (quitting)'
+                'Cannot install dependencies, unknown dependencies tool (quitting)',
             );
         });
 
@@ -137,7 +139,7 @@ describe('Dependencies Service', () => {
             await dependeciesService.autoSetDependenciesStrategy();
 
             expect(loggerMock.log).toHaveBeenCalledWith(
-                `Using ${colors.cyan(DependenciesStrategy.NPM)} for dependencies management`
+                `Using ${colors.cyan(DependenciesStrategy.NPM)} for dependencies management`,
             );
         });
 
@@ -230,7 +232,7 @@ describe('Dependencies Service', () => {
             await dependeciesService.promptForStrategy();
 
             expect(loggerMock.log).toHaveBeenCalledWith(
-                'Could not auto-detect dependencies management tool, please select one:'
+                'Could not auto-detect dependencies management tool, please select one:',
             );
         });
 
@@ -268,7 +270,7 @@ describe('Dependencies Service', () => {
             await dependeciesService.getMissingDependencies();
 
             expect(loggerMock.spinner).toHaveBeenCalledWith(
-                `Checking if "${colors.cyan(mockDependency.name)}" is installed`
+                `Checking if "${colors.cyan(mockDependency.name)}" is installed`,
             );
         });
 

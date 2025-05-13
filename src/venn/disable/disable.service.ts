@@ -1,15 +1,15 @@
-import * as colors from 'colors';
-import { ConfigService } from '@nestjs/config';
 import { Inject, Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import * as colors from 'colors';
 
 import { LoggerService } from '@/lib/logging/logger.service';
-import { VENN_ADDRESSES } from '@/venn/venn-addresses.constants';
 import { DEFAULT_PROVIDERS } from '@/venn/default-providers.constants';
 import { SupportedVennNetworks } from '@/venn/supported-networks.enum';
+import { VENN_ADDRESSES } from '@/venn/venn-addresses.constants';
 
 const MEMORY_SLOT_NAMES = {
     FIREWALL_ADDRESS: 'eip1967.firewall',
-    ATTESTATION_CENTER_PROXY_ADDRESS: 'eip1967.attestation.center.proxy'
+    ATTESTATION_CENTER_PROXY_ADDRESS: 'eip1967.attestation.center.proxy',
 };
 
 export type DisableVennOptions = {
@@ -28,7 +28,7 @@ export class DisableVennService {
     constructor(
         private readonly logger: LoggerService,
         private readonly config: ConfigService,
-        @Inject('ETHERS') private readonly ethers: typeof import('ethers')
+        @Inject('ETHERS') private readonly ethers: typeof import('ethers'),
     ) {}
 
     async disable(options: DisableVennOptions) {
@@ -41,7 +41,11 @@ export class DisableVennService {
         await this.removeFirewallFromConsumers(contracts, wallet, options.network);
     }
 
-    async removeFirewallFromConsumers(contracts: ContractInformation[], wallet: import('ethers').Wallet, network: SupportedVennNetworks) {
+    async removeFirewallFromConsumers(
+        contracts: ContractInformation[],
+        wallet: import('ethers').Wallet,
+        network: SupportedVennNetworks,
+    ) {
         this.logger.step('Removing firewall from all contracts');
 
         // First, we prepare all the addresses we need
@@ -65,7 +69,9 @@ export class DisableVennService {
         //
         for (const contract of contracts) {
             if (!contract.hasFirewall) {
-                this.logger.log(` -> No Firewall set for contract ${colors.cyan(contract.name)} ${colors.grey('(skipping)')} \n`);
+                this.logger.log(
+                    ` -> No Firewall set for contract ${colors.cyan(contract.name)} ${colors.grey('(skipping)')} \n`,
+                );
                 continue;
             } else {
                 this.logger.log(` -> Removing Firewall from contract ${colors.cyan(contract.name)}`);
@@ -117,31 +123,46 @@ export class DisableVennService {
         networkConfig.firewall = networkConfig.firewall || VENN_ADDRESSES[network.toUpperCase()].FIREWALL;
         const firewallAddressIsInvalid = !this.ethers.isAddress(networkConfig.firewall);
         if (firewallAddressIsInvalid) {
-            throw new Error(`Invalid address for contract ${colors.red('Firewall Address')}: ${colors.red(networkConfig.firewall)}`);
+            throw new Error(
+                `Invalid address for contract ${colors.red('Firewall Address')}: ${colors.red(networkConfig.firewall)}`,
+            );
         }
 
-        networkConfig.approvedCallsSigner = networkConfig.approvedCallsSigner || VENN_ADDRESSES[network.toUpperCase()]?.APPROVED_CALLS_SIGNER;
+        networkConfig.approvedCallsSigner =
+            networkConfig.approvedCallsSigner || VENN_ADDRESSES[network.toUpperCase()]?.APPROVED_CALLS_SIGNER;
         const approvedCallsSignerIsAddressInvalid = !this.ethers.isAddress(networkConfig.approvedCallsSigner);
         if (approvedCallsSignerIsAddressInvalid) {
-            throw new Error(`Invalid address for ${colors.red('Approved Calls Signer')}: ${colors.red(networkConfig.approvedCallsSigner)}`);
+            throw new Error(
+                `Invalid address for ${colors.red('Approved Calls Signer')}: ${colors.red(networkConfig.approvedCallsSigner)}`,
+            );
         }
 
-        networkConfig.policyDeployer = networkConfig.policyDeployer || VENN_ADDRESSES[network.toUpperCase()]?.POLICY_DEPLOYER;
+        networkConfig.policyDeployer =
+            networkConfig.policyDeployer || VENN_ADDRESSES[network.toUpperCase()]?.POLICY_DEPLOYER;
         const policyDeployerAddressIsInvalid = !this.ethers.isAddress(networkConfig.policyDeployer);
         if (policyDeployerAddressIsInvalid) {
-            throw new Error(`Invalid address for contract ${colors.red('Policy Deployer')}: ${colors.red(networkConfig.policyDeployer)}`);
+            throw new Error(
+                `Invalid address for contract ${colors.red('Policy Deployer')}: ${colors.red(networkConfig.policyDeployer)}`,
+            );
         }
 
-        networkConfig.approvedCallsFactory = networkConfig.approvedCallsFactory || VENN_ADDRESSES[network.toUpperCase()]?.APPROVED_CALLS_FACTORY;
+        networkConfig.approvedCallsFactory =
+            networkConfig.approvedCallsFactory || VENN_ADDRESSES[network.toUpperCase()]?.APPROVED_CALLS_FACTORY;
         const approvedCallsFactoryIsInvalid = !this.ethers.isAddress(networkConfig.approvedCallsFactory);
         if (approvedCallsFactoryIsInvalid) {
-            throw new Error(`Invalid address for contract ${colors.red('Approved Calls Factory')}: ${colors.red(networkConfig.approvedCallsFactory)}`);
+            throw new Error(
+                `Invalid address for contract ${colors.red('Approved Calls Factory')}: ${colors.red(networkConfig.approvedCallsFactory)}`,
+            );
         }
 
-        networkConfig.safeCallTarget = networkConfig.safeCallTarget || VENN_ADDRESSES[network.toUpperCase()]?.SAFE_CALL_TARGET;
-        const safeCallTargetAddressIsInvalid = networkConfig.safeCallTarget && !this.ethers.isAddress(networkConfig.safeCallTarget);
+        networkConfig.safeCallTarget =
+            networkConfig.safeCallTarget || VENN_ADDRESSES[network.toUpperCase()]?.SAFE_CALL_TARGET;
+        const safeCallTargetAddressIsInvalid =
+            networkConfig.safeCallTarget && !this.ethers.isAddress(networkConfig.safeCallTarget);
         if (safeCallTargetAddressIsInvalid) {
-            throw new Error(`Invalid address for ${colors.red('Safe Call Target')}: ${colors.red(networkConfig.safeCallTarget)}`);
+            throw new Error(
+                `Invalid address for ${colors.red('Safe Call Target')}: ${colors.red(networkConfig.safeCallTarget)}`,
+            );
         }
 
         // Validate that we have an RPC provider for the selected network
@@ -150,8 +171,10 @@ export class DisableVennService {
             // If we can get the latest block, we can assume good connection to the network
             const provider = new this.ethers.JsonRpcProvider(networkConfig.provider);
             await provider.getBlockNumber();
-        } catch (error) {
-            throw new Error(`Could not connect to network ${colors.cyan(network)} using provider ${colors.cyan(networkConfig.provider)}`);
+        } catch (_error) {
+            throw new Error(
+                `Could not connect to network ${colors.cyan(network)} using provider ${colors.cyan(networkConfig.provider)}`,
+            );
         }
 
         this.logger.debug(` -> Network configuration are ok`);
@@ -166,7 +189,7 @@ export class DisableVennService {
         try {
             const wallet = new this.ethers.Wallet(privateKey);
             this.logger.log(` -> Account: ${colors.cyan(wallet.address)}`);
-        } catch (error) {
+        } catch (_error) {
             throw new Error(`Invalid private key`);
         }
     }
@@ -186,8 +209,8 @@ export class DisableVennService {
                 name,
                 address,
                 hasFirewall: await this.isFirewallSetOnConsumer(network, address),
-                hasAttestationCenterProxy: await this.isSafeCallTargetSetOnConsumer(network, address)
-            }))
+                hasAttestationCenterProxy: await this.isSafeCallTargetSetOnConsumer(network, address),
+            })),
         );
 
         this.logger.debug(` -> Contracts information: ${JSON.stringify(contractsInfo, null, 2)}`);

@@ -35,16 +35,16 @@ const defaults = {
         integ: {
             include: [],
             exclude: ['**/node_modules/*'],
-            overrideDefaults: false
-        }
-    }
+            overrideDefaults: false,
+        },
+    },
 };
 
 export default async () => {
     let localConfig: CLIConfig = {};
     try {
         localConfig = (await import(LOCAL_CONFIG_PATH)) || {};
-    } catch (err) {
+    } catch (_err) {
         // No valid local config.
     }
 
@@ -55,9 +55,9 @@ export default async () => {
         fw: {
             integ: {
                 ...defaults.fw.integ,
-                exclude: overrideDefaults ? [] : defaults.fw.integ.exclude
-            }
-        }
+                exclude: overrideDefaults ? [] : defaults.fw.integ.exclude,
+            },
+        },
     };
 
     const config: CLIConfig = {
@@ -67,12 +67,14 @@ export default async () => {
             integ: {
                 ...overrides.fw.integ,
                 ...(localConfig?.fw?.integ || {}),
-                exclude: overrides.fw.integ.exclude.concat(localConfig?.fw?.integ?.exclude || []).map(pattern => join(pattern))
-            }
+                exclude: overrides.fw.integ.exclude
+                    .concat(localConfig?.fw?.integ?.exclude || [])
+                    .map(pattern => join(pattern)),
+            },
         },
 
         networks: localConfig?.networks || undefined,
-        privateKey: process.env.VENN_PRIVATE_KEY
+        privateKey: process.env.VENN_PRIVATE_KEY,
     };
 
     return config;

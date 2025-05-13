@@ -1,34 +1,63 @@
 module.exports = {
-    parser: '@typescript-eslint/parser',
-    parserOptions: {
-        project: 'tsconfig.json',
-        tsconfigRootDir: __dirname,
-        sourceType: 'module',
-    },
-    plugins: ['@typescript-eslint/eslint-plugin'],
-    extends: [
-        'plugin:@typescript-eslint/recommended',
-        'plugin:prettier/recommended',
-    ],
     root: true,
     env: {
+        es2021: true,
         node: true,
-        jest: true,
     },
-    ignorePatterns: ['.eslintrc.js'],
+    extends: ['eslint:recommended', 'plugin:import/recommended', 'prettier'],
+    overrides: [
+        {
+            files: ['**/*.ts?(x)'],
+            parser: '@typescript-eslint/parser',
+            extends: ['plugin:@typescript-eslint/recommended', 'plugin:import/typescript'],
+        },
+    ],
+    plugins: ['simple-import-sort', 'prettier', '@typescript-eslint'],
+    parserOptions: {
+        tsconfigRootDir: '.',
+        ecmaVersion: 'latest',
+        sourceType: 'module',
+        ecmaFeatures: {
+            jsx: true,
+        },
+    },
+    settings: {
+        'import/parsers': {
+            '@typescript-eslint/parser': ['.ts', '.tsx'],
+        },
+        'import/resolver': {
+            typescript: {},
+            node: {
+                paths: ['src'],
+                extensions: ['.js', '.jsx', '.ts', '.tsx'],
+            },
+        },
+    },
     rules: {
-        '@typescript-eslint/interface-name-prefix': 'off',
-        '@typescript-eslint/explicit-function-return-type': 'off',
-        '@typescript-eslint/explicit-module-boundary-types': 'off',
-        '@typescript-eslint/no-explicit-any': 'off',
-        'prettier/prettier': [
-            'error',
+        'prettier/prettier': ['error', {}, { usePrettierrc: true }],
+        '@typescript-eslint/no-unused-vars': [
+            'error', // or "error"
             {
-                // Indent with spaces.
-                "tabWidth": 4,
-                // Max line length.
-                "printWidth": 200,
-            }
+                argsIgnorePattern: '^_',
+                varsIgnorePattern: '^_',
+                caughtErrorsIgnorePattern: '^_',
+            },
         ],
+        'arrow-parens': 0,
+        'no-debugger': 1,
+        'no-return-await': 0,
+        'object-curly-spacing': ['error', 'always'],
+        'simple-import-sort/imports': 'error',
+        'simple-import-sort/exports': 'error',
+        'no-var': 'error',
+        'comma-dangle': [1, 'always-multiline'],
+        'no-console': [
+            1,
+            {
+                allow: ['warn', 'error'],
+            },
+        ],
+        'import/namespace': 'off',
+        '@typescript-eslint/no-non-null-assertion': 'off',
     },
 };

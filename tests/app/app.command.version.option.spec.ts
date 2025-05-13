@@ -1,5 +1,6 @@
-import * as colors from 'colors';
+/* eslint-disable @typescript-eslint/no-require-imports */
 import { TestingModule } from '@nestjs/testing';
+import * as colors from 'colors';
 import { CommandTestFactory } from 'nest-commander-testing';
 
 import { AppModule } from '@/app/app.module';
@@ -14,7 +15,7 @@ describe('App Command Option: venn --version', () => {
 
     beforeEach(async () => {
         commandInstance = await CommandTestFactory.createTestingCommand({
-            imports: [AppModule]
+            imports: [AppModule],
         }).compile();
 
         exitSpy = jest.spyOn(process, 'exit').mockImplementation();

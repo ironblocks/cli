@@ -1,7 +1,6 @@
 import * as colors from 'colors';
-import { resolve } from 'path';
-
 import { CommandRunner, Option, SubCommand } from 'nest-commander';
+import { resolve } from 'path';
 
 import { StandaloneCommand } from '@/commands/standalone-command.decorator';
 import { DESCRIPTION, FULL_NAME, NAME } from '@/firewall/integration/integration.command.descriptor';
@@ -23,13 +22,13 @@ interface CommandOptions {
 
 @SubCommand({
     name: NAME,
-    description: DESCRIPTION
+    description: DESCRIPTION,
 })
 export class IntegrationCommand extends CommandRunner {
     constructor(
         private readonly logger: LoggerService,
         private readonly integrationService: IntegrationService,
-        private readonly frameworkService: FrameworkService
+        private readonly frameworkService: FrameworkService,
     ) {
         super();
     }
@@ -56,7 +55,7 @@ export class IntegrationCommand extends CommandRunner {
                 verbose: options?.verbose,
                 external: true,
                 internal: options?.internal,
-                modifiers: options?.modifiers
+                modifiers: options?.modifiers,
             };
 
             if (options?.file) {
@@ -86,7 +85,7 @@ export class IntegrationCommand extends CommandRunner {
 
     @Option({
         flags: '-f, --file <string>',
-        description: 'path to contract file to customize'
+        description: 'path to contract file to customize',
     })
     parseFilePath(val: string): string {
         this.setOptionConflicts('file', ['dir']);
@@ -95,7 +94,7 @@ export class IntegrationCommand extends CommandRunner {
 
     @Option({
         flags: '-d, --dir <string>',
-        description: 'path to contracts directory to customize'
+        description: 'path to contracts directory to customize',
     })
     parseDirPath(val: string): string {
         this.setOptionConflicts('dir', ['file']);
@@ -105,7 +104,7 @@ export class IntegrationCommand extends CommandRunner {
     @Option({
         flags: '-r, --rec',
         description: 'recurse on all the contract files in the directory',
-        defaultValue: false
+        defaultValue: false,
     })
     parseRecursive(): boolean {
         return true;
@@ -114,7 +113,7 @@ export class IntegrationCommand extends CommandRunner {
     @Option({
         flags: '-v, --verbose',
         description: 'provider additional details along the command execution',
-        defaultValue: false
+        defaultValue: false,
     })
     parseVerbose(): boolean {
         return true;
@@ -123,7 +122,7 @@ export class IntegrationCommand extends CommandRunner {
     @Option({
         flags: '-i, --internal',
         description: 'whether to add firewall protection for "internal" functions',
-        defaultValue: false
+        defaultValue: false,
     })
     parseInternal(): boolean {
         return true;
@@ -131,7 +130,7 @@ export class IntegrationCommand extends CommandRunner {
 
     @Option({
         flags: '-m, --modifiers <string...>',
-        description: 'set advanced modifiers'
+        description: 'set advanced modifiers',
     })
     parseModifiers(val: string): FirewallModifier[] {
         const ACCEPTED_MODIFIERS = ['invariantProtected'];
