@@ -48,7 +48,7 @@ export class EnableVennService {
 
     async deployNewVennPolicy(
         contracts: ContractInformation[],
-        wallet: import('ethers').Wallet,
+        wallet: Wallet,
         network: SupportedVennNetworks,
     ): Promise<string> {
         this.logger.step('Deploying new Venn policy');
@@ -119,11 +119,7 @@ export class EnableVennService {
         return policyAddress;
     }
 
-    async setFirewallOnConsumers(
-        contracts: ContractInformation[],
-        wallet: import('ethers').Wallet,
-        network: SupportedVennNetworks,
-    ) {
+    async setFirewallOnConsumers(contracts: ContractInformation[], wallet: Wallet, network: SupportedVennNetworks) {
         this.logger.step('Setting Firewall for all contracts');
 
         // First, we prepare all the addresses we need
@@ -214,7 +210,7 @@ export class EnableVennService {
     async subscribeConsumersToNewPolicy(
         contracts: ContractInformation[],
         policyAddress: string,
-        wallet: import('ethers').Wallet,
+        wallet: Wallet,
         network: SupportedVennNetworks,
     ) {
         this.logger.step('Registering new policy');

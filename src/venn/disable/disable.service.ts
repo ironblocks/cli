@@ -1,6 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as colors from 'colors';
+import { Wallet } from 'ethers';
 
 import { LoggerService } from '@/lib/logging/logger.service';
 import { VennFirewallConsumerBase__factory } from '@/types/contracts';
@@ -43,7 +44,7 @@ export class DisableVennService {
 
     async removeFirewallFromConsumers(
         contracts: ContractInformation[],
-        wallet: import('ethers').Wallet,
+        wallet: Wallet,
         network: SupportedVennNetworks,
     ) {
         this.logger.step('Removing firewall from all contracts');
