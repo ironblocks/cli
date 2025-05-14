@@ -5,7 +5,7 @@ describe('Command Descriptor: fw', () => {
         expect(NAME).toBe('fw');
     });
 
-    it('is desribed with our company name and logo', () => {
+    it('is described with our company name and logo', () => {
         expect(DESCRIPTION).toBe('Firewall utilities for developers');
     });
 

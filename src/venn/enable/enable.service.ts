@@ -1,8 +1,10 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as colors from 'colors';
+import { EventLog, Wallet } from 'ethers';
 
 import { LoggerService } from '@/lib/logging/logger.service';
+import { Firewall__factory, PolicyDeployer__factory, VennFirewallConsumerBase__factory } from '@/types/contracts';
 import { DEFAULT_PROVIDERS } from '@/venn/default-providers.constants';
 import { SupportedVennNetworks } from '@/venn/supported-networks.enum';
 import { VENN_ADDRESSES } from '@/venn/venn-addresses.constants';
@@ -71,13 +73,7 @@ export class EnableVennService {
         const provider = this.ethers.getDefaultProvider(networkConfigs.provider);
         const signer = wallet.connect(provider);
 
-        // Get an instance of the policy deployer contract
-        // We only use this one function, so the ABI is hardcoded for now
-        //
-        const policyDeployerMinimalABI = [
-            'function deployPolicies(address, address[], bytes[]) external returns (address[])',
-        ];
-        const policyDeployer = new this.ethers.Contract(POLICY_DEPLOYER_ADDRESS, policyDeployerMinimalABI, signer);
+        const policyDeployer = PolicyDeployer__factory.connect(POLICY_DEPLOYER_ADDRESS, signer);
 
         // Prepare the call data for the policy deployer
         //
@@ -94,16 +90,6 @@ export class EnableVennService {
             ],
         );
 
-        // The easiest way to get the resulting policy address (which we need for later steps)
-        // is to make a static call which returns an array of addresses from the deployer
-        //
-        const [policyAddress] = await policyDeployer.deployPolicies.staticCall(
-            FIREWALL_ADDRESS,
-            [APPROVED_CALLS_FACTORY_ADDRESS],
-            [callData],
-        );
-        this.logger.log(` -> Policy address: ${colors.cyan(policyAddress)}`);
-
         // Finally, we can actually deploy the policy
         //
         const tx = await policyDeployer.deployPolicies(FIREWALL_ADDRESS, [APPROVED_CALLS_FACTORY_ADDRESS], [callData]);
@@ -114,6 +100,14 @@ export class EnableVennService {
         const receipt = await tx.wait();
         spinner.stop();
         this.logger.log(` -> Mined at block: ${receipt.blockNumber} \n`);
+
+        // Get the policy address from the event log
+        //
+        const policyAddress: string = (
+            receipt?.logs.find(
+                log => log.topics[0] === policyDeployer.getEvent('PolicyCreated').getFragment().topicHash,
+            ) as EventLog
+        )?.args?.[0];
 
         // Store the policy address on the networks configs
         //
@@ -143,10 +137,6 @@ export class EnableVennService {
         const provider = this.ethers.getDefaultProvider(networkConfigs.provider);
         const signer = wallet.connect(provider);
 
-        // We only use this one function, so the ABI is hardcoded for now
-        //
-        const firewallConsumerMinimalABI = ['function setFirewall(address)'];
-
         // We don't want to mess with the nonces, so we do this one by one
         //
         for (const contract of contracts) {
@@ -158,7 +148,7 @@ export class EnableVennService {
             } else {
                 this.logger.log(` -> Setting Firewall for contract ${colors.cyan(contract.name)}`);
 
-                const firewallConsumer = new this.ethers.Contract(contract.address, firewallConsumerMinimalABI, signer);
+                const firewallConsumer = VennFirewallConsumerBase__factory.connect(contract.address, signer);
                 const tx = await firewallConsumer.setFirewall(FIREWALL_ADDRESS);
                 this.logger.log(` -> Transaction hash: ${tx.hash}`);
 
@@ -177,7 +167,7 @@ export class EnableVennService {
 
     async setAttestationCenterProxyOnConsumers(
         contracts: ContractInformation[],
-        wallet: import('ethers').Wallet,
+        wallet: Wallet,
         network: SupportedVennNetworks,
     ) {
         this.logger.step('Configuring firewall for all contracts');
@@ -193,11 +183,6 @@ export class EnableVennService {
         const provider = this.ethers.getDefaultProvider(networkConfigs.provider);
         const signer = wallet.connect(provider);
 
-        // We only use this one function, so the ABI is hardcoded for now
-        // ACP: Attestation Center Proxy
-        //
-        const ACPConsumerMinimalABI = ['function setAttestationCenterProxy(address)'];
-
         // We don't want to mess with the nonces, so we do this one by one
         //
         for (const contract of contracts) {
@@ -209,7 +194,7 @@ export class EnableVennService {
             } else {
                 this.logger.log(` -> Setting firewall for contract ${colors.cyan(contract.name)}`);
 
-                const firewallConsumer = new this.ethers.Contract(contract.address, ACPConsumerMinimalABI, signer);
+                const firewallConsumer = VennFirewallConsumerBase__factory.connect(contract.address, signer);
                 const tx = await firewallConsumer.setAttestationCenterProxy(SAFE_CALL_TARGET_ADDRESS);
                 this.logger.log(` -> Transaction hash: ${tx.hash}`);
 
@@ -245,11 +230,8 @@ export class EnableVennService {
         const provider = this.ethers.getDefaultProvider(networkConfigs.provider);
         const signer = wallet.connect(provider);
 
-        // We only use this one function, so the ABI is hardcoded for now
-        //
-        const firewallMinimalABI = ['function addGlobalPolicyForConsumers(address[], address)'];
         const consumerAddresses = contracts.map(c => c.address);
-        const firewall = new this.ethers.Contract(FIREWALL_ADDRESS, firewallMinimalABI, signer);
+        const firewall = Firewall__factory.connect(FIREWALL_ADDRESS, signer);
 
         // Send the transaction
         //

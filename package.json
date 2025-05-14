@@ -36,7 +36,8 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./tests/jest-e2e.json",
-    "publish:npm": "npm run build && npm pack && npm publish --access public && rm -rf *.tgz"
+    "publish:npm": "npm run build && npm pack && npm publish --access public && rm -rf *.tgz",
+    "generate-abi-types": "typechain --target=ethers-v6 'abi/**/*.json' --out-dir src/types/contracts"
   },
   "dependencies": {
     "@nestjs/common": "^10.4.17",
@@ -61,6 +62,7 @@
     "@nestjs/cli": "^10.4.9",
     "@nestjs/schematics": "^10.2.3",
     "@nestjs/testing": "^10.4.17",
+    "@typechain/ethers-v6": "^0.5.1",
     "@types/express": "^4.17.21",
     "@types/jest": "^29.5.14",
     "@types/micromatch": "^4.0.9",
@@ -84,6 +86,7 @@
     "ts-node": "^10.9.2",
     "ts-prune": "^0.10.3",
     "tsconfig-paths": "^4.2.0",
+    "typechain": "^8.3.2",
     "typescript": "^5.8.3"
   }
 }

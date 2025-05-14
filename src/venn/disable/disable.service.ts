@@ -3,10 +3,10 @@ import { ConfigService } from '@nestjs/config';
 import * as colors from 'colors';
 
 import { LoggerService } from '@/lib/logging/logger.service';
+import { VennFirewallConsumerBase__factory } from '@/types/contracts';
 import { DEFAULT_PROVIDERS } from '@/venn/default-providers.constants';
 import { SupportedVennNetworks } from '@/venn/supported-networks.enum';
 import { VENN_ADDRESSES } from '@/venn/venn-addresses.constants';
-
 const MEMORY_SLOT_NAMES = {
     FIREWALL_ADDRESS: 'eip1967.firewall',
     ATTESTATION_CENTER_PROXY_ADDRESS: 'eip1967.attestation.center.proxy',
@@ -61,10 +61,6 @@ export class DisableVennService {
         const provider = this.ethers.getDefaultProvider(networkConfig.provider);
         const signer = wallet.connect(provider);
 
-        // We only use this one function, so the ABI is hardcoded for now
-        //
-        const firewallConsumerMinimalABI = ['function setFirewall(address)'];
-
         // We don't want to mess with the nonces, so we do this one by one
         //
         for (const contract of contracts) {
@@ -76,7 +72,7 @@ export class DisableVennService {
             } else {
                 this.logger.log(` -> Removing Firewall from contract ${colors.cyan(contract.name)}`);
 
-                const firewallConsumer = new this.ethers.Contract(contract.address, firewallConsumerMinimalABI, signer);
+                const firewallConsumer = VennFirewallConsumerBase__factory.connect(contract.address, signer);
                 const tx = await firewallConsumer.setFirewall(ZERO_ADDRESS);
                 this.logger.log(` -> Transaction hash: ${tx.hash}`);
 
