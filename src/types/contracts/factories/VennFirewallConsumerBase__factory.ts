@@ -143,6 +143,19 @@ const _abi = [
   {
     inputs: [
       {
+        internalType: "bool",
+        name: "_allowNonZeroUserNativeFee",
+        type: "bool",
+      },
+    ],
+    name: "setAllowNonZeroUserNativeFee",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
         internalType: "address",
         name: "_attestationCenterProxy",
         type: "address",

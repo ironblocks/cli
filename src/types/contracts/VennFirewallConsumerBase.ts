@@ -29,6 +29,7 @@ export interface VennFirewallConsumerBaseInterface extends Interface {
       | "acceptFirewallAdmin"
       | "firewallAdmin"
       | "safeFunctionCall"
+      | "setAllowNonZeroUserNativeFee"
       | "setAttestationCenterProxy"
       | "setFirewall"
       | "setFirewallAdmin"
@@ -55,6 +56,10 @@ export interface VennFirewallConsumerBaseInterface extends Interface {
     values: [BigNumberish, BytesLike, BytesLike]
   ): string;
   encodeFunctionData(
+    functionFragment: "setAllowNonZeroUserNativeFee",
+    values: [boolean]
+  ): string;
+  encodeFunctionData(
     functionFragment: "setAttestationCenterProxy",
     values: [AddressLike]
   ): string;
@@ -77,6 +82,10 @@ export interface VennFirewallConsumerBaseInterface extends Interface {
   ): Result;
   decodeFunctionResult(
     functionFragment: "safeFunctionCall",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "setAllowNonZeroUserNativeFee",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -194,6 +203,12 @@ export interface VennFirewallConsumerBase extends BaseContract {
     "payable"
   >;
 
+  setAllowNonZeroUserNativeFee: TypedContractMethod<
+    [_allowNonZeroUserNativeFee: boolean],
+    [void],
+    "nonpayable"
+  >;
+
   setAttestationCenterProxy: TypedContractMethod<
     [_attestationCenterProxy: AddressLike],
     [void],
@@ -228,6 +243,13 @@ export interface VennFirewallConsumerBase extends BaseContract {
     [_userNativeFee: BigNumberish, _proxyPayload: BytesLike, _data: BytesLike],
     [void],
     "payable"
+  >;
+  getFunction(
+    nameOrSignature: "setAllowNonZeroUserNativeFee"
+  ): TypedContractMethod<
+    [_allowNonZeroUserNativeFee: boolean],
+    [void],
+    "nonpayable"
   >;
   getFunction(
     nameOrSignature: "setAttestationCenterProxy"

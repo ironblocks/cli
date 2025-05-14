@@ -26,25 +26,38 @@ import type {
 export interface FirewallInterface extends Interface {
   getFunction(
     nameOrSignature:
+      | "__Firewall_init"
+      | "acceptOwnership"
       | "addGlobalPolicy"
       | "addGlobalPolicyForConsumers"
       | "addPolicies"
       | "addPolicy"
       | "approvedPolicies"
       | "dryrunEnabled"
+      | "owner"
+      | "pendingOwner"
       | "postExecution"
       | "preExecution"
+      | "proxiableUUID"
       | "removeGlobalPolicy"
       | "removeGlobalPolicyForConsumers"
       | "removePolicies"
       | "removePolicy"
+      | "renounceOwnership"
       | "setConsumerDryrunStatus"
       | "setPolicyStatus"
+      | "subscribedGlobalPolicies"
+      | "subscribedPolicies"
+      | "transferOwnership"
+      | "upgradeTo"
+      | "upgradeToAndCall"
       | "version"
   ): FunctionFragment;
 
   getEvent(
     nameOrSignatureOrTopic:
+      | "AdminChanged"
+      | "BeaconUpgraded"
       | "ConsumerDryrunStatusUpdate"
       | "DryrunPolicyPostError"
       | "DryrunPolicyPostSuccess"
@@ -58,13 +71,25 @@ export interface FirewallInterface extends Interface {
       | "GlobalPolicyPostSuccess"
       | "GlobalPolicyPreSuccess"
       | "GlobalPolicyRemoved"
+      | "Initialized"
+      | "OwnershipTransferStarted"
+      | "OwnershipTransferred"
       | "PolicyAdded"
       | "PolicyPostSuccess"
       | "PolicyPreSuccess"
       | "PolicyRemoved"
       | "PolicyStatusUpdate"
+      | "Upgraded"
   ): EventFragment;
 
+  encodeFunctionData(
+    functionFragment: "__Firewall_init",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
+    functionFragment: "acceptOwnership",
+    values?: undefined
+  ): string;
   encodeFunctionData(
     functionFragment: "addGlobalPolicy",
     values: [AddressLike, AddressLike]
@@ -89,6 +114,11 @@ export interface FirewallInterface extends Interface {
     functionFragment: "dryrunEnabled",
     values: [AddressLike]
   ): string;
+  encodeFunctionData(functionFragment: "owner", values?: undefined): string;
+  encodeFunctionData(
+    functionFragment: "pendingOwner",
+    values?: undefined
+  ): string;
   encodeFunctionData(
     functionFragment: "postExecution",
     values: [AddressLike, BytesLike, BigNumberish]
@@ -96,6 +126,10 @@ export interface FirewallInterface extends Interface {
   encodeFunctionData(
     functionFragment: "preExecution",
     values: [AddressLike, BytesLike, BigNumberish]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "proxiableUUID",
+    values?: undefined
   ): string;
   encodeFunctionData(
     functionFragment: "removeGlobalPolicy",
@@ -114,6 +148,10 @@ export interface FirewallInterface extends Interface {
     values: [AddressLike, BytesLike, AddressLike]
   ): string;
   encodeFunctionData(
+    functionFragment: "renounceOwnership",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
     functionFragment: "setConsumerDryrunStatus",
     values: [AddressLike, boolean]
   ): string;
@@ -121,8 +159,36 @@ export interface FirewallInterface extends Interface {
     functionFragment: "setPolicyStatus",
     values: [AddressLike, boolean]
   ): string;
+  encodeFunctionData(
+    functionFragment: "subscribedGlobalPolicies",
+    values: [AddressLike, BigNumberish]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "subscribedPolicies",
+    values: [AddressLike, BytesLike, BigNumberish]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "transferOwnership",
+    values: [AddressLike]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "upgradeTo",
+    values: [AddressLike]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "upgradeToAndCall",
+    values: [AddressLike, BytesLike]
+  ): string;
   encodeFunctionData(functionFragment: "version", values?: undefined): string;
 
+  decodeFunctionResult(
+    functionFragment: "__Firewall_init",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "acceptOwnership",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(
     functionFragment: "addGlobalPolicy",
     data: BytesLike
@@ -144,12 +210,21 @@ export interface FirewallInterface extends Interface {
     functionFragment: "dryrunEnabled",
     data: BytesLike
   ): Result;
+  decodeFunctionResult(functionFragment: "owner", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "pendingOwner",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(
     functionFragment: "postExecution",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
     functionFragment: "preExecution",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "proxiableUUID",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -169,6 +244,10 @@ export interface FirewallInterface extends Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(
+    functionFragment: "renounceOwnership",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
     functionFragment: "setConsumerDryrunStatus",
     data: BytesLike
   ): Result;
@@ -176,7 +255,49 @@ export interface FirewallInterface extends Interface {
     functionFragment: "setPolicyStatus",
     data: BytesLike
   ): Result;
+  decodeFunctionResult(
+    functionFragment: "subscribedGlobalPolicies",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "subscribedPolicies",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "transferOwnership",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(functionFragment: "upgradeTo", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "upgradeToAndCall",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(functionFragment: "version", data: BytesLike): Result;
+}
+
+export namespace AdminChangedEvent {
+  export type InputTuple = [previousAdmin: AddressLike, newAdmin: AddressLike];
+  export type OutputTuple = [previousAdmin: string, newAdmin: string];
+  export interface OutputObject {
+    previousAdmin: string;
+    newAdmin: string;
+  }
+  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
+  export type Filter = TypedDeferredTopicFilter<Event>;
+  export type Log = TypedEventLog<Event>;
+  export type LogDescription = TypedLogDescription<Event>;
+}
+
+export namespace BeaconUpgradedEvent {
+  export type InputTuple = [beacon: AddressLike];
+  export type OutputTuple = [beacon: string];
+  export interface OutputObject {
+    beacon: string;
+  }
+  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
+  export type Filter = TypedDeferredTopicFilter<Event>;
+  export type Log = TypedEventLog<Event>;
+  export type LogDescription = TypedLogDescription<Event>;
 }
 
 export namespace ConsumerDryrunStatusUpdateEvent {
@@ -400,6 +521,44 @@ export namespace GlobalPolicyRemovedEvent {
   export type LogDescription = TypedLogDescription<Event>;
 }
 
+export namespace InitializedEvent {
+  export type InputTuple = [version: BigNumberish];
+  export type OutputTuple = [version: bigint];
+  export interface OutputObject {
+    version: bigint;
+  }
+  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
+  export type Filter = TypedDeferredTopicFilter<Event>;
+  export type Log = TypedEventLog<Event>;
+  export type LogDescription = TypedLogDescription<Event>;
+}
+
+export namespace OwnershipTransferStartedEvent {
+  export type InputTuple = [previousOwner: AddressLike, newOwner: AddressLike];
+  export type OutputTuple = [previousOwner: string, newOwner: string];
+  export interface OutputObject {
+    previousOwner: string;
+    newOwner: string;
+  }
+  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
+  export type Filter = TypedDeferredTopicFilter<Event>;
+  export type Log = TypedEventLog<Event>;
+  export type LogDescription = TypedLogDescription<Event>;
+}
+
+export namespace OwnershipTransferredEvent {
+  export type InputTuple = [previousOwner: AddressLike, newOwner: AddressLike];
+  export type OutputTuple = [previousOwner: string, newOwner: string];
+  export interface OutputObject {
+    previousOwner: string;
+    newOwner: string;
+  }
+  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
+  export type Filter = TypedDeferredTopicFilter<Event>;
+  export type Log = TypedEventLog<Event>;
+  export type LogDescription = TypedLogDescription<Event>;
+}
+
 export namespace PolicyAddedEvent {
   export type InputTuple = [
     consumer: AddressLike,
@@ -501,6 +660,18 @@ export namespace PolicyStatusUpdateEvent {
   export type LogDescription = TypedLogDescription<Event>;
 }
 
+export namespace UpgradedEvent {
+  export type InputTuple = [implementation: AddressLike];
+  export type OutputTuple = [implementation: string];
+  export interface OutputObject {
+    implementation: string;
+  }
+  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
+  export type Filter = TypedDeferredTopicFilter<Event>;
+  export type Log = TypedEventLog<Event>;
+  export type LogDescription = TypedLogDescription<Event>;
+}
+
 export interface Firewall extends BaseContract {
   connect(runner?: ContractRunner | null): Firewall;
   waitForDeployment(): Promise<this>;
@@ -544,6 +715,10 @@ export interface Firewall extends BaseContract {
     event?: TCEvent
   ): Promise<this>;
 
+  __Firewall_init: TypedContractMethod<[], [void], "nonpayable">;
+
+  acceptOwnership: TypedContractMethod<[], [void], "nonpayable">;
+
   addGlobalPolicy: TypedContractMethod<
     [_consumer: AddressLike, _policy: AddressLike],
     [void],
@@ -573,16 +748,20 @@ export interface Firewall extends BaseContract {
   >;
 
   approvedPolicies: TypedContractMethod<
-    [_policy: AddressLike],
+    [policy: AddressLike],
     [boolean],
     "view"
   >;
 
   dryrunEnabled: TypedContractMethod<
-    [_consumer: AddressLike],
+    [consumer: AddressLike],
     [boolean],
     "view"
   >;
+
+  owner: TypedContractMethod<[], [string], "view">;
+
+  pendingOwner: TypedContractMethod<[], [string], "view">;
 
   postExecution: TypedContractMethod<
     [_sender: AddressLike, _data: BytesLike, _value: BigNumberish],
@@ -595,6 +774,8 @@ export interface Firewall extends BaseContract {
     [void],
     "nonpayable"
   >;
+
+  proxiableUUID: TypedContractMethod<[], [string], "view">;
 
   removeGlobalPolicy: TypedContractMethod<
     [_consumer: AddressLike, _policy: AddressLike],
@@ -624,6 +805,8 @@ export interface Firewall extends BaseContract {
     "nonpayable"
   >;
 
+  renounceOwnership: TypedContractMethod<[], [void], "nonpayable">;
+
   setConsumerDryrunStatus: TypedContractMethod<
     [_consumer: AddressLike, _status: boolean],
     [void],
@@ -636,12 +819,48 @@ export interface Firewall extends BaseContract {
     "nonpayable"
   >;
 
+  subscribedGlobalPolicies: TypedContractMethod<
+    [consumer: AddressLike, arg1: BigNumberish],
+    [string],
+    "view"
+  >;
+
+  subscribedPolicies: TypedContractMethod<
+    [consumer: AddressLike, sighash: BytesLike, arg2: BigNumberish],
+    [string],
+    "view"
+  >;
+
+  transferOwnership: TypedContractMethod<
+    [newOwner: AddressLike],
+    [void],
+    "nonpayable"
+  >;
+
+  upgradeTo: TypedContractMethod<
+    [newImplementation: AddressLike],
+    [void],
+    "nonpayable"
+  >;
+
+  upgradeToAndCall: TypedContractMethod<
+    [newImplementation: AddressLike, data: BytesLike],
+    [void],
+    "payable"
+  >;
+
   version: TypedContractMethod<[], [bigint], "view">;
 
   getFunction<T extends ContractMethod = ContractMethod>(
     key: string | FunctionFragment
   ): T;
 
+  getFunction(
+    nameOrSignature: "__Firewall_init"
+  ): TypedContractMethod<[], [void], "nonpayable">;
+  getFunction(
+    nameOrSignature: "acceptOwnership"
+  ): TypedContractMethod<[], [void], "nonpayable">;
   getFunction(
     nameOrSignature: "addGlobalPolicy"
   ): TypedContractMethod<
@@ -676,10 +895,16 @@ export interface Firewall extends BaseContract {
   >;
   getFunction(
     nameOrSignature: "approvedPolicies"
-  ): TypedContractMethod<[_policy: AddressLike], [boolean], "view">;
+  ): TypedContractMethod<[policy: AddressLike], [boolean], "view">;
   getFunction(
     nameOrSignature: "dryrunEnabled"
-  ): TypedContractMethod<[_consumer: AddressLike], [boolean], "view">;
+  ): TypedContractMethod<[consumer: AddressLike], [boolean], "view">;
+  getFunction(
+    nameOrSignature: "owner"
+  ): TypedContractMethod<[], [string], "view">;
+  getFunction(
+    nameOrSignature: "pendingOwner"
+  ): TypedContractMethod<[], [string], "view">;
   getFunction(
     nameOrSignature: "postExecution"
   ): TypedContractMethod<
@@ -694,6 +919,9 @@ export interface Firewall extends BaseContract {
     [void],
     "nonpayable"
   >;
+  getFunction(
+    nameOrSignature: "proxiableUUID"
+  ): TypedContractMethod<[], [string], "view">;
   getFunction(
     nameOrSignature: "removeGlobalPolicy"
   ): TypedContractMethod<
@@ -727,6 +955,9 @@ export interface Firewall extends BaseContract {
     "nonpayable"
   >;
   getFunction(
+    nameOrSignature: "renounceOwnership"
+  ): TypedContractMethod<[], [void], "nonpayable">;
+  getFunction(
     nameOrSignature: "setConsumerDryrunStatus"
   ): TypedContractMethod<
     [_consumer: AddressLike, _status: boolean],
@@ -741,9 +972,54 @@ export interface Firewall extends BaseContract {
     "nonpayable"
   >;
   getFunction(
+    nameOrSignature: "subscribedGlobalPolicies"
+  ): TypedContractMethod<
+    [consumer: AddressLike, arg1: BigNumberish],
+    [string],
+    "view"
+  >;
+  getFunction(
+    nameOrSignature: "subscribedPolicies"
+  ): TypedContractMethod<
+    [consumer: AddressLike, sighash: BytesLike, arg2: BigNumberish],
+    [string],
+    "view"
+  >;
+  getFunction(
+    nameOrSignature: "transferOwnership"
+  ): TypedContractMethod<[newOwner: AddressLike], [void], "nonpayable">;
+  getFunction(
+    nameOrSignature: "upgradeTo"
+  ): TypedContractMethod<
+    [newImplementation: AddressLike],
+    [void],
+    "nonpayable"
+  >;
+  getFunction(
+    nameOrSignature: "upgradeToAndCall"
+  ): TypedContractMethod<
+    [newImplementation: AddressLike, data: BytesLike],
+    [void],
+    "payable"
+  >;
+  getFunction(
     nameOrSignature: "version"
   ): TypedContractMethod<[], [bigint], "view">;
 
+  getEvent(
+    key: "AdminChanged"
+  ): TypedContractEvent<
+    AdminChangedEvent.InputTuple,
+    AdminChangedEvent.OutputTuple,
+    AdminChangedEvent.OutputObject
+  >;
+  getEvent(
+    key: "BeaconUpgraded"
+  ): TypedContractEvent<
+    BeaconUpgradedEvent.InputTuple,
+    BeaconUpgradedEvent.OutputTuple,
+    BeaconUpgradedEvent.OutputObject
+  >;
   getEvent(
     key: "ConsumerDryrunStatusUpdate"
   ): TypedContractEvent<
@@ -836,6 +1112,27 @@ export interface Firewall extends BaseContract {
     GlobalPolicyRemovedEvent.OutputObject
   >;
   getEvent(
+    key: "Initialized"
+  ): TypedContractEvent<
+    InitializedEvent.InputTuple,
+    InitializedEvent.OutputTuple,
+    InitializedEvent.OutputObject
+  >;
+  getEvent(
+    key: "OwnershipTransferStarted"
+  ): TypedContractEvent<
+    OwnershipTransferStartedEvent.InputTuple,
+    OwnershipTransferStartedEvent.OutputTuple,
+    OwnershipTransferStartedEvent.OutputObject
+  >;
+  getEvent(
+    key: "OwnershipTransferred"
+  ): TypedContractEvent<
+    OwnershipTransferredEvent.InputTuple,
+    OwnershipTransferredEvent.OutputTuple,
+    OwnershipTransferredEvent.OutputObject
+  >;
+  getEvent(
     key: "PolicyAdded"
   ): TypedContractEvent<
     PolicyAddedEvent.InputTuple,
@@ -870,8 +1167,37 @@ export interface Firewall extends BaseContract {
     PolicyStatusUpdateEvent.OutputTuple,
     PolicyStatusUpdateEvent.OutputObject
   >;
+  getEvent(
+    key: "Upgraded"
+  ): TypedContractEvent<
+    UpgradedEvent.InputTuple,
+    UpgradedEvent.OutputTuple,
+    UpgradedEvent.OutputObject
+  >;
 
   filters: {
+    "AdminChanged(address,address)": TypedContractEvent<
+      AdminChangedEvent.InputTuple,
+      AdminChangedEvent.OutputTuple,
+      AdminChangedEvent.OutputObject
+    >;
+    AdminChanged: TypedContractEvent<
+      AdminChangedEvent.InputTuple,
+      AdminChangedEvent.OutputTuple,
+      AdminChangedEvent.OutputObject
+    >;
+
+    "BeaconUpgraded(address)": TypedContractEvent<
+      BeaconUpgradedEvent.InputTuple,
+      BeaconUpgradedEvent.OutputTuple,
+      BeaconUpgradedEvent.OutputObject
+    >;
+    BeaconUpgraded: TypedContractEvent<
+      BeaconUpgradedEvent.InputTuple,
+      BeaconUpgradedEvent.OutputTuple,
+      BeaconUpgradedEvent.OutputObject
+    >;
+
     "ConsumerDryrunStatusUpdate(address,bool)": TypedContractEvent<
       ConsumerDryrunStatusUpdateEvent.InputTuple,
       ConsumerDryrunStatusUpdateEvent.OutputTuple,
@@ -1015,6 +1341,39 @@ export interface Firewall extends BaseContract {
       GlobalPolicyRemovedEvent.OutputObject
     >;
 
+    "Initialized(uint8)": TypedContractEvent<
+      InitializedEvent.InputTuple,
+      InitializedEvent.OutputTuple,
+      InitializedEvent.OutputObject
+    >;
+    Initialized: TypedContractEvent<
+      InitializedEvent.InputTuple,
+      InitializedEvent.OutputTuple,
+      InitializedEvent.OutputObject
+    >;
+
+    "OwnershipTransferStarted(address,address)": TypedContractEvent<
+      OwnershipTransferStartedEvent.InputTuple,
+      OwnershipTransferStartedEvent.OutputTuple,
+      OwnershipTransferStartedEvent.OutputObject
+    >;
+    OwnershipTransferStarted: TypedContractEvent<
+      OwnershipTransferStartedEvent.InputTuple,
+      OwnershipTransferStartedEvent.OutputTuple,
+      OwnershipTransferStartedEvent.OutputObject
+    >;
+
+    "OwnershipTransferred(address,address)": TypedContractEvent<
+      OwnershipTransferredEvent.InputTuple,
+      OwnershipTransferredEvent.OutputTuple,
+      OwnershipTransferredEvent.OutputObject
+    >;
+    OwnershipTransferred: TypedContractEvent<
+      OwnershipTransferredEvent.InputTuple,
+      OwnershipTransferredEvent.OutputTuple,
+      OwnershipTransferredEvent.OutputObject
+    >;
+
     "PolicyAdded(address,bytes4,address)": TypedContractEvent<
       PolicyAddedEvent.InputTuple,
       PolicyAddedEvent.OutputTuple,
@@ -1068,6 +1427,17 @@ export interface Firewall extends BaseContract {
       PolicyStatusUpdateEvent.InputTuple,
       PolicyStatusUpdateEvent.OutputTuple,
       PolicyStatusUpdateEvent.OutputObject
+    >;
+
+    "Upgraded(address)": TypedContractEvent<
+      UpgradedEvent.InputTuple,
+      UpgradedEvent.OutputTuple,
+      UpgradedEvent.OutputObject
+    >;
+    Upgraded: TypedContractEvent<
+      UpgradedEvent.InputTuple,
+      UpgradedEvent.OutputTuple,
+      UpgradedEvent.OutputObject
     >;
   };
 }
