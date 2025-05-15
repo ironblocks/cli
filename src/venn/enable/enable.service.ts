@@ -4,7 +4,12 @@ import * as colors from 'colors';
 import { EventLog, Wallet } from 'ethers';
 
 import { LoggerService } from '@/lib/logging/logger.service';
-import { Firewall__factory, PolicyDeployer__factory, VennFirewallConsumerBase__factory } from '@/types/contracts';
+import {
+    Firewall__factory,
+    PolicyDeployer__factory,
+    ProtocolRegistry__factory,
+    VennFirewallConsumerBase__factory,
+} from '@/types/contracts';
 import { DEFAULT_PROVIDERS } from '@/venn/default-providers.constants';
 import { SupportedVennNetworks } from '@/venn/supported-networks.enum';
 import { VENN_ADDRESSES } from '@/venn/venn-addresses.constants';
@@ -44,6 +49,8 @@ export class EnableVennService {
         await this.setFirewallOnConsumers(contracts, wallet, options.network);
         await this.setAttestationCenterProxyOnConsumers(contracts, wallet, options.network);
         await this.subscribeConsumersToNewPolicy(contracts, newPolicyAddress, wallet, options.network);
+        await this.registerContractsInProtocolRegistry(newPolicyAddress, wallet, options.network);
+        await this.subscribeToRootSubnet(newPolicyAddress, wallet, options.network);
     }
 
     async deployNewVennPolicy(
@@ -107,7 +114,8 @@ export class EnableVennService {
             receipt?.logs.find(
                 log => log.topics[0] === policyDeployer.getEvent('PolicyCreated').getFragment().topicHash,
             ) as EventLog
-        )?.args?.[0];
+        )?.args?.[1];
+        this.logger.log(` -> Policy address: ${colors.cyan(policyAddress)}`);
 
         // Store the policy address on the networks configs
         //
@@ -246,6 +254,77 @@ export class EnableVennService {
         this.logger.success(` -> Firewall successfully configured for all contracts!`);
     }
 
+    async registerContractsInProtocolRegistry(policyAddress: string, wallet: Wallet, network: SupportedVennNetworks) {
+        this.logger.step('Registering protocol in the registry');
+
+        // First, we prepare all the addresses we need
+        //
+        const networkConfigs = this.config.get('networks')[network];
+        const PROTOCOL_REGISTRY_ADDRESS = networkConfigs.protocolRegistry;
+        const PROTOCOL_METADATA =
+            this.config.get('protocolMetadata') || `https://venn-protocol.com/protocols/${policyAddress}`;
+        this.logger.debug(` -> Protocol registry address: ${PROTOCOL_REGISTRY_ADDRESS}`);
+        this.logger.debug(` -> Protocol metadata: "${PROTOCOL_METADATA}"`);
+
+        // We need a provider and a signer
+        //
+        const provider = this.ethers.getDefaultProvider(networkConfigs.provider);
+        const signer = wallet.connect(provider);
+
+        const protocolRegistry = ProtocolRegistry__factory.connect(PROTOCOL_REGISTRY_ADDRESS, signer);
+
+        // Send the transaction
+        //
+        const tx = await protocolRegistry.registerProtocol(policyAddress, PROTOCOL_METADATA);
+        this.logger.log(` -> Transaction hash: ${tx.hash}`);
+
+        // Wait for the transaction to be mined
+        //
+        const spinner = this.logger.spinner(' -> Waiting for transaction to be mined');
+        const receipt = await tx.wait();
+        spinner.stop();
+        this.logger.log(` -> Mined at block: ${receipt.blockNumber} \n`);
+
+        // Extra logging because, why not?
+        //
+        this.logger.success(` -> Protocol successfully registered in protocol registry!`);
+    }
+
+    async subscribeToRootSubnet(policyAddress: string, wallet: Wallet, network: SupportedVennNetworks) {
+        this.logger.step('Subscribing to root subnet');
+
+        // First, we prepare all the addresses we need
+        //
+        const networkConfigs = this.config.get('networks')[network];
+        const PROTOCOL_REGISTRY_ADDRESS = networkConfigs.protocolRegistry;
+        const ROOT_SUBNET = networkConfigs.rootSubnet;
+        this.logger.debug(` -> Protocol registry address: ${PROTOCOL_REGISTRY_ADDRESS}`);
+        this.logger.debug(` -> Root subnet: ${ROOT_SUBNET}`);
+
+        // We need a provider and a signer
+        //
+        const provider = this.ethers.getDefaultProvider(networkConfigs.provider);
+        const signer = wallet.connect(provider);
+
+        const protocolRegistry = ProtocolRegistry__factory.connect(PROTOCOL_REGISTRY_ADDRESS, signer);
+
+        // Send the transaction
+        //
+        const tx = await protocolRegistry.subscribeSubnet(policyAddress, ROOT_SUBNET, []);
+        this.logger.log(` -> Transaction hash: ${tx.hash}`);
+
+        // Wait for the transaction to be mined
+        //
+        const spinner = this.logger.spinner(' -> Waiting for transaction to be mined');
+        const receipt = await tx.wait();
+        spinner.stop();
+        this.logger.log(` -> Mined at block: ${receipt.blockNumber} \n`);
+
+        // Extra logging because, why not?
+        //
+        this.logger.success(` -> Subscribed to root subnet!`);
+    }
+
     async validateNetworkConfigs(network: string) {
         this.logger.log(` -> Network: ${colors.cyan(network)}`);
 
@@ -316,6 +395,22 @@ export class EnableVennService {
             throw new Error(
                 `Invalid address for ${colors.red('Safe Call Target')}: ${colors.red(networkConfig.safeCallTarget)}`,
             );
+        }
+
+        networkConfig.protocolRegistry =
+            networkConfig.protocolRegistry || VENN_ADDRESSES[network.toUpperCase()]?.PROTOCOL_REGISTRY;
+        const protocolRegistryAddressIsInvalid =
+            networkConfig.protocolRegistry && !this.ethers.isAddress(networkConfig.protocolRegistry);
+        if (protocolRegistryAddressIsInvalid) {
+            throw new Error(
+                `Invalid address for ${colors.red('Protocol Registry')}: ${colors.red(networkConfig.protocolRegistry)}`,
+            );
+        }
+
+        networkConfig.rootSubnet = networkConfig.rootSubnet || VENN_ADDRESSES[network.toUpperCase()]?.ROOT_SUBNET;
+        const rootSubnetAddressIsInvalid = networkConfig.rootSubnet && typeof networkConfig.rootSubnet !== 'number';
+        if (rootSubnetAddressIsInvalid) {
+            throw new Error(`Invalid id for ${colors.red('Root Subnet')}: ${colors.red(networkConfig.rootSubnet)}`);
         }
 
         // Validate that we have an RPC provider for the selected network

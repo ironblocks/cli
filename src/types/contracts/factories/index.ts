@@ -3,4 +3,5 @@
 /* eslint-disable */
 export { Firewall__factory } from "./Firewall__factory";
 export { PolicyDeployer__factory } from "./PolicyDeployer__factory";
+export { ProtocolRegistry__factory } from "./ProtocolRegistry__factory";
 export { VennFirewallConsumerBase__factory } from "./VennFirewallConsumerBase__factory";

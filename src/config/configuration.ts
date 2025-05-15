@@ -26,6 +26,7 @@ type CLIConfig = {
 
     networks?: NetworksConfiguration;
     privateKey?: string;
+    protocolMetadata?: string;
 };
 
 const defaults = {
@@ -75,6 +76,7 @@ export default async () => {
 
         networks: localConfig?.networks || undefined,
         privateKey: process.env.VENN_PRIVATE_KEY,
+        protocolMetadata: process.env.PROTOCOL_METADATA,
     };
 
     return config;

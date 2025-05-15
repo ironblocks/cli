@@ -162,6 +162,22 @@ export class DisableVennService {
             );
         }
 
+        networkConfig.protocolRegistry =
+            networkConfig.protocolRegistry || VENN_ADDRESSES[network.toUpperCase()]?.PROTOCOL_REGISTRY;
+        const protocolRegistryAddressIsInvalid =
+            networkConfig.protocolRegistry && !this.ethers.isAddress(networkConfig.protocolRegistry);
+        if (protocolRegistryAddressIsInvalid) {
+            throw new Error(
+                `Invalid address for ${colors.red('Protocol Registry')}: ${colors.red(networkConfig.protocolRegistry)}`,
+            );
+        }
+
+        networkConfig.rootSubnet = networkConfig.rootSubnet || VENN_ADDRESSES[network.toUpperCase()]?.ROOT_SUBNET;
+        const rootSubnetAddressIsInvalid = networkConfig.rootSubnet && typeof networkConfig.rootSubnet !== 'number';
+        if (rootSubnetAddressIsInvalid) {
+            throw new Error(`Invalid id for ${colors.red('Root Subnet')}: ${colors.red(networkConfig.rootSubnet)}`);
+        }
+
         // Validate that we have an RPC provider for the selected network
         networkConfig.provider = networkConfig.provider || DEFAULT_PROVIDERS[network.toUpperCase()];
         try {

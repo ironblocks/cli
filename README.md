@@ -1,4 +1,5 @@
 <!-- omit from toc -->
+
 # Venn CLI
 
 [![NPM Version](https://img.shields.io/npm/v/@vennbuild/cli?style=for-the-badge)](https://www.npmjs.com/~vennbuild)
@@ -40,21 +41,22 @@ Follow these steps to secure your contracts with Venn:
     ```
 
 <!-- omit from toc -->
+
 ## Table of Contents
 
 - [🚀 Quick Start](#-quick-start)
 - [📦 Installation](#-installation)
 - [📚 Usage](#-usage)
-  - [Firewall Integration](#firewall-integration)
-  - [Venn Integration](#venn-integration)
+    - [Firewall Integration](#firewall-integration)
+    - [Venn Integration](#venn-integration)
 - [⚙️ Configuration File](#️-configuration-file)
-  - [Firewall Configuration](#firewall-configuration)
-  - [Venn Configuration](#venn-configuration)
+    - [Firewall Configuration](#firewall-configuration)
+    - [Venn Configuration](#venn-configuration)
 - [⚡ Available Commands](#-available-commands)
-  - [`venn`](#venn)
-  - [`venn fw integ`](#venn-fw-integ)
-  - [`venn enable`](#venn-enable)
-  - [`venn disable`](#venn-disable)
+    - [`venn`](#venn)
+    - [`venn fw integ`](#venn-fw-integ)
+    - [`venn enable`](#venn-enable)
+    - [`venn disable`](#venn-disable)
 - [💬 Support \& Documentation](#-support--documentation)
 - [📜 License](#-license)
 
@@ -68,20 +70,21 @@ npm install -g @vennbuild/cli
 
 ## 📚 Usage
 
-There are 3 steps to the integration.  
+There are 3 steps to the integration.
 
 1. First, add the Firewall SDK to your smart contracts, and deploy them as your would normally deploy to any network.
 
 2. Next, connect your deployed smart contracts to Venn.
 
 3. Now that your project is secure, only approved transactions will go through.  
-    To approve transactions, make sure to add the [**Venn DApp SDK**](https://www.npmjs.com/package/@vennbuild/venn-dapp-sdk) to your DApp's frontend.
+   To approve transactions, make sure to add the [**Venn DApp SDK**](https://www.npmjs.com/package/@vennbuild/venn-dapp-sdk) to your DApp's frontend.
 
 ### Firewall Integration
 
 This integration will add the Firewall SDK to your smart contracts, making sure that they import the relevant modifiers, and apply the modifiers on external functions.
 
 <!-- omit from toc -->
+
 #### Automatic Integration With CLI
 
 Auto-import the Firewall SDK into all of your smart contracts in one go by running:
@@ -93,13 +96,14 @@ venn fw integ -d contracts
 This command will scan all your smart contracts under the `contracts` folder, and add an import of the `VennFirewallConsumer` Firewall SDK.
 
 <!-- omit from toc -->
+
 ##### Before
 
 ```solidity
 pragma solidity ^0.8;
 
 contract MyContract {
-    
+
     myMethod() {
         ...
     }
@@ -107,6 +111,7 @@ contract MyContract {
 ```
 
 <!-- omit from toc -->
+
 ##### After
 
 ```solidity
@@ -129,6 +134,7 @@ See the [**Available Commands**](#-available-commands) section below for additio
 This integration will connect your Firewall protected smart contracts to the Venn Network onchain. It does this by sending setup transactions onchain to register your smart contracts with Venn.
 
 <!-- omit from toc -->
+
 #### Prerequisites
 
 1. Make sure your smart contracts are deployed and that you have completed the [**Firewall Integration**](#firewall-integration) step above
@@ -136,6 +142,7 @@ This integration will connect your Firewall protected smart contracts to the Ven
 2. You will need your private key for this step
 
 <!-- omit from toc -->
+
 #### Configuration
 
 1. Create a new file called **`venn.config.json`**
@@ -148,7 +155,7 @@ This integration will connect your Firewall protected smart contracts to the Ven
             "holesky": {
                 "contracts": {
                     "MyContract1": "0x1234abcd1234abcd1234abcd1234abcd1234abcd",
-                    "MyContract2": "0x1234abcd1234abcd1234abcd1234abcd1234abcd",
+                    "MyContract2": "0x1234abcd1234abcd1234abcd1234abcd1234abcd"
                 }
             }
         }
@@ -164,6 +171,7 @@ This integration will connect your Firewall protected smart contracts to the Ven
     > **IMPORTANT:** This key must be the same key that deployed the smart contracts
 
 <!-- omit from toc -->
+
 #### Connect To Venn
 
 Run the following command to connect your Firewall protected smart contracts to Venn:
@@ -183,7 +191,7 @@ The address of the policy will be saved in **`venn.config.json`**:
         "holesky": {
             "contracts": {
                 "MyContract1": "0x1234abcd1234abcd1234abcd1234abcd1234abcd",
-                "MyContract2": "0x1234abcd1234abcd1234abcd1234abcd1234abcd",
+                "MyContract2": "0x1234abcd1234abcd1234abcd1234abcd1234abcd"
             },
 
             // YOUR VENN POLICY ADDRESS
@@ -203,8 +211,12 @@ Overall, the configuration file has the following structure:
 
 ```json
 {
-    "fw": { /* ... */ },
-    "network": { /* ... */ }
+    "fw": {
+        /* ... */
+    },
+    "network": {
+        /* ... */
+    }
 }
 ```
 
@@ -217,19 +229,21 @@ For the Firewall integration, you can configure which folders to include or excl
     "fw": {
         "integ": {
             "include": ["my/contracts/folder"],
-            "exclude": ["tests/fixtures/**/*.sol"],
+            "exclude": ["tests/fixtures/**/*.sol"]
         }
     }
 }
 ```
 
 <!-- omit from toc -->
+
 #### Include
 
 Acts as a whitelist.  
 If this configuration is not empty, only files inside the configured folders will be integrated with the Firewall SDK.
 
 <!-- omit from toc -->
+
 #### Exclude
 
 Acts as a blacklist.  
@@ -240,6 +254,7 @@ If this configuration is not empty, files inside the configured folders will not
 For the Venn Integration, you configure which **`networks`** to integrate with, and list the contracts that you have deployed per networks:
 
 <!-- omit from toc -->
+
 #### Smart Contracts
 
 ```json
@@ -248,7 +263,7 @@ For the Venn Integration, you configure which **`networks`** to integrate with, 
         "holesky": {
             "contracts": {
                 "MyContract1": "0x1234abcd1234abcd1234abcd1234abcd1234abcd",
-                "MyContract2": "0x1234abcd1234abcd1234abcd1234abcd1234abcd",
+                "MyContract2": "0x1234abcd1234abcd1234abcd1234abcd1234abcd"
             }
         }
     }
@@ -258,6 +273,7 @@ For the Venn Integration, you configure which **`networks`** to integrate with, 
 Note that the `key` is the name of the contract, and the `value` is the address of the contract.
 
 <!-- omit from toc -->
+
 #### Private Key
 
 When Venn CLI registers your smart contracts with Venn onchain, it sends several setup transactions for this registration to happen.
@@ -265,24 +281,35 @@ When Venn CLI registers your smart contracts with Venn onchain, it sends several
 The account that signs these transactions is provided to the CLI by setting the following environment variable:
 
 - `VENN_PRIVATE_KEY`  
-    The account that owns the deployed contracts
+   The account that owns the deployed contracts
+
+#### Protocol Metadata
+
+When you enable Venn, the CLI will register your as a protocol in the Venn Protocol Registry.
+
+The protocol has the following data, that you can configure by setting the following environment variables:
+
+- `PROTOCOL_METADATA` [optional]  
+   The URL of the protocol metadata
 
 ## ⚡ Available Commands
 
 ### `venn`
 
-This is the root command.  
+This is the root command.
 
 <!-- markdownlint-disable -->
 <!-- omit from toc -->
+
 #### Available Options
+
 <!-- markdownlint-enable -->
 
 - `--help`  
-    show help information
+   show help information
 
 - `--version`  
-    show version information
+   show version information
 
 ### `venn fw integ`
 
@@ -290,27 +317,32 @@ Subcommand for managing the Firewall SDK integration with your smart contracts.
 
 <!-- markdownlint-disable -->
 <!-- omit from toc -->
+
 #### Available Options
+
 <!-- markdownlint-enable -->
 
 - `-f, --file <file path>`  
-    specify a single smart contract file for the integration
+   specify a single smart contract file for the integration
 
 - `-d, --dir <folder path>`  
-    specify a directory of smart contracts for the integration
+   specify a directory of smart contracts for the integration
 
 - `-r, --rec`  
-    if specified, will recursively look in `<folder path>` from `--dir`
+   if specified, will recursively look in `<folder path>` from `--dir`
 
 - `-v, --verbose`  
-    show verbose logging
+   show verbose logging
 
 <!-- markdownlint-disable -->
 <!-- omit from toc -->
+
 #### Examples
+
 <!-- markdownlint-enable -->
 
 <!-- omit from toc -->
+
 ##### A single contract
 
 ```shell
@@ -318,6 +350,7 @@ venn fw integ -f contracts/MyContract.sol
 ```
 
 <!-- omit from toc -->
+
 ##### A single folder
 
 ```shell
@@ -325,6 +358,7 @@ venn fw integ -d contracts/vault
 ```
 
 <!-- omit from toc -->
+
 ##### All contracts
 
 ```shell
@@ -337,18 +371,23 @@ Register your Firewall protected smart contracts with Venn.
 
 <!-- markdownlint-disable -->
 <!-- omit from toc -->
+
 #### Available Options
+
 <!-- markdownlint-enable -->
 
 - `--network <network>`
-    the network where your smart contracts are deployed to
+  the network where your smart contracts are deployed to
 
 <!-- markdownlint-disable -->
 <!-- omit from toc -->
+
 #### Examples
+
 <!-- markdownlint-enable -->
 
 <!-- omit from toc -->
+
 ##### Enable Venn
 
 ```shell
@@ -361,18 +400,23 @@ Unregister your Firewall protected smart contracts from Venn.
 
 <!-- markdownlint-disable -->
 <!-- omit from toc -->
+
 #### Available Options
+
 <!-- markdownlint-enable -->
 
 - `--network <network>`
-    the network where your smart contracts are deployed to
+  the network where your smart contracts are deployed to
 
 <!-- markdownlint-disable -->
 <!-- omit from toc -->
+
 #### Examples
+
 <!-- markdownlint-enable -->
 
 <!-- omit from toc -->
+
 ##### Disable Venn
 
 ```shell
@@ -381,7 +425,7 @@ venn disable --network holskey
 
 ## 💬 Support & Documentation
 
-We're here to help.  
+We're here to help.
 
 - Join the discussion on Discord: [Venn Discord](https://discord.gg/97cg6Qhg)
 
