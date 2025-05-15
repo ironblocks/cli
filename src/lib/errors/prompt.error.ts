@@ -1,8 +1,8 @@
 export class PromptError extends Error {
     /**
-     * Overiding "toString" to prevent NestJS printing the error with "Error: " prefix.
+     * Overriding "toString" to prevent NestJS printing the error with "Error: " prefix.
      *
-     * @returns
+     * @returns the error message
      */
     toString(): string {
         return this.message;

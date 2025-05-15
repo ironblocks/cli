@@ -1,15 +1,22 @@
-import * as colors from 'colors';
-import { ConfigService } from '@nestjs/config';
 import { Inject, Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import * as colors from 'colors';
+import { EventLog, Wallet } from 'ethers';
 
 import { LoggerService } from '@/lib/logging/logger.service';
-import { VENN_ADDRESSES } from '@/venn/venn-addresses.constants';
+import {
+    Firewall__factory,
+    PolicyDeployer__factory,
+    ProtocolRegistry__factory,
+    VennFirewallConsumerBase__factory,
+} from '@/types/contracts';
 import { DEFAULT_PROVIDERS } from '@/venn/default-providers.constants';
 import { SupportedVennNetworks } from '@/venn/supported-networks.enum';
+import { VENN_ADDRESSES } from '@/venn/venn-addresses.constants';
 
 const MEMORY_SLOT_NAMES = {
     FIREWALL_ADDRESS: 'eip1967.firewall',
-    ATTESTATION_CENTER_PROXY_ADDRESS: 'eip1967.attestation.center.proxy'
+    ATTESTATION_CENTER_PROXY_ADDRESS: 'eip1967.attestation.center.proxy',
 };
 
 export type EnableVennOptions = {
@@ -28,7 +35,7 @@ export class EnableVennService {
     constructor(
         private readonly logger: LoggerService,
         private readonly config: ConfigService,
-        @Inject('ETHERS') private readonly ethers: typeof import('ethers')
+        @Inject('ETHERS') private readonly ethers: typeof import('ethers'),
     ) {}
 
     async enable(options: EnableVennOptions) {
@@ -42,9 +49,15 @@ export class EnableVennService {
         await this.setFirewallOnConsumers(contracts, wallet, options.network);
         await this.setAttestationCenterProxyOnConsumers(contracts, wallet, options.network);
         await this.subscribeConsumersToNewPolicy(contracts, newPolicyAddress, wallet, options.network);
+        await this.registerContractsInProtocolRegistry(newPolicyAddress, wallet, options.network);
+        await this.subscribeToRootSubnet(newPolicyAddress, wallet, options.network);
     }
 
-    async deployNewVennPolicy(contracts: ContractInformation[], wallet: import('ethers').Wallet, network: SupportedVennNetworks): Promise<string> {
+    async deployNewVennPolicy(
+        contracts: ContractInformation[],
+        wallet: Wallet,
+        network: SupportedVennNetworks,
+    ): Promise<string> {
         this.logger.step('Deploying new Venn policy');
 
         // First, we prepare all the addresses we need
@@ -67,11 +80,7 @@ export class EnableVennService {
         const provider = this.ethers.getDefaultProvider(networkConfigs.provider);
         const signer = wallet.connect(provider);
 
-        // Get an instance of the policy deployer contract
-        // We only use this one function, so the ABI is hardcoded for now
-        //
-        const policyDeployerMinimalABI = ['function deployPolicies(address, address[], bytes[]) external returns (address[])'];
-        const policyDeployer = new this.ethers.Contract(POLICY_DEPLOYER_ADDRESS, policyDeployerMinimalABI, signer);
+        const policyDeployer = PolicyDeployer__factory.connect(POLICY_DEPLOYER_ADDRESS, signer);
 
         // Prepare the call data for the policy deployer
         //
@@ -84,15 +93,9 @@ export class EnableVennService {
                 wallet.address, // policyAdmin
                 [APPROVED_CALLS_SIGNER_ADDRESS], // signers
                 contracts.map(c => c.address), // consumers
-                contracts.map(() => true) // consumerStatuses
-            ]
+                contracts.map(() => true), // consumerStatuses
+            ],
         );
-
-        // The easiest way to get the resulting policy address (which we need for later steps)
-        // is to make a static call which returns an array of addresses from the deployer
-        //
-        const [policyAddress] = await policyDeployer.deployPolicies.staticCall(FIREWALL_ADDRESS, [APPROVED_CALLS_FACTORY_ADDRESS], [callData]);
-        this.logger.log(` -> Policy address: ${colors.cyan(policyAddress)}`);
 
         // Finally, we can actually deploy the policy
         //
@@ -105,6 +108,15 @@ export class EnableVennService {
         spinner.stop();
         this.logger.log(` -> Mined at block: ${receipt.blockNumber} \n`);
 
+        // Get the policy address from the event log
+        //
+        const policyAddress: string = (
+            receipt?.logs.find(
+                log => log.topics[0] === policyDeployer.getEvent('PolicyCreated').getFragment().topicHash,
+            ) as EventLog
+        )?.args?.[1];
+        this.logger.log(` -> Policy address: ${colors.cyan(policyAddress)}`);
+
         // Store the policy address on the networks configs
         //
         networkConfigs.policyAddress = policyAddress;
@@ -115,7 +127,7 @@ export class EnableVennService {
         return policyAddress;
     }
 
-    async setFirewallOnConsumers(contracts: ContractInformation[], wallet: import('ethers').Wallet, network: SupportedVennNetworks) {
+    async setFirewallOnConsumers(contracts: ContractInformation[], wallet: Wallet, network: SupportedVennNetworks) {
         this.logger.step('Setting Firewall for all contracts');
 
         // First, we prepare all the addresses we need
@@ -129,20 +141,18 @@ export class EnableVennService {
         const provider = this.ethers.getDefaultProvider(networkConfigs.provider);
         const signer = wallet.connect(provider);
 
-        // We only use this one function, so the ABI is hardcoded for now
-        //
-        const firewallConsumerMinimalABI = ['function setFirewall(address)'];
-
         // We don't want to mess with the nonces, so we do this one by one
         //
         for (const contract of contracts) {
             if (contract.hasFirewall) {
-                this.logger.log(` -> Firewall already set for contract ${colors.cyan(contract.name)} ${colors.grey('(skipping)')} \n`);
+                this.logger.log(
+                    ` -> Firewall already set for contract ${colors.cyan(contract.name)} ${colors.grey('(skipping)')} \n`,
+                );
                 continue;
             } else {
                 this.logger.log(` -> Setting Firewall for contract ${colors.cyan(contract.name)}`);
 
-                const firewallConsumer = new this.ethers.Contract(contract.address, firewallConsumerMinimalABI, signer);
+                const firewallConsumer = VennFirewallConsumerBase__factory.connect(contract.address, signer);
                 const tx = await firewallConsumer.setFirewall(FIREWALL_ADDRESS);
                 this.logger.log(` -> Transaction hash: ${tx.hash}`);
 
@@ -159,7 +169,11 @@ export class EnableVennService {
         this.logger.success(` -> Firewall successfully set for all contracts!`);
     }
 
-    async setAttestationCenterProxyOnConsumers(contracts: ContractInformation[], wallet: import('ethers').Wallet, network: SupportedVennNetworks) {
+    async setAttestationCenterProxyOnConsumers(
+        contracts: ContractInformation[],
+        wallet: Wallet,
+        network: SupportedVennNetworks,
+    ) {
         this.logger.step('Configuring firewall for all contracts');
 
         // First, we prepare all the addresses we need
@@ -173,21 +187,18 @@ export class EnableVennService {
         const provider = this.ethers.getDefaultProvider(networkConfigs.provider);
         const signer = wallet.connect(provider);
 
-        // We only use this one function, so the ABI is hardcoded for now
-        // ACP: Attestation Center Proxy
-        //
-        const ACPConsumerMinimalABI = ['function setAttestationCenterProxy(address)'];
-
         // We don't want to mess with the nonces, so we do this one by one
         //
         for (const contract of contracts) {
             if (contract.hasAttestationCenterProxy) {
-                this.logger.log(` -> Firewall already configured for contract ${colors.cyan(contract.name)} ${colors.grey('(skipping)')} \n`);
+                this.logger.log(
+                    ` -> Firewall already configured for contract ${colors.cyan(contract.name)} ${colors.grey('(skipping)')} \n`,
+                );
                 continue;
             } else {
                 this.logger.log(` -> Setting firewall for contract ${colors.cyan(contract.name)}`);
 
-                const firewallConsumer = new this.ethers.Contract(contract.address, ACPConsumerMinimalABI, signer);
+                const firewallConsumer = VennFirewallConsumerBase__factory.connect(contract.address, signer);
                 const tx = await firewallConsumer.setAttestationCenterProxy(SAFE_CALL_TARGET_ADDRESS);
                 this.logger.log(` -> Transaction hash: ${tx.hash}`);
 
@@ -204,7 +215,12 @@ export class EnableVennService {
         this.logger.success(` -> Firewall successfully configured for all contracts!`);
     }
 
-    async subscribeConsumersToNewPolicy(contracts: ContractInformation[], policyAddress: string, wallet: import('ethers').Wallet, network: SupportedVennNetworks) {
+    async subscribeConsumersToNewPolicy(
+        contracts: ContractInformation[],
+        policyAddress: string,
+        wallet: Wallet,
+        network: SupportedVennNetworks,
+    ) {
         this.logger.step('Registering new policy');
 
         // First, we prepare all the addresses we need
@@ -218,11 +234,8 @@ export class EnableVennService {
         const provider = this.ethers.getDefaultProvider(networkConfigs.provider);
         const signer = wallet.connect(provider);
 
-        // We only use this one function, so the ABI is hardcoded for now
-        //
-        const firewallMinimalABI = ['function addGlobalPolicyForConsumers(address[], address)'];
         const consumerAddresses = contracts.map(c => c.address);
-        const firewall = new this.ethers.Contract(FIREWALL_ADDRESS, firewallMinimalABI, signer);
+        const firewall = Firewall__factory.connect(FIREWALL_ADDRESS, signer);
 
         // Send the transaction
         //
@@ -239,6 +252,77 @@ export class EnableVennService {
         // Extra logging because, why not?
         //
         this.logger.success(` -> Firewall successfully configured for all contracts!`);
+    }
+
+    async registerContractsInProtocolRegistry(policyAddress: string, wallet: Wallet, network: SupportedVennNetworks) {
+        this.logger.step('Registering protocol in the registry');
+
+        // First, we prepare all the addresses we need
+        //
+        const networkConfigs = this.config.get('networks')[network];
+        const PROTOCOL_REGISTRY_ADDRESS = networkConfigs.protocolRegistry;
+        const PROTOCOL_METADATA =
+            this.config.get('protocolMetadata') || `https://venn-protocol.com/protocols/${policyAddress}`;
+        this.logger.debug(` -> Protocol registry address: ${PROTOCOL_REGISTRY_ADDRESS}`);
+        this.logger.debug(` -> Protocol metadata: "${PROTOCOL_METADATA}"`);
+
+        // We need a provider and a signer
+        //
+        const provider = this.ethers.getDefaultProvider(networkConfigs.provider);
+        const signer = wallet.connect(provider);
+
+        const protocolRegistry = ProtocolRegistry__factory.connect(PROTOCOL_REGISTRY_ADDRESS, signer);
+
+        // Send the transaction
+        //
+        const tx = await protocolRegistry.registerProtocol(policyAddress, PROTOCOL_METADATA);
+        this.logger.log(` -> Transaction hash: ${tx.hash}`);
+
+        // Wait for the transaction to be mined
+        //
+        const spinner = this.logger.spinner(' -> Waiting for transaction to be mined');
+        const receipt = await tx.wait();
+        spinner.stop();
+        this.logger.log(` -> Mined at block: ${receipt.blockNumber} \n`);
+
+        // Extra logging because, why not?
+        //
+        this.logger.success(` -> Protocol successfully registered in protocol registry!`);
+    }
+
+    async subscribeToRootSubnet(policyAddress: string, wallet: Wallet, network: SupportedVennNetworks) {
+        this.logger.step('Subscribing to root subnet');
+
+        // First, we prepare all the addresses we need
+        //
+        const networkConfigs = this.config.get('networks')[network];
+        const PROTOCOL_REGISTRY_ADDRESS = networkConfigs.protocolRegistry;
+        const ROOT_SUBNET = networkConfigs.rootSubnet;
+        this.logger.debug(` -> Protocol registry address: ${PROTOCOL_REGISTRY_ADDRESS}`);
+        this.logger.debug(` -> Root subnet: ${ROOT_SUBNET}`);
+
+        // We need a provider and a signer
+        //
+        const provider = this.ethers.getDefaultProvider(networkConfigs.provider);
+        const signer = wallet.connect(provider);
+
+        const protocolRegistry = ProtocolRegistry__factory.connect(PROTOCOL_REGISTRY_ADDRESS, signer);
+
+        // Send the transaction
+        //
+        const tx = await protocolRegistry.subscribeSubnet(policyAddress, ROOT_SUBNET, []);
+        this.logger.log(` -> Transaction hash: ${tx.hash}`);
+
+        // Wait for the transaction to be mined
+        //
+        const spinner = this.logger.spinner(' -> Waiting for transaction to be mined');
+        const receipt = await tx.wait();
+        spinner.stop();
+        this.logger.log(` -> Mined at block: ${receipt.blockNumber} \n`);
+
+        // Extra logging because, why not?
+        //
+        this.logger.success(` -> Subscribed to root subnet!`);
     }
 
     async validateNetworkConfigs(network: string) {
@@ -271,31 +355,62 @@ export class EnableVennService {
         networkConfig.firewall = networkConfig.firewall || VENN_ADDRESSES[network.toUpperCase()].FIREWALL;
         const firewallAddressIsInvalid = !this.ethers.isAddress(networkConfig.firewall);
         if (firewallAddressIsInvalid) {
-            throw new Error(`Invalid address for contract ${colors.red('Firewall Address')}: ${colors.red(networkConfig.firewall)}`);
+            throw new Error(
+                `Invalid address for contract ${colors.red('Firewall Address')}: ${colors.red(networkConfig.firewall)}`,
+            );
         }
 
-        networkConfig.approvedCallsSigner = networkConfig.approvedCallsSigner || VENN_ADDRESSES[network.toUpperCase()]?.APPROVED_CALLS_SIGNER;
+        networkConfig.approvedCallsSigner =
+            networkConfig.approvedCallsSigner || VENN_ADDRESSES[network.toUpperCase()]?.APPROVED_CALLS_SIGNER;
         const approvedCallsSignerIsAddressInvalid = !this.ethers.isAddress(networkConfig.approvedCallsSigner);
         if (approvedCallsSignerIsAddressInvalid) {
-            throw new Error(`Invalid address for ${colors.red('Approved Calls Signer')}: ${colors.red(networkConfig.approvedCallsSigner)}`);
+            throw new Error(
+                `Invalid address for ${colors.red('Approved Calls Signer')}: ${colors.red(networkConfig.approvedCallsSigner)}`,
+            );
         }
 
-        networkConfig.policyDeployer = networkConfig.policyDeployer || VENN_ADDRESSES[network.toUpperCase()]?.POLICY_DEPLOYER;
+        networkConfig.policyDeployer =
+            networkConfig.policyDeployer || VENN_ADDRESSES[network.toUpperCase()]?.POLICY_DEPLOYER;
         const policyDeployerAddressIsInvalid = !this.ethers.isAddress(networkConfig.policyDeployer);
         if (policyDeployerAddressIsInvalid) {
-            throw new Error(`Invalid address for contract ${colors.red('Policy Deployer')}: ${colors.red(networkConfig.policyDeployer)}`);
+            throw new Error(
+                `Invalid address for contract ${colors.red('Policy Deployer')}: ${colors.red(networkConfig.policyDeployer)}`,
+            );
         }
 
-        networkConfig.approvedCallsFactory = networkConfig.approvedCallsFactory || VENN_ADDRESSES[network.toUpperCase()]?.APPROVED_CALLS_FACTORY;
+        networkConfig.approvedCallsFactory =
+            networkConfig.approvedCallsFactory || VENN_ADDRESSES[network.toUpperCase()]?.APPROVED_CALLS_FACTORY;
         const approvedCallsFactoryIsInvalid = !this.ethers.isAddress(networkConfig.approvedCallsFactory);
         if (approvedCallsFactoryIsInvalid) {
-            throw new Error(`Invalid address for contract ${colors.red('Approved Calls Factory')}: ${colors.red(networkConfig.approvedCallsFactory)}`);
+            throw new Error(
+                `Invalid address for contract ${colors.red('Approved Calls Factory')}: ${colors.red(networkConfig.approvedCallsFactory)}`,
+            );
         }
 
-        networkConfig.safeCallTarget = networkConfig.safeCallTarget || VENN_ADDRESSES[network.toUpperCase()]?.SAFE_CALL_TARGET;
-        const safeCallTargetAddressIsInvalid = networkConfig.safeCallTarget && !this.ethers.isAddress(networkConfig.safeCallTarget);
+        networkConfig.safeCallTarget =
+            networkConfig.safeCallTarget || VENN_ADDRESSES[network.toUpperCase()]?.SAFE_CALL_TARGET;
+        const safeCallTargetAddressIsInvalid =
+            networkConfig.safeCallTarget && !this.ethers.isAddress(networkConfig.safeCallTarget);
         if (safeCallTargetAddressIsInvalid) {
-            throw new Error(`Invalid address for ${colors.red('Safe Call Target')}: ${colors.red(networkConfig.safeCallTarget)}`);
+            throw new Error(
+                `Invalid address for ${colors.red('Safe Call Target')}: ${colors.red(networkConfig.safeCallTarget)}`,
+            );
+        }
+
+        networkConfig.protocolRegistry =
+            networkConfig.protocolRegistry || VENN_ADDRESSES[network.toUpperCase()]?.PROTOCOL_REGISTRY;
+        const protocolRegistryAddressIsInvalid =
+            networkConfig.protocolRegistry && !this.ethers.isAddress(networkConfig.protocolRegistry);
+        if (protocolRegistryAddressIsInvalid) {
+            throw new Error(
+                `Invalid address for ${colors.red('Protocol Registry')}: ${colors.red(networkConfig.protocolRegistry)}`,
+            );
+        }
+
+        networkConfig.rootSubnet = networkConfig.rootSubnet || VENN_ADDRESSES[network.toUpperCase()]?.ROOT_SUBNET;
+        const rootSubnetAddressIsInvalid = networkConfig.rootSubnet && typeof networkConfig.rootSubnet !== 'number';
+        if (rootSubnetAddressIsInvalid) {
+            throw new Error(`Invalid id for ${colors.red('Root Subnet')}: ${colors.red(networkConfig.rootSubnet)}`);
         }
 
         // Validate that we have an RPC provider for the selected network
@@ -304,8 +419,10 @@ export class EnableVennService {
             // If we can get the latest block, we can assume good connection to the network
             const provider = new this.ethers.JsonRpcProvider(networkConfig.provider);
             await provider.getBlockNumber();
-        } catch (error) {
-            throw new Error(`Could not connect to network ${colors.cyan(network)} using provider ${colors.cyan(networkConfig.provider)}`);
+        } catch (_error) {
+            throw new Error(
+                `Could not connect to network ${colors.cyan(network)} using provider ${colors.cyan(networkConfig.provider)}`,
+            );
         }
 
         this.logger.debug(` -> Network configuration are ok`);
@@ -320,7 +437,7 @@ export class EnableVennService {
         try {
             const wallet = new this.ethers.Wallet(privateKey);
             this.logger.log(` -> Account: ${colors.cyan(wallet.address)}`);
-        } catch (error) {
+        } catch (_error) {
             throw new Error(`Invalid private key`);
         }
     }
@@ -340,8 +457,8 @@ export class EnableVennService {
                 name,
                 address,
                 hasFirewall: await this.isFirewallSetOnConsumer(network, address),
-                hasAttestationCenterProxy: await this.isSafeCallTargetSetOnConsumer(network, address)
-            }))
+                hasAttestationCenterProxy: await this.isSafeCallTargetSetOnConsumer(network, address),
+            })),
         );
 
         this.logger.debug(` -> Contracts information: ${JSON.stringify(contractsInfo, null, 2)}`);

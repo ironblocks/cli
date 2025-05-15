@@ -2,7 +2,7 @@ import {
     INSTALL_DEPENDENCIES_QUESTION_MESSAGE,
     INSTALL_DEPENDENCIES_QUESTION_NAME,
     INSTALL_DEPENDENCIES_QUESTION_SET_NAME,
-    INSTALL_DEPENDENCIES_QUESTION_TYPE
+    INSTALL_DEPENDENCIES_QUESTION_TYPE,
 } from '@/framework/install-dependencies.questions.descriptor';
 
 describe('Install Dependencies Questions Descriptor', () => {

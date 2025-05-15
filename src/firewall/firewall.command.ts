@@ -1,14 +1,14 @@
-import { CommandRunner, Command } from 'nest-commander';
+import { Command, CommandRunner } from 'nest-commander';
 
-import { LoggerService } from '@/lib/logging/logger.service';
 import { StandaloneCommand } from '@/commands/standalone-command.decorator';
-import { IntegrationCommand } from '@/firewall/integration/integration.command';
 import { DESCRIPTION, FULL_NAME, NAME } from '@/firewall/firewall.command.descriptor';
+import { IntegrationCommand } from '@/firewall/integration/integration.command';
+import { LoggerService } from '@/lib/logging/logger.service';
 
 @Command({
     name: NAME,
     description: DESCRIPTION,
-    subCommands: [IntegrationCommand]
+    subCommands: [IntegrationCommand],
 })
 export class FirewallCommand extends CommandRunner {
     constructor(private readonly logger: LoggerService) {
@@ -16,7 +16,7 @@ export class FirewallCommand extends CommandRunner {
     }
 
     @StandaloneCommand(FULL_NAME)
-    async run(passedParams: string[]): Promise<void> {
+    async run(_passedParams: string[]): Promise<void> {
         this.command.help();
     }
 }

@@ -5,7 +5,7 @@ describe('Dependencies Strategy Enum', () => {
         NPM: 'npm',
         Yarn: 'yarn',
         Forge: 'forge',
-        Other: 'other'
+        Other: 'other',
     };
 
     it('has a type for Forge', () => {

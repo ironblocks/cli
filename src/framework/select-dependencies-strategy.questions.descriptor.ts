@@ -8,5 +8,5 @@ export const SELECT_STRATEGY_QUESTION_CHOICES = [
     DependenciesStrategy.NPM,
     DependenciesStrategy.Yarn,
     DependenciesStrategy.Forge,
-    DependenciesStrategy.Other
+    DependenciesStrategy.Other,
 ];

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import * as colors from 'colors';
 
 export function StandaloneCommand(command: string) {

@@ -1,9 +1,9 @@
-import * as ora from 'ora';
-import * as colors from 'colors';
-
+/* eslint-disable no-console */
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import * as colors from 'colors';
 import { ConsolaInstance, createConsola } from 'consola';
+import * as ora from 'ora';
 
 @Injectable()
 export class LoggerService {
@@ -11,7 +11,7 @@ export class LoggerService {
 
     constructor(private readonly config: ConfigService) {
         this.logger = createConsola({
-            level: this.config.get<number>('logLevel')
+            level: this.config.get<number>('logLevel'),
         });
     }
 

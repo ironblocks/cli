@@ -9,7 +9,7 @@ export class HardhatService {
     constructor(
         private readonly logger: LoggerService,
         private readonly inquirer: InquirerService,
-        private readonly filesService: FilesService
+        private readonly filesService: FilesService,
     ) {}
 
     public async isHardhatProject(): Promise<boolean> {

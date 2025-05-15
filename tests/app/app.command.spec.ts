@@ -1,8 +1,8 @@
 import { TestingModule } from '@nestjs/testing';
 import { CommandTestFactory } from 'nest-commander-testing';
 
-import { AppModule } from '@/app/app.module';
 import { DESCRIPTION, NAME } from '@/app/app.command.descriptor';
+import { AppModule } from '@/app/app.module';
 
 describe('Command: venn', () => {
     let commandInstance: TestingModule;
@@ -12,7 +12,7 @@ describe('Command: venn', () => {
 
     beforeEach(async () => {
         commandInstance = await CommandTestFactory.createTestingCommand({
-            imports: [AppModule]
+            imports: [AppModule],
         }).compile();
 
         exitSpy = jest.spyOn(process, 'exit').mockImplementation();

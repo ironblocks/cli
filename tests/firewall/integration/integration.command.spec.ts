@@ -12,7 +12,7 @@ describe('Sub-Command: integ', () => {
 
     beforeEach(async () => {
         commandInstance = await CommandTestFactory.createTestingCommand({
-            imports: [AppModule]
+            imports: [AppModule],
         }).compile();
 
         exitSpy = jest.spyOn(process, 'exit').mockImplementation();

@@ -1,7 +1,7 @@
 import * as colors from 'colors';
 
-import type { LoggerService } from '@/lib/logging/logger.service';
 import { StandaloneCommand } from '@/commands/standalone-command.decorator';
+import type { LoggerService } from '@/lib/logging/logger.service';
 
 describe('StandaloneCommand Decorator', () => {
     //
@@ -11,11 +11,11 @@ describe('StandaloneCommand Decorator', () => {
 
         constructor(
             private readonly logger: LoggerService,
-            private readonly command
+            private readonly command,
         ) {}
 
         @StandaloneCommand('test')
-        async run(passedParams: string[]) {
+        async run(_passedParams: string[]) {
             this.wasRun = true;
         }
     }
@@ -28,11 +28,11 @@ describe('StandaloneCommand Decorator', () => {
 
     beforeEach(() => {
         mockLogger = {
-            error: jest.fn()
+            error: jest.fn(),
         } as unknown as LoggerService;
 
         mockCommand = {
-            error: jest.fn()
+            error: jest.fn(),
         };
 
         command = new TestCommand(mockLogger, mockCommand);

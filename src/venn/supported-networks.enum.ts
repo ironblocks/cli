@@ -1,3 +1,3 @@
 export enum SupportedVennNetworks {
-    HOLESKY = 'holesky'
+    HOLESKY = 'holesky',
 }

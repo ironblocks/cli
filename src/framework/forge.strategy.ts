@@ -1,15 +1,14 @@
-import * as colors from 'colors';
+import { Injectable } from '@nestjs/common';
 import { exec } from 'child_process';
+import * as colors from 'colors';
 import { promisify } from 'util';
 
-import { Injectable } from '@nestjs/common';
-
-import { IStrategy } from '@/framework/strategy.interface';
-import { Dependency } from '@/framework/dependency.type';
 import { FilesService } from '@/files/files.service';
-import { LoggerService } from '@/lib/logging/logger.service';
 import { DependenciesError } from '@/framework/dependencies.errors';
+import { Dependency } from '@/framework/dependency.type';
 import { FORGE_DEPENDENCIES } from '@/framework/forge-dependencies.constants';
+import { IStrategy } from '@/framework/strategy.interface';
+import { LoggerService } from '@/lib/logging/logger.service';
 
 const execAsync = promisify(exec);
 
@@ -21,7 +20,7 @@ export class ForgeStrategy implements IStrategy {
 
     constructor(
         private readonly logger: LoggerService,
-        private readonly filesService: FilesService
+        private readonly filesService: FilesService,
     ) {}
 
     public async isDependencyInstalled(dependency: Dependency): Promise<boolean> {
@@ -50,7 +49,9 @@ export class ForgeStrategy implements IStrategy {
                     case 1:
                         return false;
                     default:
-                        throw new DependenciesError(`Could not search for dependency "${dependency.name}" in .gitmodules file`);
+                        throw new DependenciesError(
+                            `Could not search for dependency "${dependency.name}" in .gitmodules file`,
+                        );
                 }
             }
         }
@@ -75,7 +76,9 @@ export class ForgeStrategy implements IStrategy {
         try {
             await execAsync(`forge install "${dependency.installName}"`, { encoding: 'utf-8' });
             await this.filesService.appendToFile(REMAPPINGS_FILE, dependency.remappings.join('\n'));
-            await execAsync('git add remappings.txt && git commit -m "chore(venn): add remappings"', { encoding: 'utf-8' });
+            await execAsync('git add remappings.txt && git commit -m "chore(venn): add remappings"', {
+                encoding: 'utf-8',
+            });
 
             spinner.succeed(`Installed "${colors.cyan(dependency.name)}"`);
         } catch (e) {

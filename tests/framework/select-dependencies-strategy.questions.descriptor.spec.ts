@@ -1,11 +1,10 @@
 import { DependenciesStrategy } from '@/framework/dependencies-strategies.enum';
-
 import {
     SELECT_STRATEGY_QUESTION_CHOICES,
     SELECT_STRATEGY_QUESTION_MESSAGE,
     SELECT_STRATEGY_QUESTION_NAME,
     SELECT_STRATEGY_QUESTION_SET_NAME,
-    SELECT_STRATEGY_QUESTION_TYPE
+    SELECT_STRATEGY_QUESTION_TYPE,
 } from '@/framework/select-dependencies-strategy.questions.descriptor';
 
 describe('Install Dependencies Questions Descriptor', () => {

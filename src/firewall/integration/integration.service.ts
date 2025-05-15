@@ -1,19 +1,19 @@
-import * as colors from 'colors';
 import { Injectable } from '@nestjs/common';
+import * as colors from 'colors';
 
-import { LoggerService } from '@/lib/logging/logger.service';
 import { FilesService } from '@/files/files.service';
-import { IntegrationError } from '@/firewall/integration/integration.errors';
 import { UnsupportedFileFormatError } from '@/firewall/integration/errors/unsupported.file.format.error';
 import { UnsupportedSolidityVersionError } from '@/firewall/integration/errors/unsupported.solidity.version.error';
-import { IntegrationUtils, type IntegrateOptions } from '@/firewall/integration/integration.utils';
+import { IntegrationError } from '@/firewall/integration/integration.errors';
+import { type IntegrateOptions, IntegrationUtils } from '@/firewall/integration/integration.utils';
+import { LoggerService } from '@/lib/logging/logger.service';
 
 @Injectable()
 export class IntegrationService {
     constructor(
         private readonly fwIntegUtils: IntegrationUtils,
         private readonly filesServices: FilesService,
-        private readonly logger: LoggerService
+        private readonly logger: LoggerService,
     ) {}
 
     public async integContractFile(filepath: string, options?: IntegrateOptions): Promise<void> {
@@ -32,7 +32,7 @@ export class IntegrationService {
         } catch (err) {
             if (err instanceof UnsupportedSolidityVersionError) {
                 throw new Error(
-                    `Unsupported Solidity version: ${colors.red(err.version)} in ${colors.red(relativeFilePath)}`
+                    `Unsupported Solidity version: ${colors.red(err.version)} in ${colors.red(relativeFilePath)}`,
                 );
             }
             if (err instanceof UnsupportedFileFormatError) {
@@ -76,7 +76,7 @@ export class IntegrationService {
                 }
             },
             dirpath,
-            recursive
+            recursive,
         );
 
         if (failedToCustomizeFiles.length) {

@@ -1,7 +1,6 @@
+import { Injectable } from '@nestjs/common';
 import * as fs from 'fs/promises';
 import * as path from 'path';
-
-import { Injectable } from '@nestjs/common';
 
 @Injectable()
 export class FilesService {
@@ -12,7 +11,7 @@ export class FilesService {
 
             await fs.access(resolvedPath, fs.constants.F_OK);
             return true;
-        } catch (e) {
+        } catch (_e) {
             return false;
         }
     }

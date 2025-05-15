@@ -1,20 +1,20 @@
-import * as colors from 'colors';
 import { Injectable } from '@nestjs/common';
+import * as colors from 'colors';
 import { InquirerService } from 'nest-commander';
 
-import { IStrategy } from '@/framework/strategy.interface';
-import { Dependency } from '@/framework/dependency.type';
-import { NPMStrategy } from '@/framework/npm.strategy';
-import { YarnStrategy } from '@/framework/yarn.strategy';
 import { FilesService } from '@/files/files.service';
-import { LoggerService } from '@/lib/logging/logger.service';
-import { ForgeStrategy } from '@/framework/forge.strategy';
 import { DependenciesError } from '@/framework/dependencies.errors';
 import { DependenciesStrategy } from '@/framework/dependencies-strategies.enum';
+import { Dependency } from '@/framework/dependency.type';
+import { ForgeStrategy } from '@/framework/forge.strategy';
 import { InstallDependenciesAnswers } from '@/framework/install-dependencies.questions';
+import { INSTALL_DEPENDENCIES_QUESTION_SET_NAME } from '@/framework/install-dependencies.questions.descriptor';
+import { NPMStrategy } from '@/framework/npm.strategy';
 import { SelectDependenciesStrategyAnswers } from '@/framework/select-dependencies-strategy.questions';
 import { SELECT_STRATEGY_QUESTION_SET_NAME } from '@/framework/select-dependencies-strategy.questions.descriptor';
-import { INSTALL_DEPENDENCIES_QUESTION_SET_NAME } from '@/framework/install-dependencies.questions.descriptor';
+import { IStrategy } from '@/framework/strategy.interface';
+import { YarnStrategy } from '@/framework/yarn.strategy';
+import { LoggerService } from '@/lib/logging/logger.service';
 
 @Injectable()
 export class DependenciesService {
@@ -27,7 +27,7 @@ export class DependenciesService {
         private readonly npmStrategy: NPMStrategy,
         private readonly yarnStrategy: YarnStrategy,
         private readonly filesService: FilesService,
-        private readonly forgeStrategy: ForgeStrategy
+        private readonly forgeStrategy: ForgeStrategy,
     ) {}
 
     public async assertDependencies(): Promise<void> {
@@ -109,7 +109,10 @@ export class DependenciesService {
     }
 
     public async promptToInstallDependencies(): Promise<boolean> {
-        const { installDependencies } = await this.inquirer.ask<InstallDependenciesAnswers>(INSTALL_DEPENDENCIES_QUESTION_SET_NAME, {});
+        const { installDependencies } = await this.inquirer.ask<InstallDependenciesAnswers>(
+            INSTALL_DEPENDENCIES_QUESTION_SET_NAME,
+            {},
+        );
         return installDependencies;
     }
 

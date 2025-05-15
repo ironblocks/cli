@@ -1,19 +1,19 @@
 import * as colors from 'colors';
-import { CommandRunner, Option, Command } from 'nest-commander';
+import { Command, CommandRunner, Option } from 'nest-commander';
 
-import { LoggerService } from '@/lib/logging/logger.service';
 import { StandaloneCommand } from '@/commands/standalone-command.decorator';
+import { LoggerService } from '@/lib/logging/logger.service';
 import { DESCRIPTION, FULL_NAME, NAME } from '@/venn/disable/disable.command.descriptor';
 import { DisableVennOptions, DisableVennService } from '@/venn/disable/disable.service';
 
 @Command({
     name: NAME,
-    description: DESCRIPTION
+    description: DESCRIPTION,
 })
 export class DisableVennCommand extends CommandRunner {
     constructor(
         private readonly logger: LoggerService,
-        private readonly disableService: DisableVennService
+        private readonly disableService: DisableVennService,
     ) {
         super();
     }
@@ -38,7 +38,7 @@ export class DisableVennCommand extends CommandRunner {
     @Option({
         flags: '-n, --network <network>',
         description: 'the network where the contracts are deployed (default: holesky)',
-        defaultValue: 'holesky'
+        defaultValue: 'holesky',
     })
     parseNetwork(network: string): string {
         return network;

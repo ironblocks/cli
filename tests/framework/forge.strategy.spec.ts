@@ -1,21 +1,22 @@
-import * as colors from 'colors';
-import { exec } from 'child_process';
-
-import { Ora } from 'ora';
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable no-empty */
 import { TestBed } from '@automock/jest';
+import { exec } from 'child_process';
+import * as colors from 'colors';
+import { Ora } from 'ora';
 
-import { Dependency } from '@/framework/dependency.type';
 import { FilesService } from '@/files/files.service';
+import { DependenciesError } from '@/framework/dependencies.errors';
+import { Dependency } from '@/framework/dependency.type';
 import { ForgeStrategy } from '@/framework/forge.strategy';
 import { LoggerService } from '@/lib/logging/logger.service';
-import { DependenciesError } from '@/framework/dependencies.errors';
 
 //
 // Due to how ES6 modules work, we need to mock the child_process module using jest.mock
 // before any of our tests run. This is because the module is imported at the top of the
 // file, and the mock needs to be in place before the module is imported.
 jest.mock('child_process', () => ({
-    exec: jest.fn()
+    exec: jest.fn(),
 }));
 
 describe('Forge Strategy', () => {
@@ -40,13 +41,13 @@ describe('Forge Strategy', () => {
         mockDependency = {
             name: 'mock-dependency',
             installName: '@mock-company/mock-dependency',
-            remappings: ['mock-remappings']
+            remappings: ['mock-remappings'],
         };
 
         mockSpinner = {
             warn: jest.fn(),
             fail: jest.fn(),
-            succeed: jest.fn()
+            succeed: jest.fn(),
         };
 
         loggerMock.spinner = jest.fn().mockReturnValue(mockSpinner);
@@ -66,7 +67,6 @@ describe('Forge Strategy', () => {
         it('returns true if the dependency is found in .gitmodules', async () => {
             filesServiceMock.doesFileNotExist.mockResolvedValue(false);
             filesServiceMock.getFile.mockResolvedValueOnce(mockDependency.remappings[0]);
-
             (exec as unknown as jest.Mock).mockImplementation((cmd, options, callback) => {
                 callback(null, { stdout: 'some output indicating success', stderr: '' });
             });
@@ -78,7 +78,6 @@ describe('Forge Strategy', () => {
         it('returns false if the dependency is not found in .gitmodules', async () => {
             filesServiceMock.doesFileNotExist.mockResolvedValue(false);
             filesServiceMock.getFile.mockResolvedValueOnce(mockDependency.remappings[0]);
-
             (exec as unknown as jest.Mock).mockImplementation((cmd, options, callback) => {
                 callback({ code: 1, stdout: '', stderr: '' }, null);
             });
@@ -90,7 +89,6 @@ describe('Forge Strategy', () => {
         it('is case insensitive', async () => {
             filesServiceMock.doesFileNotExist.mockResolvedValue(false);
             filesServiceMock.getFile.mockResolvedValueOnce(mockDependency.remappings[0]);
-
             (exec as unknown as jest.Mock).mockImplementation((cmd, options, callback) => {
                 callback({ code: 1, stdout: '', stderr: '' }, null);
             });
@@ -105,7 +103,6 @@ describe('Forge Strategy', () => {
 
             filesServiceMock.doesFileNotExist.mockResolvedValue(false);
             filesServiceMock.getFile.mockResolvedValueOnce(mockDependency.remappings[0]);
-
             (exec as unknown as jest.Mock).mockImplementation((cmd, options, callback) => {
                 callback({ code: 2, stdout: '', stderr: '' }, null);
             });
@@ -117,7 +114,9 @@ describe('Forge Strategy', () => {
             }
 
             expect(thrownError).toBeInstanceOf(DependenciesError);
-            expect(thrownError.message).toBe(`Could not search for dependency "${mockDependency.name}" in .gitmodules file`);
+            expect(thrownError.message).toBe(
+                `Could not search for dependency "${mockDependency.name}" in .gitmodules file`,
+            );
         });
     });
 
@@ -178,7 +177,6 @@ describe('Forge Strategy', () => {
 
         it('throws an error if the installation fails', async () => {
             let thrownError: DependenciesError;
-
             (exec as unknown as jest.Mock).mockImplementation((cmd, options, callback) => {
                 callback({ code: 1, message: 'some error message' }, null);
             });
@@ -190,7 +188,9 @@ describe('Forge Strategy', () => {
             }
 
             expect(thrownError).toBeInstanceOf(DependenciesError);
-            expect(thrownError.message).toBe(`Could not install dependency: ${mockDependency.name}.\nsome error message`);
+            expect(thrownError.message).toBe(
+                `Could not install dependency: ${mockDependency.name}.\nsome error message`,
+            );
         });
     });
 });

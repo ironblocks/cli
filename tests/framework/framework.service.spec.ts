@@ -1,13 +1,13 @@
+import { TestBed } from '@automock/jest';
 import * as colors from 'colors';
 import { Ora } from 'ora';
-import { TestBed } from '@automock/jest';
 
-import { LoggerService } from '@/lib/logging/logger.service';
+import { DependenciesService } from '@/framework/dependencies.services';
 import { FoundryService } from '@/framework/foundry.service';
+import { FrameworkService } from '@/framework/framework.service';
 import { HardhatService } from '@/framework/hardhat.service';
 import { FrameworkTypes } from '@/framework/supported-frameworks.enum';
-import { FrameworkService } from '@/framework/framework.service';
-import { DependenciesService } from '@/framework/dependencies.services';
+import { LoggerService } from '@/lib/logging/logger.service';
 
 describe('Framework Service', () => {
     let frameworkService: FrameworkService;
@@ -32,7 +32,7 @@ describe('Framework Service', () => {
         mockSpinner = {
             warn: jest.fn(),
             info: jest.fn(),
-            succeed: jest.fn()
+            succeed: jest.fn(),
         };
 
         loggerMock.spinner = jest.fn().mockReturnValue(mockSpinner);
@@ -61,7 +61,7 @@ describe('Framework Service', () => {
             await frameworkService.assertDependencies();
 
             expect(mockSpinner.info).toHaveBeenCalledWith(
-                `Detected ${colors.cyan('some framework')} development framework`
+                `Detected ${colors.cyan('some framework')} development framework`,
             );
         });
 
@@ -71,7 +71,7 @@ describe('Framework Service', () => {
             await frameworkService.assertDependencies();
 
             expect(mockSpinner.warn).toHaveBeenCalledWith(
-                'Unknown development framework (expected Foundry or Hardhat)'
+                'Unknown development framework (expected Foundry or Hardhat)',
             );
         });
     });

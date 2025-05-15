@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
 import { FilesService } from '@/files/files.service';
 
 //
@@ -7,13 +8,13 @@ import { FilesService } from '@/files/files.service';
 jest.mock('fs/promises', () => ({
     access: jest.fn(),
     constants: {
-        F_OK: 0
-    }
+        F_OK: 0,
+    },
 }));
 
 jest.mock('path', () => ({
     normalize: jest.fn(),
-    resolve: jest.fn()
+    resolve: jest.fn(),
 }));
 
 describe('Files Service', () => {

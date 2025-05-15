@@ -1,11 +1,11 @@
-import * as colors from 'colors';
 import { Injectable } from '@nestjs/common';
+import * as colors from 'colors';
 
-import { LoggerService } from '@/lib/logging/logger.service';
+import { DependenciesService } from '@/framework/dependencies.services';
 import { FoundryService } from '@/framework/foundry.service';
 import { HardhatService } from '@/framework/hardhat.service';
 import { FrameworkTypes } from '@/framework/supported-frameworks.enum';
-import { DependenciesService } from '@/framework/dependencies.services';
+import { LoggerService } from '@/lib/logging/logger.service';
 
 @Injectable()
 export class FrameworkService {
@@ -13,7 +13,7 @@ export class FrameworkService {
         private readonly logger: LoggerService,
         private readonly foundryService: FoundryService,
         private readonly hardhatService: HardhatService,
-        private readonly dependenciesService: DependenciesService
+        private readonly dependenciesService: DependenciesService,
     ) {}
 
     public async assertDependencies(): Promise<void> {
