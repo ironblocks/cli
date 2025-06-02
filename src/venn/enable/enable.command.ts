@@ -43,4 +43,13 @@ export class EnableVennCommand extends CommandRunner {
     parseNetwork(network: string): string {
         return network;
     }
+
+    @Option({
+        flags: '--dry-run',
+        description: 'enable dry run mode (default: false)',
+        defaultValue: false,
+    })
+    parseDryRun(): boolean {
+        return true;
+    }
 }
