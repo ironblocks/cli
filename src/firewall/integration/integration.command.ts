@@ -17,6 +17,7 @@ interface CommandOptions {
     rec?: boolean;
     verbose?: boolean;
     internal?: boolean;
+    msgValue?: boolean;
     modifiers?: FirewallModifier[];
 }
 
@@ -55,6 +56,7 @@ export class IntegrationCommand extends CommandRunner {
                 verbose: options?.verbose,
                 external: true,
                 internal: options?.internal,
+                msgValue: options?.msgValue,
                 modifiers: options?.modifiers,
             };
 
@@ -125,6 +127,15 @@ export class IntegrationCommand extends CommandRunner {
         defaultValue: false,
     })
     parseInternal(): boolean {
+        return true;
+    }
+
+    @Option({
+        flags: '--msgValue',
+        description: 'use _msgValue() instead of msg.value',
+        defaultValue: false,
+    })
+    parseMsgValue(): boolean {
         return true;
     }
 

@@ -1,6 +1,15 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { parse as parseSolidity } from '@solidity-parser/parser';
+import {
+    ContractDefinition,
+    FunctionDefinition,
+    ImportDirective,
+    ModifierInvocation,
+    PragmaDirective,
+    SourceUnit,
+    TypeName,
+} from '@solidity-parser/parser/dist/src/ast-types';
 import { ethers } from 'ethers';
 import { readdir, readFile, stat, writeFile } from 'fs/promises';
 import { any as pathMatch } from 'micromatch';
@@ -47,6 +56,7 @@ export interface IntegrateOptions {
     verbose?: boolean;
     external?: boolean;
     internal?: boolean;
+    msgValue?: boolean;
     modifiers?: FirewallModifier[];
 }
 
@@ -115,41 +125,10 @@ const RE_FW_MODIFIER = new RegExp(
     'g',
 );
 
-type ParsedSolidityConstructs = {
-    children: SolidityConstruct[];
-    errors: unknown[];
-    range: [number, number];
-};
-
-type SolidityConstruct = {
-    type: string;
-    range: [number, number];
-    subNodes?: SolidityConstruct[];
-
-    kind?: string;
-    name?: string;
-    path?: string;
-    value?: string;
-    baseContracts?: SolidityConstruct[];
-    baseName?: SolidityConstruct;
-    namePath?: string;
-    visibility?: string;
-    isConstructor?: boolean;
-    body?: SolidityConstruct;
-    modifiers?: SolidityConstruct[];
-    arguments?: SolidityConstruct[];
-    typeName?: SolidityConstruct;
-    baseTypeName?: SolidityConstruct;
-    length?: {
-        type?: string;
-        number?: string;
-    };
-};
-
 @Injectable()
 export class IntegrationUtils {
     private serializerByModifier: Partial<
-        Record<FirewallModifier, (contract: SolidityConstruct, method: SolidityConstruct) => string>
+        Record<FirewallModifier, (contract: ContractDefinition, method: FunctionDefinition) => string>
     >;
 
     constructor(
@@ -159,7 +138,7 @@ export class IntegrationUtils {
     ) {
         this.serializerByModifier = {
             [FW_PROTECTED_MODIFIER]: () => FW_PROTECTED_MODIFIER,
-            [FW_PROTECTED_SIG_MODIFIER]: (contract: SolidityConstruct, method: SolidityConstruct) => {
+            [FW_PROTECTED_SIG_MODIFIER]: (contract: ContractDefinition, method: FunctionDefinition) => {
                 const sigHash = this.calcSighash(contract, method);
                 return `${FW_PROTECTED_SIG_MODIFIER}(bytes4(${sigHash}))`;
             },
@@ -251,12 +230,17 @@ export class IntegrationUtils {
         try {
             let customizedCode: string;
             customizedCode = parsed.children.reduceRight((customized, child) => {
-                return this.customizeContractInPlace(customized, child, contractNamesToCustomize, options);
+                return this.customizeContractInPlace(
+                    customized,
+                    child as ContractDefinition,
+                    contractNamesToCustomize,
+                    options,
+                );
             }, originalCode);
 
             if (
                 customizedCode === originalCode &&
-                !parsed.children.some(contract => this.alreadyCustomizedContractHeader(contract))
+                !parsed.children.some(contract => this.alreadyCustomizedContractHeader(contract as ContractDefinition))
             ) {
                 // No need to add firewall imports since the file is not using the firewall.
                 return false;
@@ -276,20 +260,20 @@ export class IntegrationUtils {
         }
     }
 
-    private parseSolidityCode(code: string): ParsedSolidityConstructs {
+    private parseSolidityCode(code: string): SourceUnit {
         try {
             const parsed = parseSolidity(code, {
                 tolerant: true,
                 range: true,
-            }) as ParsedSolidityConstructs;
+            });
             return parsed;
         } catch (_err) {
             throw new UnsupportedFileFormatError();
         }
     }
 
-    private validateSolidityVersion(parsed: ParsedSolidityConstructs): void {
-        const pragma = (parsed?.children ?? []).find(({ type }) => type === 'PragmaDirective');
+    private validateSolidityVersion(parsed: SourceUnit): void {
+        const pragma = (parsed?.children ?? []).find(({ type }) => type === 'PragmaDirective') as PragmaDirective;
         if (!pragma) {
             return;
         }
@@ -310,7 +294,7 @@ export class IntegrationUtils {
      */
     private customizeContractInPlace(
         code: string,
-        contract: SolidityConstruct,
+        contract: ContractDefinition,
         contractNamesToCustomize: Set<string>,
         options?: IntegrateOptions,
     ): string | null {
@@ -339,12 +323,12 @@ export class IntegrationUtils {
     }
 
     private customizeContractCode(
-        contract: SolidityConstruct,
+        contract: ContractDefinition,
         contractCode: string,
         options?: IntegrateOptions,
     ): string {
         const alreadyCustomizedHeader = this.alreadyCustomizedContractHeader(contract);
-        const methods = contract.subNodes.filter(({ type }) => type === 'FunctionDefinition');
+        const methods = contract.subNodes.filter(({ type }) => type === 'FunctionDefinition') as FunctionDefinition[];
         const alreadyCustomizedSomeMethods = methods.some(this.alreadyCustomizedContractMethod.bind(this));
         // Add custom modifiers to contract methods.
         const contractCodeWithCustomizedMethods = this.customizeContractMethods(
@@ -404,8 +388,8 @@ export class IntegrationUtils {
 
     private customizeContractMethods(
         contractCode: string,
-        contract: SolidityConstruct,
-        methods: SolidityConstruct[],
+        contract: ContractDefinition,
+        methods: FunctionDefinition[],
         options?: IntegrateOptions,
     ): string {
         const [contractStartIndex] = contract.range;
@@ -426,8 +410,8 @@ export class IntegrationUtils {
     }
 
     private customizeMethodCode(
-        contract: SolidityConstruct,
-        method: SolidityConstruct,
+        contract: ContractDefinition,
+        method: FunctionDefinition,
         methodCode: string,
         options?: IntegrateOptions,
     ): string {
@@ -491,8 +475,8 @@ export class IntegrationUtils {
         }
     }
 
-    private customizeImports(parsed: ParsedSolidityConstructs, code: string): string {
-        const imports = parsed.children.filter(({ type }) => type === 'ImportDirective');
+    private customizeImports(parsed: SourceUnit, code: string): string {
+        const imports = parsed.children.filter(({ type }) => type === 'ImportDirective') as ImportDirective[];
         if (this.alreadyCustomizedImports(imports)) {
             return code;
         }
@@ -528,12 +512,12 @@ export class IntegrationUtils {
         return methodCode.slice(0, lastBracketIndex) + `${FW_PROXY_FULL_SETUP()}` + '\n\t}';
     }
 
-    private alreadyCustomizedImports(imports: SolidityConstruct[]): boolean {
+    private alreadyCustomizedImports(imports: ImportDirective[]): boolean {
         const fwImport = imports.find(({ path }) => path === FW_IMPORT_PATH);
         return !!fwImport;
     }
 
-    private alreadyCustomizedContractHeader(contract: SolidityConstruct): boolean {
+    private alreadyCustomizedContractHeader(contract: ContractDefinition): boolean {
         // if header already contains FirewallConsumer or FirewallConsumeBase
         // it is conisdered customized in 2 cases:
         // 1. multisig address IS provided && the contract inherits from the FirewallConsumeBase.
@@ -541,11 +525,11 @@ export class IntegrationUtils {
         return (contract.baseContracts || []).some(base => base.baseName?.namePath === FW_CONTRACT);
     }
 
-    private alreadyCustomizedContractMethod(method: SolidityConstruct): boolean {
+    private alreadyCustomizedContractMethod(method: FunctionDefinition): boolean {
         return (method.modifiers || []).some(modifier => !!this.serializerByModifier[modifier.name]);
     }
 
-    private proxyModifiersAreDetected(modifiers: SolidityConstruct[]): boolean {
+    private proxyModifiersAreDetected(modifiers: ModifierInvocation[]): boolean {
         // Modifiers supposed to be used from openzeppelin library.
         // Only two modifiers are available in openzeppelin that indicates proxy.
         // 1. initializer 2. reinitializer(uint8 version)
@@ -558,7 +542,7 @@ export class IntegrationUtils {
         );
     }
 
-    private getModifiersToAdd(method: SolidityConstruct, options?: IntegrateOptions): FirewallModifier[] {
+    private getModifiersToAdd(method: FunctionDefinition, options?: IntegrateOptions): FirewallModifier[] {
         switch (method.visibility) {
             case 'external':
                 if (options?.modifiers?.includes(FW_INVARIANT_PROTECTED_MODIFIER)) {
@@ -572,10 +556,10 @@ export class IntegrationUtils {
         }
     }
 
-    private calcSighash(contract: SolidityConstruct, method: SolidityConstruct): string {
+    private calcSighash(contract: ContractDefinition, method: FunctionDefinition): string {
         const contractName = contract.name;
         const methodName = method.name!;
-        const paramTypes = (method.arguments || []).map(param => {
+        const paramTypes = (method.parameters || []).map(param => {
             try {
                 return this.getParamTypeName(param.typeName);
             } catch (_err) {
@@ -587,16 +571,18 @@ export class IntegrationUtils {
         return sigHash;
     }
 
-    private getParamTypeName(paramtType: SolidityConstruct): string {
-        const rawTypeName = paramtType?.name || paramtType?.namePath;
-        switch (paramtType?.type) {
+    private getParamTypeName(paramType: TypeName): string {
+        switch (paramType?.type) {
             case 'ArrayTypeName':
                 // eslint-disable-next-line no-case-declarations
-                const baseTypeName = this.getParamTypeName(paramtType?.baseTypeName);
-                return `${baseTypeName}[${paramtType?.length?.number || ''}]`;
+                const baseTypeName = this.getParamTypeName(paramType?.baseTypeName);
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                return `${baseTypeName}[${(paramType?.length as any)?.number || ''}]`;
             case 'UserDefinedTypeName':
-                return rawTypeName;
+                return paramType?.namePath;
             case 'ElementaryTypeName':
+                // eslint-disable-next-line no-case-declarations
+                const rawTypeName = paramType?.name;
                 if (rawTypeName === 'int' || rawTypeName === 'uint') {
                     // Explicit type conversions: int => int256, uint => uint256.
                     return `${rawTypeName}256`;
