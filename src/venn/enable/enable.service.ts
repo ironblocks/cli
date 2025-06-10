@@ -21,6 +21,7 @@ const MEMORY_SLOT_NAMES = {
 
 export type EnableVennOptions = {
     network: SupportedVennNetworks;
+    dryRun: boolean;
 };
 
 type ContractInformation = {
@@ -47,6 +48,9 @@ export class EnableVennService {
 
         const newPolicyAddress = await this.deployNewVennPolicy(contracts, wallet, options.network);
         await this.setFirewallOnConsumers(contracts, wallet, options.network);
+        if (options.dryRun) {
+            await this.enableDryRun(contracts, wallet, options.network);
+        }
         await this.setAttestationCenterProxyOnConsumers(contracts, wallet, options.network);
         await this.subscribeConsumersToNewPolicy(contracts, newPolicyAddress, wallet, options.network);
         await this.registerContractsInProtocolRegistry(newPolicyAddress, wallet, options.network);
@@ -167,6 +171,40 @@ export class EnableVennService {
         // Extra logging because, why not?
         //
         this.logger.success(` -> Firewall successfully set for all contracts!`);
+    }
+
+    async enableDryRun(contracts: ContractInformation[], wallet: Wallet, network: SupportedVennNetworks) {
+        this.logger.step('Enabling dry run');
+
+        const networkConfigs = this.config.get('networks')[network];
+        const FIREWALL_ADDRESS = networkConfigs.firewall;
+        this.logger.debug(` -> Firewall address: ${FIREWALL_ADDRESS}`);
+
+        // We need a provider and a signer
+        //
+        const provider = this.ethers.getDefaultProvider(networkConfigs.provider);
+        const signer = wallet.connect(provider);
+
+        const firewall = Firewall__factory.connect(FIREWALL_ADDRESS, signer);
+
+        // We don't want to mess with the nonces, so we do this one by one
+        //
+        for (const contract of contracts) {
+            this.logger.log(` -> Setting dry run for contract ${colors.cyan(contract.name)}`);
+
+            const tx = await firewall.setConsumerDryrunStatus(contract.address, true);
+            this.logger.log(` -> Transaction hash: ${tx.hash}`);
+
+            // Wait for the transaction to be mined
+            const spinner = this.logger.spinner(' -> Waiting for transaction to be mined');
+            const receipt = await tx.wait();
+            spinner.stop();
+            this.logger.log(` -> Mined at block: ${receipt.blockNumber} \n`);
+        }
+
+        // Extra logging because, why not?
+        //
+        this.logger.success(` -> Dry run enabled for all contracts!`);
     }
 
     async setAttestationCenterProxyOnConsumers(
@@ -291,7 +329,7 @@ export class EnableVennService {
     }
 
     async subscribeToRootSubnet(policyAddress: string, wallet: Wallet, network: SupportedVennNetworks) {
-        this.logger.step('Subscribing to root subnet');
+        this.logger.step('Subscribing to the root subnet');
 
         // First, we prepare all the addresses we need
         //
