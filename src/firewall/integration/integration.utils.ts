@@ -67,6 +67,11 @@ const RE_SOLIDITY_FILE_NAME = new RegExp(`\\w+\\.sol$`, 'g');
 const RE_COMMENTS = new RegExp(`(?:\\/\\/[^\\n]*|\\/\\*[\\s\\S]*?\\*\\/)`, 'g');
 const RE_BLANK_SPACE = new RegExp(`(?:(?:\\s)|${RE_COMMENTS.source})`, 'g');
 
+interface ContractChange {
+    start: number;
+    end: number;
+    replacement: string;
+}
 const RE_INDENTATION = new RegExp(`(?<indentation>[\\r\\s\\n]+)`, 'g');
 
 /**
@@ -330,27 +335,28 @@ export class IntegrationUtils {
         const alreadyCustomizedHeader = this.alreadyCustomizedContractHeader(contract);
         const methods = contract.subNodes.filter(({ type }) => type === 'FunctionDefinition') as FunctionDefinition[];
         const alreadyCustomizedSomeMethods = methods.some(this.alreadyCustomizedContractMethod.bind(this));
-        // Add custom modifiers to contract methods.
-        const contractCodeWithCustomizedMethods = this.customizeContractMethods(
-            contractCode,
-            contract,
-            methods,
-            options,
-        );
 
-        if (
-            contractCodeWithCustomizedMethods === contractCode &&
-            (alreadyCustomizedHeader || !alreadyCustomizedSomeMethods)
-        ) {
+        let changesToApply: ContractChange[] = [];
+        // Add custom modifiers to contract methods.
+        changesToApply = changesToApply.concat(this.customizeContractMethods(contractCode, contract, methods, options));
+
+        // Replace msg.value with _msgValue() if the option is enabled
+        if (options?.msgValue) {
+            changesToApply = changesToApply.concat(this.replaceMsgValueWithMsgValueFunction(contract));
+        }
+
+        let customizedContractCode = this.applyChanges(contractCode, changesToApply);
+
+        if (customizedContractCode === contractCode && (alreadyCustomizedHeader || !alreadyCustomizedSomeMethods)) {
             return contractCode;
         } else if (alreadyCustomizedHeader) {
-            return contractCodeWithCustomizedMethods;
+            return customizedContractCode;
         }
 
         const fwInheritedContract = FW_CONTRACT;
 
         // Add base contract inheritance to contract declaration.
-        const customizedContractCode = contractCodeWithCustomizedMethods.replace(
+        customizedContractCode = customizedContractCode.replace(
             RE_CONTRACT_DEFINITION,
             (
                 match: string,
@@ -391,22 +397,22 @@ export class IntegrationUtils {
         contract: ContractDefinition,
         methods: FunctionDefinition[],
         options?: IntegrateOptions,
-    ): string {
-        const [contractStartIndex] = contract.range;
-        // Customizing methods from the bottom up not to affect other methods' start and end indexes.
-        const customizedMethods = methods.reduceRight((customized, method) => {
-            const [methodStartIndex, methodEndIndex] = method.range;
-            const [relativeStartIndex, relativeEndIndex] = [
-                methodStartIndex - contractStartIndex,
-                methodEndIndex - contractStartIndex,
-            ];
+    ): ContractChange[] {
+        return methods.map(method => {
+            const methodHeaderStartIndex = method.range[0];
+            const methodHeaderEndIndex = method.body?.range[0] ?? method.range[1];
+            const [contractStartIndex] = contract.range;
+            const relativeStartIndex = methodHeaderStartIndex - contractStartIndex;
+            const relativeEndIndex = methodHeaderEndIndex - contractStartIndex;
             const methodCode = contractCode.substring(relativeStartIndex, relativeEndIndex + 1);
             const customizedMethodCode = this.customizeMethodCode(contract, method, methodCode, options);
-            const customizedCode =
-                customized.slice(0, relativeStartIndex) + customizedMethodCode + customized.slice(relativeEndIndex + 1);
-            return customizedCode;
-        }, contractCode);
-        return customizedMethods;
+
+            return {
+                start: relativeStartIndex,
+                end: relativeEndIndex + 1,
+                replacement: customizedMethodCode,
+            };
+        });
     }
 
     private customizeMethodCode(
@@ -510,6 +516,60 @@ export class IntegrationUtils {
     private customizeProxyInitializer(methodCode: string): string {
         const lastBracketIndex = methodCode.lastIndexOf('}');
         return methodCode.slice(0, lastBracketIndex) + `${FW_PROXY_FULL_SETUP()}` + '\n\t}';
+    }
+
+    private replaceMsgValueWithMsgValueFunction(contract: ContractDefinition): ContractChange[] {
+        const changes: ContractChange[] = [];
+
+        // Recursively traverse the AST to find msg.value expressions
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const traverse = (node: any) => {
+            if (
+                node.type === 'MemberAccess' &&
+                node.expression?.type === 'Identifier' &&
+                node.expression.name === 'msg' &&
+                node.memberName === 'value'
+            ) {
+                const [nodeStartIndex, nodeEndIndex] = node.range;
+                const [contractStartIndex] = contract.range;
+                const relativeStartIndex = nodeStartIndex - contractStartIndex;
+                const relativeEndIndex = nodeEndIndex - contractStartIndex;
+                changes.push({
+                    start: relativeStartIndex,
+                    end: relativeEndIndex + 1,
+                    replacement: '_msgValue()',
+                });
+                return;
+            }
+
+            // iterate all properties of the node and call traverse on them
+            Object.values(node).forEach(value => {
+                if (typeof value === 'object' && value !== null) {
+                    traverse(value);
+                }
+            });
+        };
+
+        traverse(contract);
+
+        return changes;
+    }
+
+    private applyChanges(code: string, changes: ContractChange[]): string {
+        // Sort changes by start index in ascending order
+        changes.sort((a, b) => a.start - b.start);
+
+        // If there is an intersection between changes, throw an error
+        for (let i = 0; i < changes.length - 1; i++) {
+            if (changes[i].start <= changes[i + 1].end && changes[i].end >= changes[i + 1].start) {
+                throw new Error('Changes intersect');
+            }
+        }
+
+        // Apply changes from the bottom up to avoid affecting other changes' start and end indexes
+        return changes.reduceRight((code, change) => {
+            return code.slice(0, change.start) + change.replacement + code.slice(change.end);
+        }, code);
     }
 
     private alreadyCustomizedImports(imports: ImportDirective[]): boolean {
