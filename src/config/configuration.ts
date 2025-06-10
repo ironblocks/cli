@@ -4,13 +4,32 @@ import { cwd } from 'process';
 const CONFIG_FILE_NAME = 'venn.config.json';
 const LOCAL_CONFIG_PATH = join(cwd(), CONFIG_FILE_NAME);
 
+export type SystemContracts = {
+    Firewall: string;
+    ApprovedCallsSigner: string;
+    PolicyDeployer: string;
+    ApprovedCallsFactory: string;
+    SafeCallTarget: string;
+    ProtocolRegistry: string;
+};
+
 type NetworksConfiguration = {
     [network: string]: {
-        contracts: Array<string>;
+        contracts: {
+            [contractName: string]: string;
+        };
+        overrides?: Partial<SystemContracts>;
+        provider?: string;
     };
 };
 
-type CLIConfig = {
+type SubnetsConfiguration = {
+    [network: string]: {
+        subnets: number[];
+    };
+};
+
+export type CLIConfig = {
     logLevel?: number;
 
     fw?: {
@@ -25,6 +44,7 @@ type CLIConfig = {
     };
 
     networks?: NetworksConfiguration;
+    subnets?: SubnetsConfiguration;
     privateKey?: string;
     protocolMetadata?: string;
 };
@@ -75,6 +95,7 @@ export default async () => {
         },
 
         networks: localConfig?.networks || undefined,
+        subnets: localConfig?.subnets || {},
         privateKey: process.env.VENN_PRIVATE_KEY,
         protocolMetadata: process.env.PROTOCOL_METADATA,
     };

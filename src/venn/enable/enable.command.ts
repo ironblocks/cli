@@ -37,7 +37,7 @@ export class EnableVennCommand extends CommandRunner {
 
     @Option({
         flags: '-n, --network <network>',
-        description: 'the network where the contracts are deployed (default: holesky)',
+        description: 'the network where the contracts are deployed',
         defaultValue: 'holesky',
     })
     parseNetwork(network: string): string {
@@ -46,10 +46,18 @@ export class EnableVennCommand extends CommandRunner {
 
     @Option({
         flags: '--dry-run',
-        description: 'enable dry run mode (default: false)',
+        description: 'enable dry run mode',
         defaultValue: false,
     })
     parseDryRun(): boolean {
         return true;
+    }
+
+    @Option({
+        flags: '-s, --subnets <subnet...>',
+        description: 'the subnets to subscribe to (default: [ROOT_SUBNET])',
+    })
+    parseSubnets(subnet: string, subnetsAccumulator: string[] = []): number[] {
+        return [...subnetsAccumulator, subnet].map(Number).sort();
     }
 }
