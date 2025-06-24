@@ -3,11 +3,14 @@ import { ConfigService } from '@nestjs/config';
 import * as colors from 'colors';
 import { AbstractProvider, Wallet } from 'ethers';
 
-import { CLIConfig } from '@/config/configuration';
+import { CLIConfig, ContractConfig } from '@/config/configuration';
 import { LoggerService } from '@/lib/logging/logger.service';
+import { FULL_NAME as DRY_RUN_FULL_NAME } from '@/mode/dry-run/dry-run.command.descriptor';
+import { FULL_NAME as LIVE_FULL_NAME } from '@/mode/live/live.command.descriptor';
 import { ModeCommandOptions } from '@/mode/mode.command';
 import { Firewall__factory } from '@/types/contracts';
 import { DEFAULT_PROVIDERS } from '@/venn/default-providers.constants';
+import { FULL_NAME as ENABLE_FULL_NAME } from '@/venn/enable/enable.command.descriptor';
 import { SupportedVennNetworks } from '@/venn/supported-networks.enum';
 import { VENN_ADDRESSES } from '@/venn/venn-addresses.constants';
 
@@ -30,13 +33,49 @@ export class ModeService {
         @Inject('ETHERS') private readonly ethers: typeof import('ethers'),
     ) {}
 
-    async getContractModes(options: ModeCommandOptions): Promise<ContractInformation[]> {
+    async printStatuses(options: ModeCommandOptions): Promise<void> {
         const provider = await this.validateProvider(options.network);
         const networkConfig = await this.validateNetworkConfigs(options.network);
 
-        const contracts = await this.getContractsInformation(networkConfig, provider, options.network);
+        let contracts = await this.getContractsInformation(networkConfig, provider, options.network);
+        contracts = [
+            contracts[0],
+            { ...contracts[1], isDryRunEnabled: false },
+            { ...contracts[1], hasFirewall: false },
+        ];
 
-        return contracts;
+        const contractsWithoutFirewall = contracts.filter(contract => !contract.hasFirewall);
+        if (contractsWithoutFirewall.length > 0) {
+            this.logger.log('Not Venn Enabled Contracts:');
+            for (const contract of contractsWithoutFirewall) {
+                this.logger.log(`  ${contract.name} (${contract.address})`);
+            }
+            this.logger.hint(
+                `To enable venn on the contract, you can use:\n\t${ENABLE_FULL_NAME} --network ${options.network}`,
+            );
+        }
+
+        const contractsWithFirewall = contracts.filter(contract => contract.hasFirewall);
+
+        const contractsInDryRunMode = contractsWithFirewall.filter(contract => contract.isDryRunEnabled);
+        if (contractsInDryRunMode.length > 0) {
+            this.logger.log('Contracts in Dry-Run Mode:');
+            for (const contract of contractsInDryRunMode) {
+                this.logger.log(`  ${contract.name} (${contract.address})`);
+            }
+            this.logger.hint(`To switch to live mode, you can use:\n\t${LIVE_FULL_NAME} --network ${options.network}`);
+        }
+
+        const contractsInLiveMode = contractsWithFirewall.filter(contract => !contract.isDryRunEnabled);
+        if (contractsInLiveMode.length > 0) {
+            this.logger.log('Contracts in Live Mode:');
+            for (const contract of contractsInLiveMode) {
+                this.logger.log(`  ${contract.name} (${contract.address})`);
+            }
+            this.logger.hint(
+                `To switch to dry-run mode, you can use:\n\t${DRY_RUN_FULL_NAME} --network ${options.network}`,
+            );
+        }
     }
 
     private async validateProvider(network: string): Promise<AbstractProvider> {
@@ -71,9 +110,11 @@ export class ModeService {
         }
 
         // Check that all contracts are valid ethereum addresses
-        Object.entries(networkConfig.contracts).forEach(([name, address]: [string, string]) => {
-            if (!this.ethers.isAddress(address)) {
-                throw new Error(`Invalid address for contract ${colors.red(name)}: ${colors.red(address)}`);
+        Object.entries(networkConfig.contracts).forEach(([name, contractConfig]: [string, ContractConfig]) => {
+            if (!this.ethers.isAddress(contractConfig.address)) {
+                throw new Error(
+                    `Invalid address for contract ${colors.red(name)}: ${colors.red(contractConfig.address)}`,
+                );
             }
         });
 
@@ -127,11 +168,19 @@ export class ModeService {
         const contracts = this.config.get('networks', { infer: true })[network].contracts;
 
         const contractsInfo = await Promise.all(
-            Object.entries(contracts).map(async ([name, address]) => ({
+            Object.entries(contracts).map(async ([name, contractConfig]) => ({
                 name,
-                address,
-                hasFirewall: await this.isFirewallSetOnConsumer(networkConfig.Firewall, provider, address),
-                isDryRunEnabled: await this.isDryRunSetOnConsumer(networkConfig.Firewall, provider, address),
+                address: contractConfig.address,
+                hasFirewall: await this.isFirewallSetOnConsumer(
+                    networkConfig.Firewall,
+                    provider,
+                    contractConfig.address,
+                ),
+                isDryRunEnabled: await this.isDryRunSetOnConsumer(
+                    networkConfig.Firewall,
+                    provider,
+                    contractConfig.address,
+                ),
             })),
         );
 

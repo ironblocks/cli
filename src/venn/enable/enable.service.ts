@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import * as colors from 'colors';
 import { AbstractProvider, EventLog, Wallet } from 'ethers';
 
-import { CLIConfig, SystemContracts } from '@/config/configuration';
+import { CLIConfig, ContractConfig, SystemContracts } from '@/config/configuration';
 import { LoggerService } from '@/lib/logging/logger.service';
 import {
     Firewall__factory,
@@ -388,9 +388,11 @@ export class EnableVennService {
         }
 
         // Check that all contracts are valid ethereum addresses
-        Object.entries(networkConfig.contracts).forEach(([name, address]: [string, string]) => {
-            if (!this.ethers.isAddress(address)) {
-                throw new Error(`Invalid address for contract ${colors.red(name)}: ${colors.red(address)}`);
+        Object.entries(networkConfig.contracts).forEach(([name, contractConfig]: [string, ContractConfig]) => {
+            if (!this.ethers.isAddress(contractConfig.address)) {
+                throw new Error(
+                    `Invalid address for contract ${colors.red(name)}: ${colors.red(contractConfig.address)}`,
+                );
             }
         });
 
@@ -529,11 +531,15 @@ export class EnableVennService {
         const contracts = this.config.get('networks', { infer: true })[network].contracts;
 
         const contractsInfo = await Promise.all(
-            Object.entries(contracts).map(async ([name, address]) => ({
+            Object.entries(contracts).map(async ([name, contractConfig]: [string, ContractConfig]) => ({
                 name,
-                address,
-                hasFirewall: await this.isFirewallSetOnConsumer(networkConfig, provider, address),
-                hasAttestationCenterProxy: await this.isSafeCallTargetSetOnConsumer(networkConfig, provider, address),
+                address: contractConfig.address,
+                hasFirewall: await this.isFirewallSetOnConsumer(networkConfig, provider, contractConfig.address),
+                hasAttestationCenterProxy: await this.isSafeCallTargetSetOnConsumer(
+                    networkConfig,
+                    provider,
+                    contractConfig.address,
+                ),
             })),
         );
 

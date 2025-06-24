@@ -13,10 +13,17 @@ export type SystemContracts = {
     ProtocolRegistry: string;
 };
 
+type SimpleContractConfig = string;
+
+export type ContractConfig = {
+    address: string;
+    mode?: 'live' | 'dry-run';
+};
+
 type NetworksConfiguration = {
     [network: string]: {
         contracts: {
-            [contractName: string]: string;
+            [contractName: string]: ContractConfig;
         };
         overrides?: Partial<SystemContracts>;
         provider?: string;
@@ -48,6 +55,52 @@ export type CLIConfig = {
     privateKey?: string;
     protocolMetadata?: string;
 };
+
+/**
+ * Normalizes contract configuration to DetailedContractConfig format
+ * @param contractConfig - The contract configuration (string or object)
+ * @returns Normalized DetailedContractConfig
+ */
+function normalizeContractConfig(contractConfig: SimpleContractConfig | ContractConfig): ContractConfig {
+    if (typeof contractConfig === 'string') {
+        return {
+            address: contractConfig,
+        };
+    }
+
+    return {
+        address: contractConfig.address,
+        mode: contractConfig.mode,
+    };
+}
+
+/**
+ * Normalizes all contracts in a networks configuration
+ * @param networksConfig - The networks configuration
+ * @returns Normalized networks configuration with DetailedContractConfig
+ */
+function normalizeNetworksConfiguration(networksConfig?: NetworksConfiguration): NetworksConfiguration | undefined {
+    if (!networksConfig) {
+        return undefined;
+    }
+
+    const normalized: NetworksConfiguration = {};
+
+    for (const [networkName, networkConfig] of Object.entries(networksConfig)) {
+        normalized[networkName] = {
+            ...networkConfig,
+            contracts: {},
+        };
+
+        if (networkConfig.contracts) {
+            for (const [contractName, contractConfig] of Object.entries(networkConfig.contracts)) {
+                normalized[networkName].contracts[contractName] = normalizeContractConfig(contractConfig);
+            }
+        }
+    }
+
+    return normalized;
+}
 
 const defaults = {
     logLevel: 3,
@@ -94,7 +147,7 @@ export default async () => {
             },
         },
 
-        networks: localConfig?.networks || undefined,
+        networks: normalizeNetworksConfiguration(localConfig?.networks),
         subnets: localConfig?.subnets || {},
         privateKey: process.env.VENN_PRIVATE_KEY,
         protocolMetadata: process.env.PROTOCOL_METADATA,
