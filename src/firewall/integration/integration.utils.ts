@@ -8,9 +8,7 @@ import {
     ModifierInvocation,
     PragmaDirective,
     SourceUnit,
-    TypeName,
 } from '@solidity-parser/parser/dist/src/ast-types';
-import { ethers } from 'ethers';
 import { readdir, readFile, stat, writeFile } from 'fs/promises';
 import { any as pathMatch } from 'micromatch';
 import { InquirerService } from 'nest-commander';
@@ -29,16 +27,6 @@ const FW_CONTRACT = 'VennFirewallConsumer';
 const FW_IMPORT = `import {${FW_CONTRACT}} from "${FW_IMPORT_PATH}";`;
 
 const FW_PROTECTED_MODIFIER = 'firewallProtected';
-const FW_PROTECTED_CUSTOM_MODIFIER = 'firewallProtectedCustom';
-const FW_PROTECTED_SIG_MODIFIER = 'firewallProtectedSig';
-const FW_INVARIANT_PROTECTED_MODIFIER = 'invariantProtected';
-
-const FIREWALL_MODIFIERS = [
-    FW_PROTECTED_MODIFIER,
-    FW_PROTECTED_CUSTOM_MODIFIER,
-    FW_PROTECTED_SIG_MODIFIER,
-    FW_INVARIANT_PROTECTED_MODIFIER,
-] as const;
 
 const FW_STORAGE_SLOT = 'bytes32(uint256(keccak256("eip1967.firewall")) - 1)';
 const FW_ADMIN_STORAGE_SLOT = 'bytes32(uint256(keccak256("eip1967.firewall.admin")) - 1)';
@@ -50,14 +38,11 @@ const FW_PROXY_SETUP = `_setAddressBySlot(${FW_STORAGE_SLOT}, address(0));`;
 const FW_PROXY_ADMIN_SETUP = () => `_setAddressBySlot(${FW_ADMIN_STORAGE_SLOT}, ${MSG_SENDER});`;
 const FW_PROXY_FULL_SETUP = () => `\n\t\t${FW_PROXY_SETUP}\n\t\t${FW_PROXY_ADMIN_SETUP()}`;
 
-export type FirewallModifier = (typeof FIREWALL_MODIFIERS)[number];
-
 export interface IntegrateOptions {
     verbose?: boolean;
     external?: boolean;
     internal?: boolean;
     msgValue?: boolean;
-    modifiers?: FirewallModifier[];
 }
 
 export const SUPPORTED_SOLIDITY_VERSIONS = '>= 0.8';
@@ -101,7 +86,6 @@ const RE_CONTRACT_DEFINITION = new RegExp(`^${RE_CONTRACT_DECLARATION.source}${R
  */
 const RE_FUNCTION = new RegExp(`(?<func>function)`, 'g');
 const RE_PARAMS = new RegExp(`(?<params>${RE_BLANK_SPACE.source}*[\\w,\\.\\[\\]]+(?:${RE_BLANK_SPACE.source}*))*`, 'g');
-const RE_ARGS = new RegExp(`(?:${RE_BLANK_SPACE.source}*[\\w,\\.\\(\\)\\[\\]]+(?:${RE_BLANK_SPACE.source}*))*`, 'g');
 const RE_SIGNATURE = new RegExp(
     `(?<signature>${RE_BLANK_SPACE.source}+(?<name>${RE_NAME.source})${RE_BLANK_SPACE.source}*\\(${RE_PARAMS.source}\\))`,
     'g',
@@ -115,41 +99,18 @@ const RE_METHOD_DEFINITION = new RegExp(
     'g',
 );
 
-/**
- * Gradually composing a regex to match the following pattern:
- *
- * <firewallModifier>(...params)(\s\r\n)?
- */
-const RE_FW_MODIFIER_NO_ARGS = new RegExp(`(?:${FIREWALL_MODIFIERS.map(mod => `\\b${mod}\\b`).join('|')})`, 'g');
-const RE_FW_MODIFIER_WITH_ARGS = new RegExp(
-    `${RE_FW_MODIFIER_NO_ARGS.source}(?:${RE_BLANK_SPACE.source}*\\(${RE_ARGS.source}\\))?`,
-    'g',
-);
 const RE_FW_MODIFIER = new RegExp(
-    `${RE_BLANK_SPACE.source}*${RE_FW_MODIFIER_WITH_ARGS.source}(?:${RE_BLANK_SPACE.source}*)?`,
+    `${RE_BLANK_SPACE.source}*${FW_PROTECTED_MODIFIER}(?:${RE_BLANK_SPACE.source}*)?`,
     'g',
 );
 
 @Injectable()
 export class IntegrationUtils {
-    private serializerByModifier: Partial<
-        Record<FirewallModifier, (contract: ContractDefinition, method: FunctionDefinition) => string>
-    >;
-
     constructor(
         private readonly inquirer: InquirerService,
         private readonly config: ConfigService,
         private readonly logger: LoggerService,
-    ) {
-        this.serializerByModifier = {
-            [FW_PROTECTED_MODIFIER]: () => FW_PROTECTED_MODIFIER,
-            [FW_PROTECTED_SIG_MODIFIER]: (contract: ContractDefinition, method: FunctionDefinition) => {
-                const sigHash = this.calcSighash(contract, method);
-                return `${FW_PROTECTED_SIG_MODIFIER}(bytes4(${sigHash}))`;
-            },
-            [FW_INVARIANT_PROTECTED_MODIFIER]: () => FW_INVARIANT_PROTECTED_MODIFIER,
-        };
-    }
+    ) {}
 
     async assertFileExists(path: string): Promise<void> {
         try {
@@ -422,11 +383,7 @@ export class IntegrationUtils {
         options?: IntegrateOptions,
     ): string {
         const isAbstract = !method.body;
-        const firewallModifiers = (method.modifiers || []).filter(modifier =>
-            FIREWALL_MODIFIERS.includes(modifier?.name as FirewallModifier),
-        );
-        const requiredModifiers = this.getModifiersToAdd(method, options);
-        const hasMismatchingModifiers = firewallModifiers.length !== requiredModifiers.length;
+        const hasMismatchingModifiers = method.modifiers?.length !== FW_PROTECTED_MODIFIER.length;
         const shouldCustomize = !isAbstract && hasMismatchingModifiers && !!options[method.visibility];
         if (!shouldCustomize) {
             return methodCode;
@@ -452,9 +409,7 @@ export class IntegrationUtils {
                     }
 
                     const [indentation] = modifiers.match(RE_INDENTATION) || [' '];
-                    const modifiersToAdd = requiredModifiers
-                        .map(name => this.serializerByModifier[name](contract, method))
-                        .join(indentation);
+                    const modifiersToAdd = FW_PROTECTED_MODIFIER;
 
                     if (modifiers) {
                         // Remove existing firewall modifiers.
@@ -586,7 +541,7 @@ export class IntegrationUtils {
     }
 
     private alreadyCustomizedContractMethod(method: FunctionDefinition): boolean {
-        return (method.modifiers || []).some(modifier => !!this.serializerByModifier[modifier.name]);
+        return (method.modifiers || []).some(modifier => modifier.name === FW_PROTECTED_MODIFIER);
     }
 
     private proxyModifiersAreDetected(modifiers: ModifierInvocation[]): boolean {
@@ -600,56 +555,5 @@ export class IntegrationUtils {
                     modifier.arguments?.length == 1 &&
                     modifier.arguments[0].type == 'NumberLiteral'),
         );
-    }
-
-    private getModifiersToAdd(method: FunctionDefinition, options?: IntegrateOptions): FirewallModifier[] {
-        switch (method.visibility) {
-            case 'external':
-                if (options?.modifiers?.includes(FW_INVARIANT_PROTECTED_MODIFIER)) {
-                    return [FW_PROTECTED_MODIFIER, FW_INVARIANT_PROTECTED_MODIFIER];
-                }
-                return [FW_PROTECTED_MODIFIER];
-            case 'internal':
-                return [FW_PROTECTED_SIG_MODIFIER];
-            default:
-                return [];
-        }
-    }
-
-    private calcSighash(contract: ContractDefinition, method: FunctionDefinition): string {
-        const contractName = contract.name;
-        const methodName = method.name!;
-        const paramTypes = (method.parameters || []).map(param => {
-            try {
-                return this.getParamTypeName(param.typeName);
-            } catch (_err) {
-                throw new UnsupportedParamTypeError(`unsupported type of param "${param.name}"`);
-            }
-        });
-        const sig = `${contractName}.${methodName}(${paramTypes.join(',')})`;
-        const sigHash = ethers.id(sig).slice(0, 10);
-        return sigHash;
-    }
-
-    private getParamTypeName(paramType: TypeName): string {
-        switch (paramType?.type) {
-            case 'ArrayTypeName':
-                // eslint-disable-next-line no-case-declarations
-                const baseTypeName = this.getParamTypeName(paramType?.baseTypeName);
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                return `${baseTypeName}[${(paramType?.length as any)?.number || ''}]`;
-            case 'UserDefinedTypeName':
-                return paramType?.namePath;
-            case 'ElementaryTypeName':
-                // eslint-disable-next-line no-case-declarations
-                const rawTypeName = paramType?.name;
-                if (rawTypeName === 'int' || rawTypeName === 'uint') {
-                    // Explicit type conversions: int => int256, uint => uint256.
-                    return `${rawTypeName}256`;
-                }
-                return rawTypeName;
-            default:
-                throw new Error();
-        }
     }
 }

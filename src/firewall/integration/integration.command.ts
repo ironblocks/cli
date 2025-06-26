@@ -5,7 +5,6 @@ import { resolve } from 'path';
 import { StandaloneCommand } from '@/commands/standalone-command.decorator';
 import { DESCRIPTION, FULL_NAME, NAME } from '@/firewall/integration/integration.command.descriptor';
 import { IntegrationService } from '@/firewall/integration/integration.service';
-import type { FirewallModifier } from '@/firewall/integration/integration.utils';
 import { FrameworkService } from '@/framework/framework.service';
 import { LoggerService } from '@/lib/logging/logger.service';
 
@@ -18,7 +17,6 @@ interface CommandOptions {
     verbose?: boolean;
     internal?: boolean;
     msgValue?: boolean;
-    modifiers?: FirewallModifier[];
 }
 
 @SubCommand({
@@ -57,7 +55,6 @@ export class IntegrationCommand extends CommandRunner {
                 external: true,
                 internal: options?.internal,
                 msgValue: options?.msgValue,
-                modifiers: options?.modifiers,
             };
 
             if (options?.file) {
@@ -137,20 +134,5 @@ export class IntegrationCommand extends CommandRunner {
     })
     parseMsgValue(): boolean {
         return true;
-    }
-
-    @Option({
-        flags: '-m, --modifiers <string...>',
-        description: 'set advanced modifiers',
-    })
-    parseModifiers(val: string): FirewallModifier[] {
-        const ACCEPTED_MODIFIERS = ['invariantProtected'];
-        const thisOption = this.getCommandOption('modifiers');
-        // This is a hotfix.
-        // NestJS commander overriding "parseArg" immediately after setting it via the decorator.
-        thisOption.choices(ACCEPTED_MODIFIERS);
-        // @ts-expect-error because of the hotfix above
-        const previous = this.command._optionValues['modifiers'];
-        return thisOption.parseArg(val, previous);
     }
 }
