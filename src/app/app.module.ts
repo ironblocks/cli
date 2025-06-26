@@ -5,6 +5,7 @@ import { AppCommand } from '@/app/app.command';
 import config from '@/config/configuration';
 import { FirewallModule } from '@/firewall/firewall.module';
 import { LoggerModule } from '@/lib/logging/logger.module';
+import { ModeModule } from '@/mode/mode.module';
 import { VennModule } from '@/venn/venn.module';
 
 @Module({
@@ -16,6 +17,7 @@ import { VennModule } from '@/venn/venn.module';
         VennModule,
         LoggerModule,
         FirewallModule,
+        ModeModule,
     ],
     providers: [AppCommand],
 })
