@@ -60,4 +60,12 @@ export class EnableVennCommand extends CommandRunner {
     parseSubnets(subnet: string, subnetsAccumulator: string[] = []): number[] {
         return [...subnetsAccumulator, subnet].map(Number).sort();
     }
+
+    @Option({
+        flags: '-p, --policy <address>',
+        description: 'use a custom policy address instead of deploying a new one',
+    })
+    parsePolicy(policy: string): string {
+        return policy;
+    }
 }

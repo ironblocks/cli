@@ -24,6 +24,7 @@ export type EnableVennOptions = {
     network: SupportedVennNetworks;
     dryRun: boolean;
     subnets?: number[];
+    policy?: string;
 };
 
 type ContractInformation = {
@@ -49,17 +50,27 @@ export class EnableVennService {
 
         const contracts = await this.getContractsInformation(networkConfig, provider, options.network);
 
-        const newPolicyAddress = await this.deployNewVennPolicy(contracts, wallet, networkConfig, provider);
+        let policyAddress: string;
+        if (options.policy) {
+            // Use custom policy address
+            policyAddress = await this.validatePolicyAddress(options.policy);
+            this.logger.step('Using custom policy address');
+            this.logger.log(` -> Policy address: ${colors.cyan(policyAddress)}`);
+        } else {
+            // Deploy new policy with default configuration
+            policyAddress = await this.deployNewVennPolicy(contracts, wallet, networkConfig, provider);
+        }
+
         await this.setFirewallOnConsumers(contracts, networkConfig, wallet, options.network, provider);
 
         if (options.dryRun) {
             await this.enableDryRun(contracts, networkConfig, wallet, provider);
         }
 
-        await this.setAttestationCenterProxyOnConsumers(contracts, networkConfig, wallet, newPolicyAddress, provider);
-        await this.subscribeConsumersToNewPolicy(contracts, newPolicyAddress, wallet, networkConfig, provider);
-        await this.registerContractsInProtocolRegistry(newPolicyAddress, networkConfig, wallet, provider);
-        await this.subscribeToRootSubnet(newPolicyAddress, networkConfig, wallet, provider, subnets);
+        await this.setAttestationCenterProxyOnConsumers(contracts, networkConfig, wallet, policyAddress, provider);
+        await this.subscribeConsumersToNewPolicy(contracts, policyAddress, wallet, networkConfig, provider);
+        await this.registerContractsInProtocolRegistry(policyAddress, networkConfig, wallet, provider);
+        await this.subscribeToRootSubnet(policyAddress, networkConfig, wallet, provider, subnets);
     }
 
     private async deployNewVennPolicy(
@@ -577,5 +588,13 @@ export class EnableVennService {
         this.logger.debug(` -> Memory  Safe Call Target address: ${setAddress}`);
         this.logger.debug(` -> Network Safe Call Target address: ${networkAddress}`);
         return setAddress === networkAddress;
+    }
+
+    private async validatePolicyAddress(policyAddress: string): Promise<string> {
+        if (!this.ethers.isAddress(policyAddress)) {
+            throw new Error(`Invalid policy address: ${colors.red(policyAddress)}`);
+        }
+
+        return this.ethers.getAddress(policyAddress);
     }
 }
