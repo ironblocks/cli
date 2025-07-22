@@ -31,9 +31,7 @@ export class IntegrationService {
             }
         } catch (err) {
             if (err instanceof UnsupportedSolidityVersionError) {
-                throw new Error(
-                    `Unsupported Solidity version: ${colors.red(err.version)} in ${colors.red(relativeFilePath)}`
-                );
+                throw new Error(`Unsupported Solidity version: ${colors.red(err.version)} in ${colors.red(relativeFilePath)}`);
             }
             if (err instanceof UnsupportedFileFormatError) {
                 throw new Error(`Unsupported file format: ${colors.red(relativeFilePath)}`);
@@ -65,10 +63,7 @@ export class IntegrationService {
                         customizedFiles.push(filepath);
                     }
                 } catch (err) {
-                    if (
-                        err instanceof UnsupportedSolidityVersionError ||
-                        err instanceof UnsupportedSolidityVersionError
-                    ) {
+                    if (err instanceof UnsupportedSolidityVersionError || err instanceof UnsupportedSolidityVersionError) {
                         failedToCustomizeFiles.push(filepath);
                     } else {
                         throw err;

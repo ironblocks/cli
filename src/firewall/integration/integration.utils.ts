@@ -25,12 +25,7 @@ const FW_PROTECTED_CUSTOM_MODIFIER = 'firewallProtectedCustom';
 const FW_PROTECTED_SIG_MODIFIER = 'firewallProtectedSig';
 const FW_INVARIANT_PROTECTED_MODIFIER = 'invariantProtected';
 
-const FIREWALL_MODIFIERS = [
-    FW_PROTECTED_MODIFIER,
-    FW_PROTECTED_CUSTOM_MODIFIER,
-    FW_PROTECTED_SIG_MODIFIER,
-    FW_INVARIANT_PROTECTED_MODIFIER
-] as const;
+const FIREWALL_MODIFIERS = [FW_PROTECTED_MODIFIER, FW_PROTECTED_CUSTOM_MODIFIER, FW_PROTECTED_SIG_MODIFIER, FW_INVARIANT_PROTECTED_MODIFIER] as const;
 
 const FW_STORAGE_SLOT = 'bytes32(uint256(keccak256("eip1967.firewall")) - 1)';
 const FW_ADMIN_STORAGE_SLOT = 'bytes32(uint256(keccak256("eip1967.firewall.admin")) - 1)';
@@ -66,18 +61,12 @@ const RE_INDENTATION = new RegExp(`(?<indentation>[\\r\\s\\n]+)`, 'g');
  * contract <name> (is X, Y, Z)
  */
 const RE_NAME = new RegExp(`\\w+`, 'g');
-const RE_CONTRACT_DECLARATION = new RegExp(
-    `(?<declaration>(?:abstract${RE_BLANK_SPACE.source}+)?contract${RE_BLANK_SPACE.source}+(?<name>${RE_NAME.source}))`,
-    'g'
-);
+const RE_CONTRACT_DECLARATION = new RegExp(`(?<declaration>(?:abstract${RE_BLANK_SPACE.source}+)?contract${RE_BLANK_SPACE.source}+(?<name>${RE_NAME.source}))`, 'g');
 
 const RE_FW_CONTRACT = new RegExp(`(?<fwContract>(?:${FW_CONTRACT}(?:Base${RE_BLANK_SPACE.source}*\\(.*\\))?))`, 'gs');
 
 const RE_BASE_CONTRACTS = new RegExp(`(?<baseContracts>(?:${RE_BLANK_SPACE.source}*[\\w,()]+)+)`, 'g');
-const RE_INHERITANCE = new RegExp(
-    `(?<inheritance>${RE_BLANK_SPACE.source}+is${RE_BLANK_SPACE.source}+${RE_BASE_CONTRACTS.source})`,
-    'g'
-);
+const RE_INHERITANCE = new RegExp(`(?<inheritance>${RE_BLANK_SPACE.source}+is${RE_BLANK_SPACE.source}+${RE_BASE_CONTRACTS.source})`, 'g');
 const RE_CONTRACT_DEFINITION = new RegExp(`^${RE_CONTRACT_DECLARATION.source}${RE_INHERITANCE.source}?`, 'g');
 
 /**
@@ -88,18 +77,12 @@ const RE_CONTRACT_DEFINITION = new RegExp(`^${RE_CONTRACT_DECLARATION.source}${R
 const RE_FUNCTION = new RegExp(`(?<func>function)`, 'g');
 const RE_PARAMS = new RegExp(`(?<params>${RE_BLANK_SPACE.source}*[\\w,\\.\\[\\]]+(?:${RE_BLANK_SPACE.source}*))*`, 'g');
 const RE_ARGS = new RegExp(`(?:${RE_BLANK_SPACE.source}*[\\w,\\.\\(\\)\\[\\]]+(?:${RE_BLANK_SPACE.source}*))*`, 'g');
-const RE_SIGNATURE = new RegExp(
-    `(?<signature>${RE_BLANK_SPACE.source}+(?<name>${RE_NAME.source})${RE_BLANK_SPACE.source}*\\(${RE_PARAMS.source}\\))`,
-    'g'
-);
+const RE_SIGNATURE = new RegExp(`(?<signature>${RE_BLANK_SPACE.source}+(?<name>${RE_NAME.source})${RE_BLANK_SPACE.source}*\\(${RE_PARAMS.source}\\))`, 'g');
 const RE_VISIBILITY = new RegExp(`(?<visibility>${RE_BLANK_SPACE.source}*(?:public|external|internal|private))`, 'g');
 const RE_MODIFIERS = new RegExp(`(?<modifiers>(?:${RE_BLANK_SPACE.source}*(?!returns)[\\w,\\.\\(\\)\\[\\]]+)*)`, 'g');
 const RE_IMMUTABLE_STATE = new RegExp(`\\pure|view\\b`, 'i');
 const RE_RETURNS = new RegExp(`(?<returns>${RE_BLANK_SPACE.source}*returns[^{]+)`, 'g');
-const RE_METHOD_DEFINITION = new RegExp(
-    `^${RE_FUNCTION.source}?${RE_SIGNATURE.source}${RE_VISIBILITY.source}?${RE_MODIFIERS.source}?${RE_RETURNS.source}?`,
-    'g'
-);
+const RE_METHOD_DEFINITION = new RegExp(`^${RE_FUNCTION.source}?${RE_SIGNATURE.source}${RE_VISIBILITY.source}?${RE_MODIFIERS.source}?${RE_RETURNS.source}?`, 'g');
 
 /**
  * Gradually composing a regex to match the following pattern:
@@ -107,14 +90,8 @@ const RE_METHOD_DEFINITION = new RegExp(
  * <firewallModifier>(...params)(\s\r\n)?
  */
 const RE_FW_MODIFIER_NO_ARGS = new RegExp(`(?:${FIREWALL_MODIFIERS.map(mod => `\\b${mod}\\b`).join('|')})`, 'g');
-const RE_FW_MODIFIER_WITH_ARGS = new RegExp(
-    `${RE_FW_MODIFIER_NO_ARGS.source}(?:${RE_BLANK_SPACE.source}*\\(${RE_ARGS.source}\\))?`,
-    'g'
-);
-const RE_FW_MODIFIER = new RegExp(
-    `${RE_BLANK_SPACE.source}*${RE_FW_MODIFIER_WITH_ARGS.source}(?:${RE_BLANK_SPACE.source}*)?`,
-    'g'
-);
+const RE_FW_MODIFIER_WITH_ARGS = new RegExp(`${RE_FW_MODIFIER_NO_ARGS.source}(?:${RE_BLANK_SPACE.source}*\\(${RE_ARGS.source}\\))?`, 'g');
+const RE_FW_MODIFIER = new RegExp(`${RE_BLANK_SPACE.source}*${RE_FW_MODIFIER_WITH_ARGS.source}(?:${RE_BLANK_SPACE.source}*)?`, 'g');
 
 type ParsedSolidityConstructs = {
     children: SolidityConstruct[];
@@ -149,9 +126,7 @@ type SolidityConstruct = {
 
 @Injectable()
 export class IntegrationUtils {
-    private serializerByModifier: Partial<
-        Record<FirewallModifier, (contract: SolidityConstruct, method: SolidityConstruct) => string>
-    >;
+    private serializerByModifier: Partial<Record<FirewallModifier, (contract: SolidityConstruct, method: SolidityConstruct) => string>>;
 
     constructor(
         private readonly inquirer: InquirerService,
@@ -200,11 +175,7 @@ export class IntegrationUtils {
         return !!path.match(RE_SOLIDITY_FILE_NAME);
     }
 
-    async forEachSolidityFilesInDir(
-        cb: (filepath: string) => unknown | Promise<unknown>,
-        dirpath: string,
-        recursive: boolean
-    ): Promise<void> {
+    async forEachSolidityFilesInDir(cb: (filepath: string) => unknown | Promise<unknown>, dirpath: string, recursive: boolean): Promise<void> {
         const directoriesQueue: string[] = [dirpath];
         while (directoriesQueue.length) {
             const dir = directoriesQueue.pop();
@@ -255,10 +226,7 @@ export class IntegrationUtils {
                 return this.customizeContractInPlace(customized, child, contractNamesToCustomize, options);
             }, originalCode);
 
-            if (
-                customizedCode === originalCode &&
-                !parsed.children.some(contract => this.alreadyCustomizedContractHeader(contract))
-            ) {
+            if (customizedCode === originalCode && !parsed.children.some(contract => this.alreadyCustomizedContractHeader(contract))) {
                 // No need to add firewall imports since the file is not using the firewall.
                 return false;
             }
@@ -309,12 +277,7 @@ export class IntegrationUtils {
      * @param contractNamesToCustomize
      * @returns
      */
-    private customizeContractInPlace(
-        code: string,
-        contract: SolidityConstruct,
-        contractNamesToCustomize: Set<string>,
-        options?: IntegrateOptions
-    ): string | null {
+    private customizeContractInPlace(code: string, contract: SolidityConstruct, contractNamesToCustomize: Set<string>, options?: IntegrateOptions): string | null {
         const { type, kind, name, range } = contract;
         const isContractDefinition = type === 'ContractDefinition';
         const isContract = kind === 'abstract' || kind === 'contract';
@@ -339,26 +302,14 @@ export class IntegrationUtils {
         return customizedCode;
     }
 
-    private customizeContractCode(
-        contract: SolidityConstruct,
-        contractCode: string,
-        options?: IntegrateOptions
-    ): string {
+    private customizeContractCode(contract: SolidityConstruct, contractCode: string, options?: IntegrateOptions): string {
         const alreadyCustomizedHeader = this.alreadyCustomizedContractHeader(contract);
         const methods = contract.subNodes.filter(({ type }) => type === 'FunctionDefinition');
         const alreadyCustomizedSomeMethods = methods.some(this.alreadyCustomizedContractMethod.bind(this));
         // Add custom modifiers to contract methods.
-        const contractCodeWithCustomizedMethods = this.customizeContractMethods(
-            contractCode,
-            contract,
-            methods,
-            options
-        );
+        const contractCodeWithCustomizedMethods = this.customizeContractMethods(contractCode, contract, methods, options);
 
-        if (
-            contractCodeWithCustomizedMethods === contractCode &&
-            (alreadyCustomizedHeader || !alreadyCustomizedSomeMethods)
-        ) {
+        if (contractCodeWithCustomizedMethods === contractCode && (alreadyCustomizedHeader || !alreadyCustomizedSomeMethods)) {
             return contractCode;
         } else if (alreadyCustomizedHeader) {
             return contractCodeWithCustomizedMethods;
@@ -369,13 +320,7 @@ export class IntegrationUtils {
         // Add base contract inheritance to contract declaration.
         const customizedContractCode = contractCodeWithCustomizedMethods.replace(
             RE_CONTRACT_DEFINITION,
-            (
-                match: string,
-                declaration: string,
-                name: string,
-                inheritance: string = '',
-                baseContracts: string = ''
-            ) => {
+            (match: string, declaration: string, name: string, inheritance: string = '', baseContracts: string = '') => {
                 if (baseContracts) {
                     const is = inheritance.substring(0, inheritance.length - baseContracts.length);
                     const [indentation] = baseContracts.match(RE_INDENTATION) || [' '];
@@ -390,9 +335,7 @@ export class IntegrationUtils {
                     // Inheritance is placed leftmost to prevent inheritance linearization error.
                     // In overriding case, firewall contract is just replaced with the new one and the order is omitted.
 
-                    const customizedInheritance = fwIsAlreadyInherited
-                        ? inheritance.replace(RE_FW_CONTRACT, fwInheritedContract)
-                        : `${is}${fwInheritedContract},${indentation}${baseContracts}`;
+                    const customizedInheritance = fwIsAlreadyInherited ? inheritance.replace(RE_FW_CONTRACT, fwInheritedContract) : `${is}${fwInheritedContract},${indentation}${baseContracts}`;
 
                     return `${declaration}${customizedInheritance}`;
                 }
@@ -403,39 +346,23 @@ export class IntegrationUtils {
         return customizedContractCode;
     }
 
-    private customizeContractMethods(
-        contractCode: string,
-        contract: SolidityConstruct,
-        methods: SolidityConstruct[],
-        options?: IntegrateOptions
-    ): string {
+    private customizeContractMethods(contractCode: string, contract: SolidityConstruct, methods: SolidityConstruct[], options?: IntegrateOptions): string {
         const [contractStartIndex] = contract.range;
         // Customizing methods from the bottom up not to affect other methods' start and end indexes.
         const customizedMethods = methods.reduceRight((customized, method) => {
             const [methodStartIndex, methodEndIndex] = method.range;
-            const [relativeStartIndex, relativeEndIndex] = [
-                methodStartIndex - contractStartIndex,
-                methodEndIndex - contractStartIndex
-            ];
+            const [relativeStartIndex, relativeEndIndex] = [methodStartIndex - contractStartIndex, methodEndIndex - contractStartIndex];
             const methodCode = contractCode.substring(relativeStartIndex, relativeEndIndex + 1);
             const customizedMethodCode = this.customizeMethodCode(contract, method, methodCode, options);
-            const customizedCode =
-                customized.slice(0, relativeStartIndex) + customizedMethodCode + customized.slice(relativeEndIndex + 1);
+            const customizedCode = customized.slice(0, relativeStartIndex) + customizedMethodCode + customized.slice(relativeEndIndex + 1);
             return customizedCode;
         }, contractCode);
         return customizedMethods;
     }
 
-    private customizeMethodCode(
-        contract: SolidityConstruct,
-        method: SolidityConstruct,
-        methodCode: string,
-        options?: IntegrateOptions
-    ): string {
+    private customizeMethodCode(contract: SolidityConstruct, method: SolidityConstruct, methodCode: string, options?: IntegrateOptions): string {
         const isAbstract = !method.body;
-        const firewallModifiers = (method.modifiers || []).filter(modifier =>
-            FIREWALL_MODIFIERS.includes(modifier?.name as FirewallModifier)
-        );
+        const firewallModifiers = (method.modifiers || []).filter(modifier => FIREWALL_MODIFIERS.includes(modifier?.name as FirewallModifier));
         const requiredModifiers = this.getModifiersToAdd(method, options);
         const hasMismatchingModifiers = firewallModifiers.length !== requiredModifiers.length;
         const shouldCustomize = !isAbstract && hasMismatchingModifiers && !!options[method.visibility];
@@ -463,9 +390,7 @@ export class IntegrationUtils {
                     }
 
                     const [indentation] = modifiers.match(RE_INDENTATION) || [' '];
-                    const modifiersToAdd = requiredModifiers
-                        .map(name => this.serializerByModifier[name](contract, method))
-                        .join(indentation);
+                    const modifiersToAdd = requiredModifiers.map(name => this.serializerByModifier[name](contract, method)).join(indentation);
 
                     if (modifiers) {
                         // Remove existing firewall modifiers.
@@ -504,8 +429,7 @@ export class IntegrationUtils {
             const [firstImportStartIndex] = firstImport.range;
             const customizedImports = `${FW_IMPORT}\r\n`;
             // Editing imports section whithin the file.
-            const customizedCode =
-                code.slice(0, firstImportStartIndex) + customizedImports + code.slice(firstImportStartIndex);
+            const customizedCode = code.slice(0, firstImportStartIndex) + customizedImports + code.slice(firstImportStartIndex);
             return customizedCode;
         }
 
@@ -516,8 +440,7 @@ export class IntegrationUtils {
             const [_pragmaStartIndex, pragmaEndIndex] = firstDirective.range;
             const customizedImports = `\r\n\r\n${FW_IMPORT}`;
             // Editing imports section whithin the file.
-            const customizedCode =
-                code.slice(0, pragmaEndIndex + 1) + customizedImports + code.slice(pragmaEndIndex + 1);
+            const customizedCode = code.slice(0, pragmaEndIndex + 1) + customizedImports + code.slice(pragmaEndIndex + 1);
             return customizedCode;
         }
 
@@ -553,9 +476,7 @@ export class IntegrationUtils {
         return modifiers.some(
             modifier =>
                 (modifier.name === FW_PROXY_INITIALIZER_MODIFIER && !modifier.arguments) ||
-                (modifier.name === FW_PROXY_REINITIALIZER_MODIFIER &&
-                    modifier.arguments?.length == 1 &&
-                    modifier.arguments[0].type == 'NumberLiteral')
+                (modifier.name === FW_PROXY_REINITIALIZER_MODIFIER && modifier.arguments?.length == 1 && modifier.arguments[0].type == 'NumberLiteral')
         );
     }
 

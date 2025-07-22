@@ -15,17 +15,7 @@ import { SelectDependenciesStrategyQuestions } from './select-dependencies-strat
 @Module({
     imports: [FilesModules, LoggerModule],
 
-    providers: [
-        FrameworkService,
-        FoundryService,
-        HardhatService,
-        InstallDependenciesQuestions,
-        SelectDependenciesStrategyQuestions,
-        DependenciesService,
-        ForgeStrategy,
-        YarnStrategy,
-        NPMStrategy
-    ],
+    providers: [FrameworkService, FoundryService, HardhatService, InstallDependenciesQuestions, SelectDependenciesStrategyQuestions, DependenciesService, ForgeStrategy, YarnStrategy, NPMStrategy],
 
     exports: [FrameworkService]
 })

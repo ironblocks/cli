@@ -13,9 +13,6 @@ export class HardhatService {
     ) {}
 
     public async isHardhatProject(): Promise<boolean> {
-        return (
-            (await this.filesService.doesFileExist('hardhat.config.ts')) ||
-            (await this.filesService.doesFileExist('hardhat.config.js'))
-        );
+        return (await this.filesService.doesFileExist('hardhat.config.ts')) || (await this.filesService.doesFileExist('hardhat.config.js'));
     }
 }
