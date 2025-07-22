@@ -1,5 +1,6 @@
 import * as fs from 'fs/promises';
 import * as path from 'path';
+import { glob } from 'glob';
 
 import { Injectable } from '@nestjs/common';
 
@@ -35,5 +36,17 @@ export class FilesService {
         const resolvedPath = path.resolve(normalizedPath);
 
         await fs.appendFile(resolvedPath, `\n${content}`, { encoding: 'utf-8' });
+    }
+
+    public async glob(pattern: string): Promise<string[]> {
+        try {
+            const files = await glob(pattern, {
+                cwd: process.cwd(),
+                nodir: true
+            });
+            return files;
+        } catch (error) {
+            return [];
+        }
     }
 }
