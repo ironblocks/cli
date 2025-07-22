@@ -108,9 +108,7 @@ describe('Dependencies Service', () => {
             dependeciesService.autoSetDependenciesStrategy = jest.fn();
             dependeciesService.promptToInstallDependencies = jest.fn().mockResolvedValue(false);
 
-            await expect(dependeciesService.assertDependencies()).rejects.toThrow(
-                'Cannot continue without dependencies'
-            );
+            await expect(dependeciesService.assertDependencies()).rejects.toThrow('Cannot continue without dependencies');
         });
     });
 
@@ -126,9 +124,7 @@ describe('Dependencies Service', () => {
         it('throws an error if the strategy is unknown', async () => {
             dependeciesService.detectDependenciesStrategy = jest.fn().mockResolvedValue(DependenciesStrategy.Other);
 
-            await expect(dependeciesService.autoSetDependenciesStrategy()).rejects.toThrow(
-                'Cannot install dependencies, unknown dependencies tool (quitting)'
-            );
+            await expect(dependeciesService.autoSetDependenciesStrategy()).rejects.toThrow('Cannot install dependencies, unknown dependencies tool (quitting)');
         });
 
         it('logs the detected strategy type', async () => {
@@ -136,9 +132,7 @@ describe('Dependencies Service', () => {
 
             await dependeciesService.autoSetDependenciesStrategy();
 
-            expect(loggerMock.log).toHaveBeenCalledWith(
-                `Using ${colors.cyan(DependenciesStrategy.NPM)} for dependencies management`
-            );
+            expect(loggerMock.log).toHaveBeenCalledWith(`Using ${colors.cyan(DependenciesStrategy.NPM)} for dependencies management`);
         });
 
         it('sets the strategy to forge if detected', async () => {
@@ -171,12 +165,7 @@ describe('Dependencies Service', () => {
 
     describe('.detectDependenciesStrategy()', () => {
         it('detects when forge and git-submodules are used', async () => {
-            filesServiceMock.doesFileExist = jest
-                .fn()
-                .mockResolvedValueOnce(true)
-                .mockResolvedValueOnce(true)
-                .mockResolvedValueOnce(false)
-                .mockResolvedValueOnce(false);
+            filesServiceMock.doesFileExist = jest.fn().mockResolvedValueOnce(true).mockResolvedValueOnce(true).mockResolvedValueOnce(false).mockResolvedValueOnce(false);
 
             const strategy = await dependeciesService.detectDependenciesStrategy();
 
@@ -186,12 +175,7 @@ describe('Dependencies Service', () => {
         });
 
         it('detects when yarn is used', async () => {
-            filesServiceMock.doesFileExist = jest
-                .fn()
-                .mockResolvedValueOnce(false)
-                .mockResolvedValueOnce(false)
-                .mockResolvedValueOnce(true)
-                .mockResolvedValueOnce(false);
+            filesServiceMock.doesFileExist = jest.fn().mockResolvedValueOnce(false).mockResolvedValueOnce(false).mockResolvedValueOnce(true).mockResolvedValueOnce(false);
 
             const strategy = await dependeciesService.detectDependenciesStrategy();
 
@@ -200,12 +184,7 @@ describe('Dependencies Service', () => {
         });
 
         it('detects when npm is used', async () => {
-            filesServiceMock.doesFileExist = jest
-                .fn()
-                .mockResolvedValueOnce(false)
-                .mockResolvedValueOnce(false)
-                .mockResolvedValueOnce(false)
-                .mockResolvedValueOnce(true);
+            filesServiceMock.doesFileExist = jest.fn().mockResolvedValueOnce(false).mockResolvedValueOnce(false).mockResolvedValueOnce(false).mockResolvedValueOnce(true);
 
             const strategy = await dependeciesService.detectDependenciesStrategy();
 
@@ -229,9 +208,7 @@ describe('Dependencies Service', () => {
 
             await dependeciesService.promptForStrategy();
 
-            expect(loggerMock.log).toHaveBeenCalledWith(
-                'Could not auto-detect dependencies management tool, please select one:'
-            );
+            expect(loggerMock.log).toHaveBeenCalledWith('Could not auto-detect dependencies management tool, please select one:');
         });
 
         it('prompts the user for the strategy type', async () => {
@@ -267,9 +244,7 @@ describe('Dependencies Service', () => {
 
             await dependeciesService.getMissingDependencies();
 
-            expect(loggerMock.spinner).toHaveBeenCalledWith(
-                `Checking if "${colors.cyan(mockDependency.name)}" is installed`
-            );
+            expect(loggerMock.spinner).toHaveBeenCalledWith(`Checking if "${colors.cyan(mockDependency.name)}" is installed`);
         });
 
         it('checks if the dependency is installed', async () => {

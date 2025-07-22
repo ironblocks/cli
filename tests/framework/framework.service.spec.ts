@@ -60,9 +60,7 @@ describe('Framework Service', () => {
 
             await frameworkService.assertDependencies();
 
-            expect(mockSpinner.info).toHaveBeenCalledWith(
-                `Detected ${colors.cyan('some framework')} development framework`
-            );
+            expect(mockSpinner.info).toHaveBeenCalledWith(`Detected ${colors.cyan('some framework')} development framework`);
         });
 
         it('logs a warning for unknown framework types', async () => {
@@ -70,9 +68,7 @@ describe('Framework Service', () => {
 
             await frameworkService.assertDependencies();
 
-            expect(mockSpinner.warn).toHaveBeenCalledWith(
-                'Unknown development framework (expected Foundry or Hardhat)'
-            );
+            expect(mockSpinner.warn).toHaveBeenCalledWith('Unknown development framework (expected Foundry or Hardhat)');
         });
     });
 

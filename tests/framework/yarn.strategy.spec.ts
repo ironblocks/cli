@@ -166,9 +166,7 @@ describe('Yarn Strategy', () => {
             }
 
             expect(thrownError).toBeInstanceOf(DependenciesError);
-            expect(thrownError.message).toBe(
-                `Could not install dependency: ${mockDependency.name}.\nsome error message`
-            );
+            expect(thrownError.message).toBe(`Could not install dependency: ${mockDependency.name}.\nsome error message`);
         });
     });
 });
